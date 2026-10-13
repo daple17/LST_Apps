@@ -17,7 +17,7 @@ const ICON = {
   truck: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h11v10H2z"/><path d="M13 9h4l4 4v3h-8z"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="17.5" cy="17.5" r="1.8"/></svg>',
 };
 // tombol progress: ikon + persen + bar, seluruhnya link ke halaman terkait
-const pbtn = (href, icon, v, title) => `<a class="pbtn" href="${href}" title="${title}" aria-label="${title} ${pct(v)}"><span class="pi">${ICON[icon]}</span><span class="pv"><b class="${pcls(v)}">${pct(v)}</b><i class="bar ${pcls(v)}"><u style="width:${Math.min(100, +v)}%"></u></i></span><span class="chev">›</span></a>`;
+const pbtn = (href, icon, v, title) => `<a class="pbtn" href="${href}" title="${title}" aria-label="${title} ${pct(v)}"><span class="pi">${ICON[icon]}</span><span class="pv"><b class="${pcls(v)}">${pct(v)}</b><i class="pb ${pcls(v)}"><u style="width:${Math.min(100, +v)}%"></u></i></span><span class="chev">›</span></a>`;
 const dtLocal = d => d ? d.replace(' ', 'T').slice(0, 16) : '';
 
 async function download(path, name) {
@@ -83,7 +83,7 @@ const hoOverview = run(async () => {
   const d = await api('/ho/tickets?' + hoQs(hoSt)), c = d.counts;
   const tab = (k, n, v) => `<button class="btn ${hoSt.progress === k ? '' : 'sec'} sm" onclick="hoSetP('${k}')">${n} (${v})</button>`;
   $('#view').innerHTML = `<p style="margin:-8px 0 14px;color:var(--mut)">Report Material &amp; Trucking Delivery</p>
-    <div class="bar"><input id="hq" placeholder="Cari ticket, PIC, customer, vessel" value="${esc(hoSt.q)}">
+    <div class="bar fbar"><input id="hq" placeholder="Cari ticket, PIC, customer, vessel" value="${esc(hoSt.q)}">
     <label class="inl">Tanggal <input type="date" id="hf" value="${hoSt.from}"> – <input type="date" id="ht" value="${hoSt.to}"></label>
     <button class="btn sec" onclick="hoResetF()">Reset</button><span style="flex:1"></span>
     <button class="btn sec out" onclick="hoExport()">Download Excel</button><button class="btn" onclick="hoTicketForm()">+ Tambah Data</button></div>
@@ -169,9 +169,9 @@ function hoHead(t, tab) {
     <div><span>Customer:</span> <b>${join('customer_name')}</b></div><div><span>Weight:</span> <b>${fmtN(t.weight)} Ton</b></div>
     <div><span>Vessel:</span> <b>${join('vessel')}</b></div><div><span>No. Aju:</span> <b>${join('aju_no')}</b></div>
     <div><span>No. BL:</span> <b>${join('bl_no')}</b></div><div><span>Status JO:</span> <b>${stJo}</b></div></div></div>
-    <div class="cards"><div class="card stat s-total"><b class="${pcls(t.mat_pct)}">${pct(t.mat_pct)}</b><span>Report Material (${t.mat_checked}/${t.mat_total} dicek)</span></div>
-    <div class="card stat s-done"><b class="${pcls(t.del_pct)}">${pct(t.del_pct)}</b><span>Trucking Delivery (${fmtN(t.qty_sent)}/${fmtN(t.qty_total)} qty)</span></div>
-    <div class="card stat s-open"><b style="font-size:24px;color:var(--ink)">${dwell(t.dwell_min)}</b><span>Dwelling time${t.done_at ? ' (selesai)' : ''}</span></div></div>`;
+    <div class="cards"><div class="card stat s-mat"><b class="${pcls(t.mat_pct)}">${pct(t.mat_pct)}</b><span>Report Material (${t.mat_checked}/${t.mat_total} dicek)</span></div>
+    <div class="card stat s-del"><b class="${pcls(t.del_pct)}">${pct(t.del_pct)}</b><span>Trucking Delivery (${fmtN(t.qty_sent)}/${fmtN(t.qty_total)} qty)</span></div>
+    <div class="card stat s-dw"><b>${dwell(t.dwell_min)}</b><span>Dwelling time${t.done_at ? ' (selesai)' : ''}</span></div></div>`;
 }
 const hoDelTicket = run(async id => { if (confirm('Hapus ticket beserta seluruh material dan fotonya?')) { await api('/ho/tickets/' + id, 'DELETE'); location.hash = '#ho'; } });
 const hoLoadT = async id => { hoT = await api('/ho/tickets/' + id); return hoT; };
@@ -186,7 +186,7 @@ const hoMaterial = run(async id => {
 const hoMatList = run(async () => {
   const t = hoT, d = await api(`/ho/tickets/${t.id}/materials?${hoQs(hoMq)}`), s = d.totals;
   const sel = t.jos.length > 0;
-  $('#hl').innerHTML = `<div class="bar"><input id="mq" placeholder="Search by name, Destination, … / Scan Barcode" value="${esc(hoMq.q)}" style="max-width:320px">
+  $('#hl').innerHTML = `<div class="bar fbar"><input id="mq" placeholder="Search by name, Destination, … / Scan Barcode" value="${esc(hoMq.q)}" style="max-width:320px">
     <select id="ms"><option value="">Semua status</option><option value="NOT_CHECKED">Not Checked</option><option value="OK">OK</option><option value="DAMAGE">Damage</option></select>
     <span class="tag" style="color:var(--ink)">Net ${fmtN(s.net)}</span><span class="tag" style="color:var(--ink)">Gross ${fmtN(s.gross)}</span><span class="tag" style="color:var(--ink)">Qty ${fmtN(s.qty)}</span><span style="flex:1"></span>
     <button class="btn sec" onclick="hoDl(${t.id},'${esc(t.ticket_no)}')">Download Excel</button>
@@ -277,7 +277,7 @@ const hoTrucking = run(async id => {
 });
 const hoSjList = run(async () => {
   const t = hoT, d = await api(`/ho/tickets/${t.id}/sj?${hoQs(hoSq)}`), s = d.totals;
-  $('#hl').innerHTML = `<div class="bar"><input id="sq" placeholder="Search by nopol, driver, no. surat jalan" value="${esc(hoSq.q)}" style="max-width:320px">
+  $('#hl').innerHTML = `<div class="bar fbar"><input id="sq" placeholder="Search by nopol, driver, no. surat jalan" value="${esc(hoSq.q)}" style="max-width:320px">
     <span class="tag" style="color:var(--ink)">Net ${fmtN(s.net)}</span><span class="tag" style="color:var(--ink)">Gross ${fmtN(s.gross)}</span><span class="tag" style="color:var(--ink)">Qty ${fmtN(s.qty)}</span><span class="tag" style="color:var(--ink)">${s.trips} RIT</span><span style="flex:1"></span>
     <button class="btn sec" onclick="hoCopy(${t.id})">Copy Report</button><button class="btn" ${t.mat_total ? '' : 'disabled'} onclick="hoSjForm()">Buat Surat Jalan</button></div>
     <div class="card tw"><table><tr><th>No.</th><th>Nomor Polisi</th><th>Driver</th><th>Vendor</th><th>No. Surat Jalan</th><th>Start Loading</th><th>Load Time</th><th class="num">Net Weight</th><th class="num">Gross Weight</th><th class="num">Qty</th><th>Satuan</th><th>Dari</th><th>Tujuan</th><th>Detail</th></tr>

@@ -50,7 +50,7 @@ function shell() {
   $('#app').innerHTML = `<div class="shell"><aside><div class="brand"><img src="logo.png" alt="LST"><div><b class="wm"><i>me</i>LESAT</b><small>By Lima Sarana</small></div></div>
     <div class="grp">HOME</div><a class="off">Jadwal Truck &amp; Tiket</a>
     ${MENU.map(([g, items]) => `<div class="grp">${g}</div>${items.map(([n, k]) => k ? `<a href="#${k}" data-r="${k}">${n}</a>` : `<a class="off">${n}</a>`).join('')}`).join('')}
-    </aside><div class="nav-bg" onclick="toggleNav(false)"></div><main><div class="top"><button class="btn sec mbtn" aria-label="Menu" onclick="toggleNav()">☰</button><h2 id="ttl"></h2><div class="usr"><span>${esc(uname)}</span> <button class="btn sec sm" onclick="logout()">Logout</button></div></div><div id="view"></div></main></div><div id="md"></div>`;
+    </aside><div class="nav-bg" onclick="toggleNav(false)"></div><main><div class="top"><button class="btn sec mbtn" aria-label="Menu" onclick="toggleNav()">☰</button><h2 id="ttl"></h2><div class="usr"><span class="av" aria-hidden="true">${esc((uname || '?').trim().charAt(0).toUpperCase())}</span><span>${esc(uname)}</span><button class="btn sec sm" onclick="logout()">Logout</button></div></div><div id="view"></div></main></div><div id="md"></div>`;
   api('/lookups').then(d => { look = d; route(); });
 }
 const toggleNav = on => document.body.classList.toggle('nav', on);
@@ -75,7 +75,7 @@ async function joList() {
     .map(([l, v, f, c]) => `<div class="card stat ${c} ${f === 'late' && v ? 'warn' : ''}" ${f && f !== 'late' ? `style="cursor:pointer" onclick="setF('status','${f}')"` : ''}><b>${v}</b><span>${l}</span></div>`).join('')}</div>`;
   const th = (k, n) => `<th style="cursor:pointer" onclick="sortBy('${k}')">${n}${st.sort === k ? (st.dir === 'asc' ? ' ▲' : ' ▼') : ''}</th>`;
   const late = r => r.status === 'NOT_COMP' && r.delivery_plan && r.delivery_plan < today();
-  $('#pg').innerHTML = `<div class="bar"><input id="q" placeholder="Cari JO, customer, vessel, BL, No. Aju, Invoice" value="${esc(st.q)}">
+  $('#pg').innerHTML = `<div class="bar fbar"><input id="q" placeholder="Cari JO, customer, vessel, BL, No. Aju, Invoice" value="${esc(st.q)}">
     <select id="fs"><option value="">Semua status</option><option value="NOT_COMP">Not Complete</option><option value="COMPLETE">Complete</option></select>
     <select id="ft"><option value="">Semua type</option>${TYPES.map(t => `<option>${t}</option>`).join('')}</select>
     <select id="fc"><option value="">Semua customer</option>${look.customers.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select>
@@ -83,7 +83,7 @@ async function joList() {
     <button class="btn sec" onclick="resetF()">Reset</button><span style="flex:1"></span>
     <button class="btn sec out" onclick="exportCsv()">Export CSV</button><button class="btn" onclick="joForm()">+ Job Order</button></div>
     <div class="card tw"><table><tr>${th('jo_no', 'No. JO')}<th>Type</th>${th('customer', 'Customer')}<th>Vessel</th><th>Party</th><th>Weight</th>${th('eta', 'ETA/ETD')}${th('delivery_plan', 'Rencana Delivery')}<th>Status</th></tr>
-    ${d.rows.map(r => `<tr class="row" style="cursor:pointer" onclick="detail(${r.id})"><td><b>${esc(r.jo_no)}</b></td><td><span><span class="dot t-${esc(r.type)}"></span>${esc(r.type)}</span></td><td>${esc(r.customer_name)}</td><td>${esc(r.vessel)}</td><td>${esc(r.party)}</td><td>${fmtN(r.weight)}</td><td>${fmtD(r.eta)}</td><td ${late(r) ? 'style="color:var(--bad);font-weight:600" title="Lewat rencana delivery"' : ''}>${fmtD(r.delivery_plan)}</td><td><span class="tag ${r.status}">${r.status === 'COMPLETE' ? 'Complete' : 'Not Comp'}</span></td></tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--mut)">Belum ada data</td></tr>'}</table>
+    ${d.rows.map(r => `<tr class="row" style="cursor:pointer" onclick="detail(${r.id})"><td><b>${esc(r.jo_no)}</b></td><td><span><span class="dot t-${esc(r.type)}"></span>${esc(r.type)}</span></td><td class="wrap">${esc(r.customer_name)}</td><td>${esc(r.vessel)}</td><td>${esc(r.party)}</td><td>${fmtN(r.weight)}</td><td>${fmtD(r.eta)}</td><td ${late(r) ? 'style="color:var(--bad);font-weight:600" title="Lewat rencana delivery"' : ''}>${fmtD(r.delivery_plan)}</td><td><span class="tag ${r.status}">${r.status === 'COMPLETE' ? 'Complete' : 'Not Comp'}</span></td></tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--mut)">Belum ada data</td></tr>'}</table>
     <div class="pg"><span>${d.total} data</span><button class="btn sec sm" ${st.page <= 1 ? 'disabled' : ''} onclick="go(-1)">‹</button><span>${st.page}/${d.pages || 1}</span><button class="btn sec sm" ${st.page >= d.pages ? 'disabled' : ''} onclick="go(1)">›</button></div></div>`;
   $('#fs').value = st.status; $('#ft').value = st.type; $('#fc').value = st.customer_id;
   let t; $('#q').oninput = e => { clearTimeout(t); t = setTimeout(() => { st.q = e.target.value; st.page = 1; joList().then(() => { const q = $('#q'); q.focus(); q.setSelectionRange(1e4, 1e4); }); }, 300); };
