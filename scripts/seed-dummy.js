@@ -1,6 +1,8 @@
 // Data dummy Handling Ops. Pakai: npm run seed (aman diulang: hanya mengganti data dummy sebelumnya)
 const mysql = require('mysql2/promise'), bcrypt = require('bcryptjs');
-const pool = mysql.createPool({ host: process.env.DB_HOST || '127.0.0.1', port: +(process.env.DB_PORT || 3307), user: process.env.DB_USER || 'root', password: process.env.DB_PASS || 'root', database: process.env.DB_NAME || 'lesat', timezone: 'Z', multipleStatements: true });
+const cfg = require('../config');
+if (cfg.isProd) { console.error('Seed data dummy dinonaktifkan di production'); process.exit(1); }
+const pool = mysql.createPool(cfg.db);
 let seed = 42; const rnd = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 const pick = a => a[Math.floor(rnd() * a.length)], between = (a, b) => a + Math.floor(rnd() * (b - a + 1)), pad = (n, l) => String(n).padStart(l, '0');
 const ymd = d => `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1, 2)}${pad(d.getUTCDate(), 2)}`;

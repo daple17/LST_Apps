@@ -1,12 +1,8 @@
 const express = require('express'), mysql = require('mysql2/promise'), bcrypt = require('bcryptjs'),
   jwt = require('jsonwebtoken'), fs = require('fs'), path = require('path');
-const SECRET = process.env.JWT_SECRET || 'lesat-dev-secret';
-const pool = mysql.createPool({
-  host: process.env.DB_HOST || '127.0.0.1', port: +(process.env.DB_PORT || 3307),
-  user: process.env.DB_USER || 'root', password: process.env.DB_PASS || 'root',
-  database: process.env.DB_NAME || 'lesat', multipleStatements: true, dateStrings: true, timezone: 'Z',
-});
-const UP = path.join(__dirname, 'uploads'); fs.mkdirSync(UP, { recursive: true });
+const cfg = require('./config'), SECRET = cfg.secret;
+const pool = mysql.createPool(cfg.db);
+const UP = cfg.uploadDir; fs.mkdirSync(UP, { recursive: true });
 const app = express();
 app.use(express.json({ limit: '15mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -199,7 +195,8 @@ async function init() {
   if (!cc.length) await pool.query("ALTER TABLE jo_documents ADD COLUMN category VARCHAR(40) NOT NULL DEFAULT 'Lainnya'");
   const [[{ n }]] = await pool.query('SELECT COUNT(*) n FROM users');
   if (!n) {
-    await pool.query('INSERT INTO users (username,password,name) VALUES (?,?,?)', ['admin', bcrypt.hashSync('admin123', 10), 'Administrator']);
+    if (!cfg.adminPassword) throw new Error('ADMIN_PASSWORD wajib diisi untuk membuat user admin pertama');
+    await pool.query('INSERT INTO users (username,password,name) VALUES (?,?,?)', ['admin', bcrypt.hashSync(cfg.adminPassword, 10), 'Administrator']);
     await pool.query('INSERT INTO customers (code,name) VALUES ?', [[['USC', 'PT UNITED STEEL SERVICE INDONESIA'], ['BTU', 'PT BERKAH TRANS UTAMA'], ['POS', 'PT POSCO INDONESIA JAKARTA PROCESSING CENTER'], ['NIJ', 'PT NIPRO INDONESIA JAYA'], ['PJM', 'PT PANATA JAYA MANDIRI']]]);
     await pool.query('INSERT INTO shippers (name) VALUES ?', [[['POSCO CORPORATION'], ['SHANGHAI STEEL CO'], ['EVERGREEN SHIPPING']]]);
   }
