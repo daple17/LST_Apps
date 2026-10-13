@@ -1,8 +1,7 @@
-// Data dummy Handling Ops. Pakai: npm run seed (aman diulang: hanya mengganti data dummy sebelumnya)
+// Data dummy Handling Ops. Lokal: npm run seed (aman diulang: hanya mengganti data dummy sebelumnya).
+// Di server (Railway dev): set SEED_DUMMY=1, data dibuat sekali saat start jika belum ada data dummy (SEED_DUMMY=force untuk membuat ulang).
 const mysql = require('mysql2/promise'), bcrypt = require('bcryptjs');
 const cfg = require('../config');
-if (cfg.isProd) { console.error('Seed data dummy dinonaktifkan di production'); process.exit(1); }
-const pool = mysql.createPool(cfg.db);
 let seed = 42; const rnd = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 const pick = a => a[Math.floor(rnd() * a.length)], between = (a, b) => a + Math.floor(rnd() * (b - a + 1)), pad = (n, l) => String(n).padStart(l, '0');
 const ymd = d => `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1, 2)}${pad(d.getUTCDate(), 2)}`;
@@ -15,7 +14,7 @@ const DEST = ['CIBITUNG', 'KARAWANG TIMUR', 'CIKARANG', 'CILEGON', 'MARUNDA', 'C
 const NOPOL = [['B 9854 TEJ', 'YANTO', 'LST'], ['B 9855 TEJ', 'IWAN', 'LST'], ['B 9701 MM', 'SUPRAPTO', 'LST'], ['B 9102 TEK', 'EJE', 'LST'], ['B 9103 TEK', 'WARNADI', 'LST'], ['B 9157 TEK', 'UWAN', 'MJL'], ['B 9195 TEK', 'WAWAN', 'DMS'], ['B 9198 TEK', 'KOMAR', 'HAJ W'], ['B 9076 TEK', 'SUPRIADI', 'HAJ S'], ['B 9077 TEK', 'MAMAN', 'LST']];
 const DMG = ['Penyok pada sisi luar coil', 'Karat di bagian tepi', 'Packing sobek', 'Strapping putus, coil longgar'];
 
-(async () => {
+async function seedDummy(pool) {
   const q = (s, p) => pool.query(s, p).then(r => r[0]);
   // idempotent: hanya menghapus data dummy sebelumnya (remarks 'DUMMY%'), data asli tidak disentuh
   const old = await q("SELECT DISTINCT tj.ticket_id FROM ho_ticket_jos tj JOIN job_orders j ON j.id=tj.jo_id WHERE j.remarks LIKE 'DUMMY%'");
@@ -90,5 +89,11 @@ const DMG = ['Penyok pada sisi luar coil', 'Karat di bagian tepi', 'Packing sobe
     stats.tickets++;
   }
   console.log('Selesai:', stats, '\nPIC demo: arjun / tejo / faad / teguh / fajar (password demo1234)');
-  await pool.end();
-})().catch(e => { console.error(e); process.exit(1); });
+}
+module.exports = seedDummy;
+
+if (require.main === module) {
+  if (cfg.isProd && process.env.ALLOW_SEED !== '1') { console.error('Seed dinonaktifkan di production (set ALLOW_SEED=1 jika ini environment development)'); process.exit(1); }
+  const pool = mysql.createPool(cfg.db);
+  seedDummy(pool).then(() => pool.end()).catch(e => { console.error(e); process.exit(1); });
+}

@@ -19,6 +19,7 @@ Login awal lokal: `admin` / `admin123`. Di production password admin wajib lewat
 | `MYSQL_URL` atau `MYSQLHOST` `MYSQLPORT` `MYSQLUSER` `MYSQLPASSWORD` `MYSQLDATABASE` | Koneksi MySQL (otomatis dari Railway); lokal bisa `DB_HOST` `DB_PORT` `DB_USER` `DB_PASS` `DB_NAME` |
 | `UPLOAD_DIR` | Folder file upload; di Railway arahkan ke path Volume, mis. `/data/uploads` |
 | `PORT` | Diisi otomatis oleh Railway |
+| `SEED_DUMMY` | `1` = isi data dummy Handling Ops sekali saat start (hanya bila belum ada); `force` = buat ulang. Untuk environment development, jangan dipakai di production sungguhan |
 
 ## Deploy ke Railway
 1. New Project → Deploy from GitHub repo → pilih repo ini. Tambah **MySQL** (New → Database → MySQL) dan **Volume** (mount ke `/data`).

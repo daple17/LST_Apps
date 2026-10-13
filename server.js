@@ -200,6 +200,10 @@ async function init() {
     await pool.query('INSERT INTO customers (code,name) VALUES ?', [[['USC', 'PT UNITED STEEL SERVICE INDONESIA'], ['BTU', 'PT BERKAH TRANS UTAMA'], ['POS', 'PT POSCO INDONESIA JAKARTA PROCESSING CENTER'], ['NIJ', 'PT NIPRO INDONESIA JAYA'], ['PJM', 'PT PANATA JAYA MANDIRI']]]);
     await pool.query('INSERT INTO shippers (name) VALUES ?', [[['POSCO CORPORATION'], ['SHANGHAI STEEL CO'], ['EVERGREEN SHIPPING']]]);
   }
+  if (cfg.seedDummy) {
+    const [[{ n }]] = await pool.query("SELECT COUNT(*) n FROM job_orders WHERE remarks LIKE 'DUMMY%'");
+    if (!n || cfg.seedDummy === 'force') await require('./scripts/seed-dummy')(pool);
+  }
   const PORT = process.env.PORT || 3100;
   app.listen(PORT, () => console.log('LESAT di http://localhost:' + PORT));
 }
