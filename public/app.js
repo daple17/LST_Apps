@@ -72,7 +72,7 @@ const qs = (extra = {}) => new URLSearchParams({ ...st, ...extra });
 async function joList() {
   const [d, s] = await Promise.all([api('/job-orders?' + qs()), api('/job-orders/summary')]);
   $('#sum').innerHTML = `<div class="cards">${[['Total JO', s.total, '', 's-total'], ['Not Complete', s.open_jo, 'NOT_COMP', 's-open'], ['Complete', s.done, 'COMPLETE', 's-done'], ['ETA 7 hari ke depan', s.eta_week, '', 's-eta'], ['Lewat rencana delivery', s.late, 'late', 's-late']]
-    .map(([l, v, f, c]) => `<div class="card stat ${c} ${f === 'late' && v ? 'warn' : ''}" ${f && f !== 'late' ? `style="cursor:pointer" onclick="setF('status','${f}')"` : ''}><b>${v}</b><span>${l}</span></div>`).join('')}</div>`;
+    .map(([l, v, f, c]) => `<div class="card stat ${c} ${f === 'late' && v ? 'warn' : ''}" ${c === 's-total' ? clickAttr('resetF()') : f && f !== 'late' ? clickAttr(`setF('status','${f}')`) : ''}><b>${v}</b><span>${l}</span></div>`).join('')}</div>`;
   const th = (k, n) => `<th style="cursor:pointer" onclick="sortBy('${k}')">${n}${st.sort === k ? (st.dir === 'asc' ? ' ▲' : ' ▼') : ''}</th>`;
   const late = r => r.status === 'NOT_COMP' && r.delivery_plan && r.delivery_plan < today();
   $('#pg').innerHTML = `<div class="bar fbar"><input id="q" placeholder="Cari JO, customer, vessel, BL, No. Aju, Invoice" value="${esc(st.q)}">
@@ -89,6 +89,8 @@ async function joList() {
   let t; $('#q').oninput = e => { clearTimeout(t); t = setTimeout(() => { st.q = e.target.value; st.page = 1; joList().then(() => { const q = $('#q'); q.focus(); q.setSelectionRange(1e4, 1e4); }); }, 300); };
   [['fs', 'status'], ['ft', 'type'], ['fc', 'customer_id'], ['ff', 'from'], ['fto', 'to']].forEach(([i, k]) => $('#' + i).onchange = e => setF(k, e.target.value));
 }
+// kartu KPI yang bisa diklik (mouse & keyboard)
+const clickAttr = js => `role="button" tabindex="0" style="cursor:pointer" onclick="${js}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();${js}}"`;
 const setF = (k, v) => { st[k] = v; st.page = 1; joList(); };
 const resetF = () => { st = blank(); joList(); };
 const sortBy = k => { st.dir = st.sort === k && st.dir === 'asc' ? 'desc' : 'asc'; st.sort = k; joList(); };
