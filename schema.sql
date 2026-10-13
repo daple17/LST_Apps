@@ -1,0 +1,139 @@
+CREATE TABLE IF NOT EXISTS users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(50) UNIQUE NOT NULL,
+  password VARCHAR(100) NOT NULL,
+  name VARCHAR(100) NOT NULL
+);
+CREATE TABLE IF NOT EXISTS customers (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  code VARCHAR(10) UNIQUE NOT NULL,
+  name VARCHAR(150) NOT NULL
+);
+CREATE TABLE IF NOT EXISTS shippers (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(150) NOT NULL
+);
+CREATE TABLE IF NOT EXISTS job_orders (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  jo_no VARCHAR(20) UNIQUE NOT NULL,
+  type VARCHAR(30) NOT NULL,
+  customer_id INT NOT NULL,
+  shipper_id INT NULL,
+  invoice_no VARCHAR(60),
+  bl_no VARCHAR(100),
+  si_po_no VARCHAR(60),
+  aju_no VARCHAR(60),
+  cargo_type VARCHAR(80),
+  party VARCHAR(60),
+  weight DECIMAL(14,2),
+  vessel VARCHAR(100),
+  eta DATE,
+  delivery_plan DATE,
+  remarks TEXT,
+  checklist JSON,
+  status ENUM('NOT_COMP','COMPLETE') NOT NULL DEFAULT 'NOT_COMP',
+  created_by INT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (customer_id) REFERENCES customers(id),
+  FOREIGN KEY (shipper_id) REFERENCES shippers(id)
+);
+CREATE TABLE IF NOT EXISTS jo_documents (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  jo_id INT NOT NULL,
+  filename VARCHAR(200) NOT NULL,
+  path VARCHAR(200) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (jo_id) REFERENCES job_orders(id) ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS jo_logs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  jo_id INT NOT NULL,
+  user_name VARCHAR(100),
+  action VARCHAR(60) NOT NULL,
+  note VARCHAR(255),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (jo_id) REFERENCES job_orders(id) ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS vendors (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  code VARCHAR(10) UNIQUE NOT NULL,
+  name VARCHAR(150) NOT NULL
+);
+CREATE TABLE IF NOT EXISTS ho_tickets (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  ticket_no VARCHAR(20) UNIQUE NOT NULL,
+  pic_id INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  done_at TIMESTAMP NULL,
+  FOREIGN KEY (pic_id) REFERENCES users(id)
+);
+CREATE TABLE IF NOT EXISTS ho_ticket_jos (
+  ticket_id INT NOT NULL,
+  jo_id INT NOT NULL UNIQUE,
+  PRIMARY KEY (ticket_id, jo_id),
+  FOREIGN KEY (ticket_id) REFERENCES ho_tickets(id) ON DELETE CASCADE,
+  FOREIGN KEY (jo_id) REFERENCES job_orders(id)
+);
+CREATE TABLE IF NOT EXISTS materials (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  ticket_id INT NOT NULL,
+  jo_id INT NOT NULL,
+  product_no VARCHAR(60) NOT NULL,
+  description VARCHAR(150),
+  spec VARCHAR(60),
+  thickness DECIMAL(10,2),
+  width DECIMAL(10,2),
+  bl_no VARCHAR(60),
+  net_weight DECIMAL(14,2) NOT NULL DEFAULT 0,
+  gross_weight DECIMAL(14,2) NOT NULL DEFAULT 0,
+  qty INT NOT NULL DEFAULT 1,
+  unit VARCHAR(20) NOT NULL DEFAULT 'COIL',
+  origin VARCHAR(80),
+  destination VARCHAR(120),
+  check_status ENUM('NOT_CHECKED','OK','DAMAGE') NOT NULL DEFAULT 'NOT_CHECKED',
+  remarks TEXT,
+  checked_at TIMESTAMP NULL,
+  checked_by VARCHAR(100),
+  UNIQUE KEY uq_mat (ticket_id, product_no),
+  FOREIGN KEY (ticket_id) REFERENCES ho_tickets(id) ON DELETE CASCADE,
+  FOREIGN KEY (jo_id) REFERENCES job_orders(id)
+);
+CREATE TABLE IF NOT EXISTS material_photos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  material_id INT NOT NULL,
+  path VARCHAR(200) NOT NULL,
+  FOREIGN KEY (material_id) REFERENCES materials(id) ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS surat_jalan (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  sj_no VARCHAR(20) UNIQUE NOT NULL,
+  ticket_id INT NOT NULL,
+  nopol VARCHAR(20) NOT NULL,
+  driver VARCHAR(80) NOT NULL,
+  phone VARCHAR(30),
+  vendor_id INT NULL,
+  start_at TIMESTAMP NULL,
+  finish_at TIMESTAMP NULL,
+  entry_at DATETIME NULL,
+  exit_at DATETIME NULL,
+  created_by VARCHAR(100),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (ticket_id) REFERENCES ho_tickets(id) ON DELETE CASCADE,
+  FOREIGN KEY (vendor_id) REFERENCES vendors(id)
+);
+CREATE TABLE IF NOT EXISTS surat_jalan_items (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  sj_id INT NOT NULL,
+  material_id INT NOT NULL,
+  qty INT NOT NULL DEFAULT 1,
+  weight DECIMAL(14,2) NOT NULL DEFAULT 0,
+  FOREIGN KEY (sj_id) REFERENCES surat_jalan(id) ON DELETE CASCADE,
+  FOREIGN KEY (material_id) REFERENCES materials(id) ON DELETE RESTRICT
+);
+CREATE TABLE IF NOT EXISTS sj_photos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  sj_id INT NOT NULL,
+  path VARCHAR(200) NOT NULL,
+  FOREIGN KEY (sj_id) REFERENCES surat_jalan(id) ON DELETE CASCADE
+);
