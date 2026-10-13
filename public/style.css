@@ -93,3 +93,17 @@ td.wrap{white-space:normal;min-width:180px;max-width:280px}
   table.rt td input[type=number]{width:120px!important}
   .pick table td{white-space:normal}
 }
+
+.pbtn{display:inline-flex;align-items:center;gap:10px;padding:6px 10px 6px 8px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);text-decoration:none;transition:border-color .15s,box-shadow .15s}
+.pbtn:hover{border-color:var(--pri);box-shadow:0 1px 6px color-mix(in srgb,var(--pri) 20%,transparent)}
+.pbtn:focus-visible{outline:2px solid var(--pri);outline-offset:2px}
+.pbtn .pi{display:grid;place-items:center;width:32px;height:32px;border-radius:8px;background:color-mix(in srgb,var(--pri) 12%,transparent);color:var(--pri)}
+.pbtn .pv{display:flex;flex-direction:column;gap:4px;min-width:74px}
+.pbtn .pv b{font-size:13px;line-height:1}
+.pbtn .bar{display:block;height:5px;border-radius:99px;background:color-mix(in srgb,var(--mut) 25%,transparent);overflow:hidden}
+.pbtn .bar u{display:block;height:100%;border-radius:99px;background:currentColor;text-decoration:none}
+.pbtn .chev{color:var(--mut);font-size:20px;line-height:1}
+.pbtn:hover .chev{color:var(--pri)}
+@media (max-width:760px){.pbtn{padding:8px 12px 8px 8px}.pbtn .pv{min-width:90px}}
+@media (min-width:761px){.pbtn{gap:8px;padding:5px 8px 5px 6px}.pbtn .pv{min-width:62px}.pbtn .pi{width:28px;height:28px}td.wrap{min-width:140px;max-width:190px}.tw th,.tw td{padding-left:10px;padding-right:10px}}
+@media (min-width:761px) and (max-width:1600px){.tw table{font-size:13px}.tw th,.tw td{padding-left:8px;padding-right:8px}}

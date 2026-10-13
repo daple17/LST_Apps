@@ -10,6 +10,12 @@ const dwell = m => `${Math.floor(m / 1440)} D : ${String(Math.floor(m / 60) % 24
 const fmtT = d => d ? new Date(d.replace(' ', 'T') + 'Z').toLocaleTimeString('id-ID', { hour12: false }).replace(/\./g, ':') + ' WIB' : '-';
 const loadT = m => m == null ? '-' : `${Math.floor(m / 60)} H ${m % 60} M`;
 const markOf = s => s === 'OK' ? '<b class="p-ok">Good</b>' : s === 'DAMAGE' ? '<b class="p-bad">Damage</b>' : '-';
+const ICON = {
+  material: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9z"/><path d="m9 14 2 2 4-4"/></svg>',
+  truck: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h11v10H2z"/><path d="M13 9h4l4 4v3h-8z"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="17.5" cy="17.5" r="1.8"/></svg>',
+};
+// tombol progress: ikon + persen + bar, seluruhnya link ke halaman terkait
+const pbtn = (href, icon, v, title) => `<a class="pbtn" href="${href}" title="${title}" aria-label="${title} ${pct(v)}"><span class="pi">${ICON[icon]}</span><span class="pv"><b class="${pcls(v)}">${pct(v)}</b><i class="bar ${pcls(v)}"><u style="width:${Math.min(100, +v)}%"></u></i></span><span class="chev">›</span></a>`;
 const dtLocal = d => d ? d.replace(' ', 'T').slice(0, 16) : '';
 
 async function download(path, name) {
@@ -82,8 +88,8 @@ const hoOverview = run(async () => {
     <div class="tabs">${tab('', 'All', c.all)}${tab('done', '100%', c.done)}${tab('mid', '50% - 99%', c.mid)}${tab('low', '< 50%', c.low)}</div>
     <div class="card tw"><table><tr><th>No. Ticket</th><th>PIC</th><th>Customer</th><th>Vessel</th><th>Party</th><th class="num">Weight</th><th>Dwelling time</th><th>Report Material</th><th>Trucking Delivery</th><th>Report</th></tr>
     ${d.rows.map(r => `<tr class="row"><td><a href="#ho/${r.id}/material"><b>${esc(r.ticket_no)}</b></a></td><td>${esc(r.pic_name)}</td><td class="wrap">${esc(r.customer)}</td><td>${esc(r.vessel)}</td><td>${esc(r.party)}</td><td class="num">${fmtN(r.weight)} ton</td><td>${dwell(r.dwell_min)}</td>
-      <td><span class="${pcls(r.mat_pct)}">${pct(r.mat_pct)}</span> <a class="btn sm" href="#ho/${r.id}/material">&gt;&gt;</a></td>
-      <td><span class="${pcls(r.del_pct)}">${pct(r.del_pct)}</span> <a class="btn sm" href="#ho/${r.id}/trucking">&gt;&gt;</a></td>
+      <td>${pbtn(`#ho/${r.id}/material`, 'material', r.mat_pct, 'Buka Report Material')}</td>
+      <td>${pbtn(`#ho/${r.id}/trucking`, 'truck', r.del_pct, 'Buka Trucking Delivery')}</td>
       <td><button class="btn sec sm" title="Copy report" onclick="hoCopy(${r.id})">Copy</button> <button class="btn sec sm" title="Download Excel" onclick="hoDl(${r.id},'${esc(r.ticket_no)}')">⇩</button></td></tr>`).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--mut)">Belum ada ticket</td></tr>'}</table>
     ${pager(hoSt.page, d.pages, d.total, 'hoGo')}</div>`;
   searchBind('#hq', hoSt, hoOverview);
