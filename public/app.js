@@ -31,7 +31,7 @@ function render() { token ? shell() : login(); }
 const photoOf = p => `/uploads/${p}?t=${token}`;
 
 function login() {
-  $('#app').innerHTML = `<div class="login"><div class="about"><h1>meLESAT</h1><div>By Lima Sarana</div>
+  $('#app').innerHTML = `<div class="login"><div class="about"><div class="logo"><img src="logo.png" alt="LST"><div><b class="wm"><i>me</i>LESAT</b><div>By Lima Sarana</div></div></div>
     <p>Selamat datang di Sistem Internal berbasis web PT Lima Sarana Trans — logistik, trucking, handling &amp; custom clearance.</p>
     <small>Kontak: IT Support · it@limasarana.example</small></div>
     <form id="lf"><h2 style="margin:0">Login</h2><div><label>Username</label><input name="username" autofocus required></div>
@@ -47,7 +47,7 @@ function login() {
 }
 
 function shell() {
-  $('#app').innerHTML = `<div class="shell"><aside><div class="brand">meLESAT<small>By Lima Sarana</small></div>
+  $('#app').innerHTML = `<div class="shell"><aside><div class="brand"><img src="logo.png" alt="LST"><div><b class="wm"><i>me</i>LESAT</b><small>By Lima Sarana</small></div></div>
     <div class="grp">HOME</div><a class="off">Jadwal Truck &amp; Tiket</a>
     ${MENU.map(([g, items]) => `<div class="grp">${g}</div>${items.map(([n, k]) => k ? `<a href="#${k}" data-r="${k}">${n}</a>` : `<a class="off">${n}</a>`).join('')}`).join('')}
     </aside><div class="nav-bg" onclick="toggleNav(false)"></div><main><div class="top"><button class="btn sec mbtn" aria-label="Menu" onclick="toggleNav()">☰</button><h2 id="ttl"></h2><div class="usr"><span>${esc(uname)}</span> <button class="btn sec sm" onclick="logout()">Logout</button></div></div><div id="view"></div></main></div><div id="md"></div>`;
@@ -71,8 +71,8 @@ window.onhashchange = route;
 const qs = (extra = {}) => new URLSearchParams({ ...st, ...extra });
 async function joList() {
   const [d, s] = await Promise.all([api('/job-orders?' + qs()), api('/job-orders/summary')]);
-  $('#sum').innerHTML = `<div class="cards">${[['Total JO', s.total, ''], ['Not Complete', s.open_jo, 'NOT_COMP'], ['Complete', s.done, 'COMPLETE'], ['ETA 7 hari ke depan', s.eta_week, ''], ['Lewat rencana delivery', s.late, 'late']]
-    .map(([l, v, f]) => `<div class="card stat ${f === 'late' && v ? 'warn' : ''}" ${f && f !== 'late' ? `style="cursor:pointer" onclick="setF('status','${f}')"` : ''}><b>${v}</b><span>${l}</span></div>`).join('')}</div>`;
+  $('#sum').innerHTML = `<div class="cards">${[['Total JO', s.total, '', 's-total'], ['Not Complete', s.open_jo, 'NOT_COMP', 's-open'], ['Complete', s.done, 'COMPLETE', 's-done'], ['ETA 7 hari ke depan', s.eta_week, '', 's-eta'], ['Lewat rencana delivery', s.late, 'late', 's-late']]
+    .map(([l, v, f, c]) => `<div class="card stat ${c} ${f === 'late' && v ? 'warn' : ''}" ${f && f !== 'late' ? `style="cursor:pointer" onclick="setF('status','${f}')"` : ''}><b>${v}</b><span>${l}</span></div>`).join('')}</div>`;
   const th = (k, n) => `<th style="cursor:pointer" onclick="sortBy('${k}')">${n}${st.sort === k ? (st.dir === 'asc' ? ' ▲' : ' ▼') : ''}</th>`;
   const late = r => r.status === 'NOT_COMP' && r.delivery_plan && r.delivery_plan < today();
   $('#pg').innerHTML = `<div class="bar"><input id="q" placeholder="Cari JO, customer, vessel, BL, No. Aju, Invoice" value="${esc(st.q)}">
@@ -81,9 +81,9 @@ async function joList() {
     <select id="fc"><option value="">Semua customer</option>${look.customers.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select>
     <label class="inl">ETA <input type="date" id="ff" value="${st.from}"> – <input type="date" id="fto" value="${st.to}"></label>
     <button class="btn sec" onclick="resetF()">Reset</button><span style="flex:1"></span>
-    <button class="btn sec" onclick="exportCsv()">Export CSV</button><button class="btn" onclick="joForm()">+ Job Order</button></div>
+    <button class="btn sec out" onclick="exportCsv()">Export CSV</button><button class="btn" onclick="joForm()">+ Job Order</button></div>
     <div class="card tw"><table><tr>${th('jo_no', 'No. JO')}<th>Type</th>${th('customer', 'Customer')}<th>Vessel</th><th>Party</th><th>Weight</th>${th('eta', 'ETA/ETD')}${th('delivery_plan', 'Rencana Delivery')}<th>Status</th></tr>
-    ${d.rows.map(r => `<tr class="row" style="cursor:pointer" onclick="detail(${r.id})"><td><b>${esc(r.jo_no)}</b></td><td>${esc(r.type)}</td><td>${esc(r.customer_name)}</td><td>${esc(r.vessel)}</td><td>${esc(r.party)}</td><td>${fmtN(r.weight)}</td><td>${fmtD(r.eta)}</td><td ${late(r) ? 'style="color:var(--bad);font-weight:600" title="Lewat rencana delivery"' : ''}>${fmtD(r.delivery_plan)}</td><td><span class="tag ${r.status}">${r.status === 'COMPLETE' ? 'Complete' : 'Not Comp'}</span></td></tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--mut)">Belum ada data</td></tr>'}</table>
+    ${d.rows.map(r => `<tr class="row" style="cursor:pointer" onclick="detail(${r.id})"><td><b>${esc(r.jo_no)}</b></td><td><span><span class="dot t-${esc(r.type)}"></span>${esc(r.type)}</span></td><td>${esc(r.customer_name)}</td><td>${esc(r.vessel)}</td><td>${esc(r.party)}</td><td>${fmtN(r.weight)}</td><td>${fmtD(r.eta)}</td><td ${late(r) ? 'style="color:var(--bad);font-weight:600" title="Lewat rencana delivery"' : ''}>${fmtD(r.delivery_plan)}</td><td><span class="tag ${r.status}">${r.status === 'COMPLETE' ? 'Complete' : 'Not Comp'}</span></td></tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--mut)">Belum ada data</td></tr>'}</table>
     <div class="pg"><span>${d.total} data</span><button class="btn sec sm" ${st.page <= 1 ? 'disabled' : ''} onclick="go(-1)">‹</button><span>${st.page}/${d.pages || 1}</span><button class="btn sec sm" ${st.page >= d.pages ? 'disabled' : ''} onclick="go(1)">›</button></div></div>`;
   $('#fs').value = st.status; $('#ft').value = st.type; $('#fc').value = st.customer_id;
   let t; $('#q').oninput = e => { clearTimeout(t); t = setTimeout(() => { st.q = e.target.value; st.page = 1; joList().then(() => { const q = $('#q'); q.focus(); q.setSelectionRange(1e4, 1e4); }); }, 300); };

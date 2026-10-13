@@ -11,6 +11,8 @@ const fmtT = d => d ? new Date(d.replace(' ', 'T') + 'Z').toLocaleTimeString('id
 const loadT = m => m == null ? '-' : `${Math.floor(m / 60)} H ${m % 60} M`;
 const markOf = s => s === 'OK' ? '<b class="p-ok">Good</b>' : s === 'DAMAGE' ? '<b class="p-bad">Damage</b>' : '-';
 const ICON = {
+  copy: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg>',
+  down: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11m0 0-4-4m4 4 4-4"/><path d="M4 19h16"/></svg>',
   material: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9z"/><path d="m9 14 2 2 4-4"/></svg>',
   truck: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h11v10H2z"/><path d="M13 9h4l4 4v3h-8z"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="17.5" cy="17.5" r="1.8"/></svg>',
 };
@@ -84,13 +86,13 @@ const hoOverview = run(async () => {
     <div class="bar"><input id="hq" placeholder="Cari ticket, PIC, customer, vessel" value="${esc(hoSt.q)}">
     <label class="inl">Tanggal <input type="date" id="hf" value="${hoSt.from}"> – <input type="date" id="ht" value="${hoSt.to}"></label>
     <button class="btn sec" onclick="hoResetF()">Reset</button><span style="flex:1"></span>
-    <button class="btn sec" onclick="hoExport()">Download Excel</button><button class="btn" onclick="hoTicketForm()">+ Tambah Data</button></div>
+    <button class="btn sec out" onclick="hoExport()">Download Excel</button><button class="btn" onclick="hoTicketForm()">+ Tambah Data</button></div>
     <div class="tabs">${tab('', 'All', c.all)}${tab('done', '100%', c.done)}${tab('mid', '50% - 99%', c.mid)}${tab('low', '< 50%', c.low)}</div>
     <div class="card tw"><table><tr><th>No. Ticket</th><th>PIC</th><th>Customer</th><th>Vessel</th><th>Party</th><th class="num">Weight</th><th>Dwelling time</th><th>Report Material</th><th>Trucking Delivery</th><th>Report</th></tr>
     ${d.rows.map(r => `<tr class="row"><td><a href="#ho/${r.id}/material"><b>${esc(r.ticket_no)}</b></a></td><td>${esc(r.pic_name)}</td><td class="wrap">${esc(r.customer)}</td><td>${esc(r.vessel)}</td><td>${esc(r.party)}</td><td class="num">${fmtN(r.weight)} ton</td><td>${dwell(r.dwell_min)}</td>
       <td>${pbtn(`#ho/${r.id}/material`, 'material', r.mat_pct, 'Buka Report Material')}</td>
       <td>${pbtn(`#ho/${r.id}/trucking`, 'truck', r.del_pct, 'Buka Trucking Delivery')}</td>
-      <td><button class="btn sec sm" title="Copy report" onclick="hoCopy(${r.id})">Copy</button> <button class="btn sec sm" title="Download Excel" onclick="hoDl(${r.id},'${esc(r.ticket_no)}')">⇩</button></td></tr>`).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--mut)">Belum ada ticket</td></tr>'}</table>
+      <td style="white-space:nowrap"><button class="ib" title="Copy report" aria-label="Copy report" onclick="hoCopy(${r.id})">${ICON.copy}</button> <button class="ib" title="Download Excel" aria-label="Download Excel" onclick="hoDl(${r.id},'${esc(r.ticket_no)}')">${ICON.down}</button></td></tr>`).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--mut)">Belum ada ticket</td></tr>'}</table>
     ${pager(hoSt.page, d.pages, d.total, 'hoGo')}</div>`;
   searchBind('#hq', hoSt, hoOverview);
   [['hf', 'from'], ['ht', 'to']].forEach(([i, k]) => $('#' + i).onchange = e => { hoSt[k] = e.target.value; hoSt.page = 1; hoOverview(); });
@@ -167,9 +169,9 @@ function hoHead(t, tab) {
     <div><span>Customer:</span> <b>${join('customer_name')}</b></div><div><span>Weight:</span> <b>${fmtN(t.weight)} Ton</b></div>
     <div><span>Vessel:</span> <b>${join('vessel')}</b></div><div><span>No. Aju:</span> <b>${join('aju_no')}</b></div>
     <div><span>No. BL:</span> <b>${join('bl_no')}</b></div><div><span>Status JO:</span> <b>${stJo}</b></div></div></div>
-    <div class="cards"><div class="card stat"><b class="${pcls(t.mat_pct)}">${pct(t.mat_pct)}</b><span>Report Material (${t.mat_checked}/${t.mat_total} dicek)</span></div>
-    <div class="card stat"><b class="${pcls(t.del_pct)}">${pct(t.del_pct)}</b><span>Trucking Delivery (${fmtN(t.qty_sent)}/${fmtN(t.qty_total)} qty)</span></div>
-    <div class="card stat"><b>${dwell(t.dwell_min)}</b><span>Dwelling time${t.done_at ? ' (selesai)' : ''}</span></div></div>`;
+    <div class="cards"><div class="card stat s-total"><b class="${pcls(t.mat_pct)}">${pct(t.mat_pct)}</b><span>Report Material (${t.mat_checked}/${t.mat_total} dicek)</span></div>
+    <div class="card stat s-done"><b class="${pcls(t.del_pct)}">${pct(t.del_pct)}</b><span>Trucking Delivery (${fmtN(t.qty_sent)}/${fmtN(t.qty_total)} qty)</span></div>
+    <div class="card stat s-open"><b style="font-size:24px;color:var(--ink)">${dwell(t.dwell_min)}</b><span>Dwelling time${t.done_at ? ' (selesai)' : ''}</span></div></div>`;
 }
 const hoDelTicket = run(async id => { if (confirm('Hapus ticket beserta seluruh material dan fotonya?')) { await api('/ho/tickets/' + id, 'DELETE'); location.hash = '#ho'; } });
 const hoLoadT = async id => { hoT = await api('/ho/tickets/' + id); return hoT; };
