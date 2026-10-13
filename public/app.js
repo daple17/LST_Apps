@@ -50,11 +50,13 @@ function shell() {
   $('#app').innerHTML = `<div class="shell"><aside><div class="brand">meLESAT<small>By Lima Sarana</small></div>
     <div class="grp">HOME</div><a class="off">Jadwal Truck &amp; Tiket</a>
     ${MENU.map(([g, items]) => `<div class="grp">${g}</div>${items.map(([n, k]) => k ? `<a href="#${k}" data-r="${k}">${n}</a>` : `<a class="off">${n}</a>`).join('')}`).join('')}
-    </aside><main><div class="top"><h2 id="ttl"></h2><div>${esc(uname)} <button class="btn sec sm" onclick="logout()">Logout</button></div></div><div id="view"></div></main></div><div id="md"></div>`;
+    </aside><div class="nav-bg" onclick="toggleNav(false)"></div><main><div class="top"><button class="btn sec mbtn" aria-label="Menu" onclick="toggleNav()">☰</button><h2 id="ttl"></h2><div class="usr"><span>${esc(uname)}</span> <button class="btn sec sm" onclick="logout()">Logout</button></div></div><div id="view"></div></main></div><div id="md"></div>`;
   api('/lookups').then(d => { look = d; route(); });
 }
+const toggleNav = on => document.body.classList.toggle('nav', on);
 function route() {
   if (!token) return;
+  toggleNav(false);
   const [r, ...rest] = (location.hash.slice(1) || 'jo').split('/');
   document.querySelectorAll('aside a[data-r]').forEach(a => a.classList.toggle('on', a.dataset.r === r));
   $('#md').innerHTML = '';
@@ -178,3 +180,15 @@ const setSt = run(async (id, status) => { await api(`/job-orders/${id}/status`, 
 const delJo = run(async id => { if (confirm('Hapus Job Order ini beserta dokumennya?')) { await api('/job-orders/' + id, 'DELETE'); closeMd(); joList(); } });
 const delDoc = run(async (d, id) => { if (confirm('Hapus dokumen?')) { await api('/documents/' + d, 'DELETE'); detail(id); } });
 const dupJo = run(async id => { if (confirm('Buat JO baru dari data JO ini?')) { const r = await api(`/job-orders/${id}/duplicate`, 'POST'); joList(); detail(r.id); } });
+
+// tabel -> kartu di layar kecil: beri label kolom pada tiap sel (CSS yang menyembunyikan header)
+function labelTables() {
+  document.querySelectorAll('.tw table').forEach(t => {
+    const h = t.querySelector('tr th')?.parentElement;
+    if (!h) return;
+    const names = [...h.children].map(c => c.textContent.trim());
+    t.classList.add('rt'); h.classList.add('th-row');
+    t.querySelectorAll('tr:not(.th-row):not([data-d])').forEach(r => { r.dataset.d = 1; [...r.children].forEach((c, i) => { if (c.tagName === 'TD' && !c.colSpan || c.colSpan === 1) c.dataset.label = names[i] || ''; }); });
+  });
+}
+new MutationObserver(() => requestAnimationFrame(labelTables)).observe(document.body, { childList: true, subtree: true });
