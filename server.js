@@ -102,6 +102,7 @@ function createApp(pool) {
   app.use('/api/ho', guard('ho', HO_EXPORT));
   app.use('/api/home', requirePerm('home.view'));
   app.use('/api/users', guard('user', [['POST', /^\/\d+\/(de)?activate$/, 'update']]), require('./routes/users')(pool));
+  app.use('/api/roles', guard('role'), require('./routes/roles')(pool));
   app.use('/api/job-orders', require('./routes/jo-materials')(pool, { refreshTickets: handling.refreshForJo }));
   app.use('/api/job-orders', jo(pool));
   app.use('/api/documents', jo.documentsRouter(pool));
