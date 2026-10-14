@@ -35,7 +35,7 @@ Seluruh router: `GET /upcoming`, `/plan`, `/tickets`.
 | POST `/api/vendors` | `vendor.create` |
 | GET `/api/vendors` | cukup login |
 
-## Pengaturan
+## Administrator
 | Route | Izin |
 |---|---|
 | GET `/api/users`, `/api/users/roles`, `/api/users/:id` | `user.view` |

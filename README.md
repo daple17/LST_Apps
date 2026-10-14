@@ -1,6 +1,6 @@
 # LESAT — Sistem Internal PT Lima Sarana Trans
 
-Menu yang sudah jadi: **Dashboard**, **Job Order & Doc**, **Handling Ops** (tiket, Report Material, Trucking Delivery / Surat Jalan), serta **User Management** dan **Role Management** (grup PENGATURAN).
+Menu yang sudah jadi: **Dashboard**, **Job Order & Doc**, **Handling Ops** (tiket, Report Material, Trucking Delivery / Surat Jalan), serta **User Management** dan **Role Management** (grup ADMINISTRATOR).
 Menu lain di sidebar masih berlabel "segera". Spesifikasi: [docs/spec-jo-handling.md](docs/spec-jo-handling.md), audit awal: [docs/audit-jo-handling.md](docs/audit-jo-handling.md).
 
 ## Menjalankan
@@ -15,8 +15,8 @@ npm run migrate             # jalankan migrasi manual (server juga menjalankanny
 Login awal lokal: `admin` / `admin123` (role Super Admin, email `admin@gmail.com`). Di production password admin wajib lewat env `ADMIN_PASSWORD`.
 
 ### User & role (RBAC)
-- Menu **Pengaturan → Role Management**: atur izin per modul (Tanpa / Lihat / Kelola / Penuh, atau per aksi). Super Admin dikunci dan selalu memegang semua izin.
-- Menu **Pengaturan → User Management**: tambah user (username, email unik, kode PIC 2 huruf, role). Jika password dikosongkan, server membuat password sementara yang ditampilkan **sekali**; user wajib menggantinya saat login pertama.
+- Menu **Administrator → Role Management**: atur izin per modul (Tanpa / Lihat / Kelola / Penuh, atau per aksi). Super Admin dikunci dan selalu memegang semua izin.
+- Menu **Administrator → User Management**: tambah user (username, email unik, kode PIC 2 huruf, role). Jika password dikosongkan, server membuat password sementara yang ditampilkan **sekali**; user wajib menggantinya saat login pertama.
 - Membuat user pertama selain admin: login sebagai `admin` → User Management → + Tambah User. User lama (hasil migrasi) otomatis berrole **PIC Operasional** (JO & Handling Ops Kelola, Dashboard Lihat); email-nya masih kosong dan wajib diisi saat diedit.
 - Izin dicek di server pada setiap permintaan; pemetaan route → izin: [docs/permission-map.md](docs/permission-map.md). OTP email belum ada (tahap berikutnya); email sudah wajib dan unik.
 

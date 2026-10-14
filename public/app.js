@@ -8,7 +8,7 @@ const ico = d => `<svg class="ic" width="17" height="17" viewBox="0 0 24 24" fil
 const GICON = { HOME: 'M3 3h7v7H3z M14 3h7v7h-7z M14 14h7v7h-7z M3 14h7v7H3z', OPERASIONAL: 'M3 7h11v9H3z M14 10h4l3 3v3h-7z M5.5 17.5h3 M15.5 17.5h3',
   FAT: 'M6 3h9l4 4v14H6z M14 3v5h5 M9 13h7 M9 17h7', APPROVAL: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z M9 12l2 2 4-4',
   'HR (SDM)': 'M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6 M17 11a2.5 2.5 0 1 0 0-5 M21 19c0-2.5-1.5-4.5-4-5',
-  PENGATURAN: 'M4 7h10 M18 7h2 M4 17h2 M10 17h10 M16 5v4 M8 15v4', 'DATA MASTER': 'M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6 M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6' };
+  ADMINISTRATOR: 'M4 7h10 M18 7h2 M4 17h2 M10 17h10 M16 5v4 M8 15v4', 'DATA MASTER': 'M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6 M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6' };
 // grup sidebar sesuai Tab Menu; item tanpa kode rute tampil nonaktif "segera"
 const MENU = [['HOME', [['Dashboard', 'home', 'home']]],
   ['OPERASIONAL', [['Job Order & Doc', 'jo', 'jo'], ['Handling Ops', 'ho', 'ho'], ['Trucking', null, 'trucking'], ['Submission', null, 'submission'], ['Settlement', null, 'settlement'], ['Job Complete', null, 'job_complete']]],
@@ -16,7 +16,7 @@ const MENU = [['HOME', [['Dashboard', 'home', 'home']]],
   ['APPROVAL', [['Submission', null, 'approval'], ['Expenses', null, 'approval'], ['Job Complete', null, 'approval'], ['Payment', null, 'approval']]],
   ['HR (SDM)', [['Employees'], ['Partner'], ['Check In & Report'], ['Loans']]],
   ['DATA MASTER', [['Trailer'], ['Rute'], ['Customer', null, 'customer'], ['Vendor', null, 'vendor'], ['Shipper', null, 'shipper'], ['PIB / PEB'], ['Unit', null, 'unit']]],
-  ['PENGATURAN', [['User Management', 'users', 'user'], ['Role Management', 'roles', 'role']]]];
+  ['ADMINISTRATOR', [['User Management', 'users', 'user'], ['Role Management', 'roles', 'role']]]];
 let me = null; // pengguna login: role + izin (GET /api/me)
 const can = code => !!me?.permissions?.includes(code);
 // item sidebar terlihat bila tidak dipetakan ke modul, atau user punya izin lihat modul itu
