@@ -30,7 +30,7 @@ function createApp(pool, opts = {}) {   // opts.now: jam server yang bisa digant
   // semua /api di bawah ini butuh login; user nonaktif / token lama langsung ditolak (401)
   app.use('/api', wrap(async (req, res, next) => {
     // unduhan yang dibuka lewat tautan biasa (PDF/ZIP) boleh membawa token di ?t= (hanya GET)
-    const tok = (req.headers.authorization || '').slice(7) || (req.method === 'GET' && /\/(pdf|zip)$/.test(req.path) ? String(req.query.t || '') : '');
+    const tok = (req.headers.authorization || '').slice(7) || (req.method === 'GET' && /\/(pdf|zip)$|\/photo\/\d+$/.test(req.path) ? String(req.query.t || '') : '');
     const user = await authenticate(pool, cfg.secret, tok);
     if (!user) return res.status(401).json({ error: 'Unauthorized' });
     // wajib ganti password: hanya /me, ganti password, dan lookups yang boleh sampai password diganti
@@ -40,6 +40,7 @@ function createApp(pool, opts = {}) {   // opts.now: jam server yang bisa digant
   app.use('/uploads', wrap(async (req, res, next) => { // berkas butuh token lewat ?t= dan izin lihat JO atau Handling Ops
     const user = await authenticate(pool, cfg.secret, String(req.query.t || ''));
     if (!user) return res.sendStatus(401);
+    if (/^\/att-/.test(req.path)) return res.sendStatus(403);   // foto absensi hanya lewat /api/checkin(-rekap)/photo (dicek pemilik/izin)
     if (!user.perms.has('jo.view') && !user.perms.has('ho.view')) return res.sendStatus(403);
     next();
   }), express.static(cfg.uploadDir));

@@ -4,7 +4,8 @@ const { wrap, httpError } = require('../lib/http');
 const audit = require('../lib/audit');
 const excel = require('../lib/excel');
 const C = require('../lib/checkin');
-const { shapeAtt, shapeItem } = require('./checkin');
+const { shapeAtt, shapeItem, sendPhoto } = require('./checkin');
+const RK_PHOTO = '/api/checkin-rekap/photo/';
 
 const invalid = (field, message) => Object.assign(httpError(400, message), { fields: { [field]: message } });
 const note = s => String(s).slice(0, 1000);
@@ -27,7 +28,7 @@ module.exports = (pool, { now = () => new Date() } = {}) => {
     const rows = await q('SELECT * FROM attendance WHERE work_date BETWEEN ? AND ?', [f.from, f.to]);
     const reports = f.from === f.to ? await q('SELECT * FROM daily_report_items WHERE work_date=? ORDER BY start_time, id', [f.from]) : [];
     const out = C.buildRekap({ users, rows, reports, from: f.from, to: f.to, today: today(), status: f.status, q: f.q });
-    for (const x of out.rows) if (x.day) { x.day.lat = x.day.lat == null ? null : +x.day.lat; x.day.lng = x.day.lng == null ? null : +x.day.lng; x.day.maps_url = x.day.lat == null ? null : C.mapsUrl(x.day.lat, x.day.lng); }
+    for (const x of out.rows) if (x.day) { x.day.lat = x.day.lat == null ? null : +x.day.lat; x.day.lng = x.day.lng == null ? null : +x.day.lng; x.day.maps_url = x.day.lat == null ? null : C.mapsUrl(x.day.lat, x.day.lng); x.day.photo_url = x.day.has_photo ? RK_PHOTO + x.day.attendance_id : null; }
     return { ...f, mode: f.from === f.to ? 'day' : 'period', today: today(), work_start: C.WORK_START, ...out };
   }
 
@@ -37,13 +38,15 @@ module.exports = (pool, { now = () => new Date() } = {}) => {
     const d = await rekap(req.query), day = d.mode === 'day';
     const columns = [{ header: 'No.', key: 'no', width: 6 }, { header: 'Nomor ID', key: 'id', width: 14 }, { header: 'Nama', key: 'name', width: 28 },
       { header: 'Attendance', key: 'att', width: 12 }, { header: 'Permit', key: 'permit', width: 10 }, { header: 'Alfa', key: 'alfa', width: 8 }, { header: 'Past', key: 'late', width: 8 }];
-    if (day) columns.push({ header: 'Location', key: 'loc', width: 36 }, { header: 'Check In', key: 'time', width: 10 }, { header: 'Status', key: 'status', width: 10 }, { header: 'Report', key: 'report', width: 60 });
+    if (day) columns.push({ header: 'Location', key: 'loc', width: 36 }, { header: 'Check In', key: 'time', width: 10 }, { header: 'Status', key: 'status', width: 10 }, { header: 'Foto', key: 'photo', width: 8 }, { header: 'Report', key: 'report', width: 60 });
     const rows = d.rows.map((x, i) => ({ no: i + 1, id: x.employee_no || '-', name: x.name, att: x.attendance, permit: x.permit, alfa: x.alfa, late: x.late,
-      ...(day ? { loc: x.day?.maps_url || (x.day?.time ? 'Lokasi tidak dibagikan' : '-'), time: x.day?.time || '-', status: x.day ? x.day.status + (x.day.virtual ? ' (otomatis)' : '') : '-', report: x.report || '-' } : {}) }));
+      ...(day ? { loc: x.day?.maps_url || (x.day?.time ? 'Lokasi tidak dibagikan' : '-'), time: x.day?.time || '-', status: x.day ? x.day.status + (x.day.virtual ? ' (otomatis)' : '') : '-', photo: x.day?.has_photo ? 'Ada' : '-', report: x.report || '-' } : {}) }));
     await excel.send(res, `absensi-${d.from}${day ? '' : '_' + d.to}.xlsx`, [
       { name: day ? 'Rekap Harian' : 'Rekap Periode', columns, rows },
       { name: 'Total', columns: [{ header: 'Status', key: 's', width: 14 }, { header: 'Jumlah', key: 'n', width: 10 }], rows: Object.entries(d.totals).map(([s, n]) => ({ s: `Total ${s}`, n })) }]);
   }));
+
+  r.get('/photo/:id(\\d+)', wrap(async (req, res) => sendPhoto(pool, res, await one('SELECT id, photo_file_id FROM attendance WHERE id=?', [req.params.id]))));
 
   r.get('/user/:id(\\d+)', wrap(async (req, res) => {
     const u = (await loadUsers()).find(x => x.id === +req.params.id); if (!u) throw httpError(404, 'Pegawai tidak ditemukan');
@@ -53,7 +56,7 @@ module.exports = (pool, { now = () => new Date() } = {}) => {
     const its = await q('SELECT * FROM daily_report_items WHERE user_id=? AND work_date BETWEEN ? AND ? ORDER BY work_date, start_time, id', [u.id, from, to]);
     const sum = { WFO: 0, WFH: 0, ALF: 0, SCK: 0, OTH: 0, late: 0 };
     const days = C.eachDate(from, to).reverse().map(d => {
-      const row = atts.find(a => a.work_date === d), e = C.effectiveDay({ row, date: d, today: today(), active: !!u.is_active, joined: u.joined }), a = shapeAtt(row);
+      const row = atts.find(a => a.work_date === d), e = C.effectiveDay({ row, date: d, today: today(), active: !!u.is_active, joined: u.joined }), a = shapeAtt(row, RK_PHOTO);
       if (e) sum[e.status]++; if (a?.late) sum.late++;
       return { date: d, weekday: C.isWeekday(d), status: e?.status || null, virtual: !!e?.virtual, attendance: a, report: its.filter(i => i.work_date === d).map(shapeItem) };
     });
@@ -78,7 +81,7 @@ module.exports = (pool, { now = () => new Date() } = {}) => {
       catch (e) { if (e.code === 'ER_DUP_ENTRY') throw httpError(409, 'Absensi baru saja diubah pihak lain. Muat ulang.'); throw e; }
     }
     await audit.log(pool, { entity: 'attendance', id, action: cur ? 'Dikoreksi HR' : 'Diinput HR', note: note(`${u.name} ${date}: ${cur ? cur.status : (C.isWeekday(date) && date < today() ? 'ALF (otomatis)' : '-')} → ${status}${nt ? ' (' + nt + ')' : ''}${cur?.note && cur.note !== nt ? '; catatan lama: ' + cur.note : ''}`), user: req.user });
-    res.json({ id, attendance: shapeAtt(await one('SELECT * FROM attendance WHERE id=?', [id])) });
+    res.json({ id, attendance: shapeAtt(await one('SELECT * FROM attendance WHERE id=?', [id]), RK_PHOTO) });
   }));
 
   // Koreksi baris report pegawai mana pun, hari mana pun

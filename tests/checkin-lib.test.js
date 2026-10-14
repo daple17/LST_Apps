@@ -81,3 +81,12 @@ test('rekap: total status, alfa virtual, terlambat, filter', () => {
   assert.deepEqual(C.buildRekap({ users, rows, from: '2026-10-12', to: '2026-10-14', today: '2026-10-14', q: 'ade' }).totals, { WFO: 2, WFH: 1, ALF: 0, SCK: 0, OTH: 0 });
   assert.deepEqual(C.buildRekap({ users, rows, from: '2026-10-12', to: '2026-10-14', today: '2026-10-14', status: 'ALF' }).rows.map(r => r.name), ['Budi', 'Citra']);
 });
+
+test('foto bukti: jenis gambar dari byte awal, bukan ekstensi', () => {
+  const pad = n => Buffer.alloc(n, 1);
+  assert.equal(C.sniffImage(Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), pad(20)])), 'jpg');
+  assert.equal(C.sniffImage(Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), pad(20)])), 'png');
+  assert.equal(C.sniffImage(Buffer.concat([Buffer.from('RIFF'), pad(4), Buffer.from('WEBP'), pad(8)])), 'webp');
+  assert.equal(C.sniffImage(Buffer.from('<?php echo 1; ?> bukan gambar')), null); assert.equal(C.sniffImage(Buffer.from('%PDF-1.4 ........')), null); assert.equal(C.sniffImage(Buffer.alloc(0)), null); assert.equal(C.sniffImage(null), null);
+  assert.equal(C.PHOTO_REQUIRED, true);
+});

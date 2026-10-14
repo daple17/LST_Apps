@@ -24,7 +24,9 @@ test('migrasi 008: tabel absensi dan report, aman diulang', async t => {
   assert.deepEqual(sa, ['checkin.create', 'checkin.update', 'checkin.view', 'checkin_rekap.export', 'checkin_rekap.update', 'checkin_rekap.view'].sort());
 });
 
-const jwt = require('jsonwebtoken'), cfg = require('../config'), { startApp } = require('./app-helper');
+const jwt = require('jsonwebtoken'), cfg = require('../config'), { startApp } = require('./app-helper'), files = require('../lib/files');
+const JPEG = n => Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(n, 7)]);
+const PHOTO = { filename: 'selfie.jpg', data: JPEG(64).toString('base64') };
 
 test('API check in pegawai: waktu server, satu kali per hari, lokasi, report', async t => {
   if (!(await dbAvailable())) return t.skip('MySQL tidak tersedia');
@@ -52,26 +54,26 @@ test('API check in pegawai: waktu server, satu kali per hari, lokasi, report', a
   assert.equal((await q('SELECT COUNT(*) n FROM attendance'))[0].n, 0);                              // yang ditolak tidak tersimpan
 
   // sukses: jam dan tanggal dari server, bukan dari klien
-  r = await a('POST', '/checkin', { status: 'WFO', lat: -6.1234567891, lng: 106.8, accuracy: 18.6, work_date: '2020-01-01', check_in_at: '2020-01-01T03:00:00Z', user_id: B });
+  r = await a('POST', '/checkin', { photo: PHOTO, status: 'WFO', lat: -6.1234567891, lng: 106.8, accuracy: 18.6, work_date: '2020-01-01', check_in_at: '2020-01-01T03:00:00Z', user_id: B });
   assert.equal(r.status, 200); assert.equal(r.data.late, false); assert.equal(r.data.attendance.time, '07:45'); assert.equal(r.data.attendance.status, 'WFO');
   assert.deepEqual([r.data.attendance.lat, r.data.attendance.lng, r.data.attendance.accuracy_m], [-6.1234568, 106.8, 19]); assert.equal(r.data.attendance.maps_url, 'https://www.google.com/maps?q=-6.1234568,106.8');
   const row = (await q('SELECT * FROM attendance WHERE user_id=?', [A]))[0]; assert.equal(row.work_date, '2026-10-14'); assert.equal(row.check_in_at, '2026-10-14 00:45:18'); assert.equal(row.source, 'SELF'); assert.equal(row.created_by, A);
   assert.equal((await q('SELECT COUNT(*) n FROM attendance WHERE user_id=?', [B]))[0].n, 0);       // body user_id diabaikan
   // kedua kali: 409, pesan jelas, tidak mengubah baris
-  clock.t = new Date('2026-10-14T05:00:00Z'); r = await a('POST', '/checkin', { status: 'WFH' });
+  clock.t = new Date('2026-10-14T05:00:00Z'); r = await a('POST', '/checkin', { photo: PHOTO, status: 'WFH' });
   assert.equal(r.status, 409); assert.match(r.data.error, /sudah check in hari ini pukul 07:45/);
   assert.equal((await q('SELECT status FROM attendance WHERE user_id=?', [A]))[0].status, 'WFO');
   r = await a('GET', '/checkin/today'); assert.equal(r.data.attendance.time, '07:45'); assert.equal(r.data.server_time, '2026-10-14T12:00:00+07:00');
   // lokasi kosong diterima; terlambat dihitung saat dibaca
-  clock.t = new Date('2026-10-14T01:01:00Z'); r = await b('POST', '/checkin', { status: 'WFH' });
+  clock.t = new Date('2026-10-14T01:01:00Z'); r = await b('POST', '/checkin', { photo: PHOTO, status: 'WFH' });
   assert.equal(r.status, 200); assert.equal(r.data.late, true); assert.deepEqual([r.data.attendance.lat, r.data.attendance.lng, r.data.attendance.maps_url], [null, null, null]);
-  clock.t = new Date('2026-10-14T01:00:00Z'); assert.equal((await c('POST', '/checkin', { status: 'WFO', lat: '', lng: '' })).data.late, false);   // tepat 08:00 belum terlambat
+  clock.t = new Date('2026-10-14T01:00:00Z'); assert.equal((await c('POST', '/checkin', { photo: PHOTO, status: 'WFO', lat: '', lng: '' })).data.late, false);   // tepat 08:00 belum terlambat
   // lewat tengah malam WIB: tanggal mengikuti server
-  clock.t = new Date('2026-10-14T17:05:00Z'); r = await a('POST', '/checkin', { status: 'WFO', work_date: '2026-10-14' });
+  clock.t = new Date('2026-10-14T17:05:00Z'); r = await a('POST', '/checkin', { photo: PHOTO, status: 'WFO', work_date: '2026-10-14' });
   assert.equal(r.status, 200); assert.equal(r.data.attendance.work_date, '2026-10-15'); assert.equal(r.data.attendance.time, '00:05');
   // baris yang diinput HR untuk hari ini: check in ditolak
   await q("INSERT INTO attendance (user_id, work_date, status, note, source) VALUES (?, '2026-10-15', 'SCK', 'Demam', 'HR')", [D]);
-  r = await d('POST', '/checkin', { status: 'WFO' }); assert.equal(r.status, 409); assert.match(r.data.error, /diinput HR \(SCK\)/);
+  r = await d('POST', '/checkin', { photo: PHOTO, status: 'WFO' }); assert.equal(r.status, 409); assert.match(r.data.error, /diinput HR \(SCK\)/);
 
   // report: tambah, validasi, ubah milik sendiri hari ini
   clock.t = new Date('2026-10-15T01:00:00Z');                                                        // Kamis 08:00 WIB
@@ -114,7 +116,7 @@ test('API check in pegawai: waktu server, satu kali per hari, lokasi, report', a
   const vr = (await q("INSERT INTO roles (name) VALUES ('Lihat Absen')")).insertId; await q("INSERT INTO role_permissions (role_id, permission) VALUES (?, 'checkin.view')", [vr]);
   const vu = as((await q("INSERT INTO users (username,password,name,role_id,email) VALUES ('lihat','x','Lihat',?,'l@x.id')", [vr])).insertId);
   assert.equal((await vu('GET', '/checkin/today')).status, 200); assert.equal((await vu('GET', '/checkin/history')).status, 200);
-  assert.equal((await vu('POST', '/checkin', { status: 'WFO' })).status, 403); assert.equal((await vu('POST', '/checkin/report', { start_time: '08:00', activity: 'x' })).status, 403);
+  assert.equal((await vu('POST', '/checkin', { photo: PHOTO, status: 'WFO' })).status, 403); assert.equal((await vu('POST', '/checkin/report', { start_time: '08:00', activity: 'x' })).status, 403);
   assert.equal((await app.get('/checkin/today')).status, 200);                                        // Super Admin
 });
 
@@ -191,7 +193,7 @@ test('API rekap HR: harian, periode, alfa virtual, override, koreksi report, eks
   // ekspor Excel
   let ex = await app.raw('/checkin-rekap/export?date=2026-10-15'); assert.equal(ex.status, 200); assert.match(ex.type, /spreadsheetml/);
   let wb = new ExcelJS.Workbook(); await wb.xlsx.load(ex.buf); let ws = wb.getWorksheet('Rekap Harian');
-  assert.deepEqual(ws.getRow(1).values.slice(1), ['No.', 'Nomor ID', 'Nama', 'Attendance', 'Permit', 'Alfa', 'Past', 'Location', 'Check In', 'Status', 'Report']);
+  assert.deepEqual(ws.getRow(1).values.slice(1), ['No.', 'Nomor ID', 'Nama', 'Attendance', 'Permit', 'Alfa', 'Past', 'Location', 'Check In', 'Status', 'Foto', 'Report']);
   assert.equal(ws.rowCount, 1 + 5); assert.equal(ws.getRow(2).getCell(3).value, 'Ade'); assert.equal(ws.getRow(2).getCell(9).value, '08:45'); assert.equal(ws.getRow(2).getCell(10).value, 'WFH'); assert.equal(ws.getRow(2).getCell(8).value, 'Lokasi tidak dibagikan');
   assert.equal(ws.getRow(4).getCell(10).value, 'SCK'); assert.equal(wb.getWorksheet('Total').getRow(2).getCell(1).value, 'Total WFO');
   ex = await app.raw('/checkin-rekap/export?from=2026-10-14&to=2026-10-16'); wb = new ExcelJS.Workbook(); await wb.xlsx.load(ex.buf); ws = wb.getWorksheet('Rekap Periode');
@@ -207,4 +209,57 @@ test('API rekap HR: harian, periode, alfa virtual, override, koreksi report, eks
   assert.equal((await view('GET', '/checkin-rekap')).status, 200); assert.equal((await view('GET', `/checkin-rekap/user/${ade}`)).status, 200);
   for (const [m, u] of calls.slice(2)) assert.equal((await view(m, u, {})).status, 403, 'rekap view: ' + m + u);                  // override dan ekspor butuh izin sendiri
   assert.equal((await view('GET', '/checkin/today')).status, 403);                                                                  // rekap tidak otomatis berarti boleh check in
+});
+
+test('foto bukti absensi: wajib, divalidasi, hanya pemilik dan HR yang melihat', async t => {
+  if (!(await dbAvailable())) return t.skip('MySQL tidak tersedia');
+  const clock = { t: new Date('2026-10-14T00:45:18Z') };
+  const app = await startApp('lesat_test_checkin_photo', { now: () => clock.t }), q = async (s, p) => (await app.pool.query(s, p))[0];
+  t.after(async () => { await files.removeByOwner(app.pool, 'attendance', (await q("SELECT owner_id FROM files WHERE owner_type='attendance'")).map(r => r.owner_id)); await app.close(); });
+  const rl = (await q("INSERT INTO roles (name) VALUES ('Pegawai')")).insertId; await q('INSERT INTO role_permissions (role_id, permission) VALUES ?', [['checkin.view', 'checkin.create', 'checkin.update'].map(p => [rl, p])]);
+  const hr = (await q("INSERT INTO roles (name) VALUES ('HR')")).insertId; await q('INSERT INTO role_permissions (role_id, permission) VALUES ?', [['checkin_rekap.view', 'checkin_rekap.export'].map(p => [hr, p])]);
+  const mk = async (u, role) => (await q('INSERT INTO users (username,password,name,role_id,email) VALUES (?,?,?,?,?)', [u, 'x', u.toUpperCase(), role, u + '@x.id'])).insertId;
+  const A = await mk('ade', rl), B = await mk('budi', rl), H = await mk('hr1', hr);
+  const as = id => (m, u, b) => app.callAs(jwt.sign({ id }, cfg.secret), m, u, b), a = as(A), b = as(B), h = as(H);
+  const get = async (id, url) => { const r = await fetch(`${app.base.replace(/\/api$/, '')}${url}`, { headers: { Authorization: 'Bearer ' + jwt.sign({ id }, cfg.secret) } }); return { status: r.status, type: r.headers.get('content-type'), buf: Buffer.from(await r.arrayBuffer()) }; };
+
+  assert.equal((await a('GET', '/checkin/today')).data.photo_required, true);
+  // foto wajib; harus gambar sungguhan; maks 8 MB
+  let r = await a('POST', '/checkin', { status: 'WFO' }); assert.equal(r.status, 400); assert.match(r.data.fields.photo, /wajib/);
+  r = await a('POST', '/checkin', { status: 'WFO', photo: { filename: 'x.jpg', data: '' } }); assert.equal(r.status, 400);
+  r = await a('POST', '/checkin', { status: 'WFO', photo: { filename: 'x.jpg', data: Buffer.from('<?php echo 1; ?> ini bukan gambar sama sekali').toString('base64') } }); assert.equal(r.status, 400); assert.match(r.data.fields.photo, /gambar/);
+  r = await a('POST', '/checkin', { status: 'WFO', photo: { filename: 'x.jpg', data: Buffer.from('%PDF-1.4 ...........................').toString('base64') } }); assert.equal(r.status, 400);
+  r = await a('POST', '/checkin', { status: 'WFO', photo: { filename: 'x.jpg', data: JPEG(8 * 1024 * 1024).toString('base64') } }); assert.equal(r.status, 400); assert.match(r.data.fields.photo, /8 MB/);
+  assert.equal((await q('SELECT COUNT(*) n FROM attendance'))[0].n, 0); assert.equal((await q('SELECT COUNT(*) n FROM files WHERE owner_type="attendance"'))[0].n, 0);   // yang ditolak tidak tersimpan
+
+  // sukses: foto tersimpan sebagai berkas pribadi (awalan att-)
+  r = await a('POST', '/checkin', { status: 'WFO', photo: PHOTO }); assert.equal(r.status, 200);
+  const att = r.data.attendance; assert.equal(att.has_photo, true); assert.equal(att.photo_url, `/api/checkin/photo/${att.id}`);
+  const f = (await q("SELECT * FROM files WHERE owner_type='attendance'"))[0]; assert.equal(f.owner_id, att.id); assert.match(f.path, /^att-\d+-/); assert.equal(f.mime, 'image/jpeg'); assert.equal(f.uploaded_by, A);
+  assert.equal((await q('SELECT photo_file_id FROM attendance WHERE id=?', [att.id]))[0].photo_file_id, f.id);
+  // check in kedua dengan foto: 409 dan tidak ada berkas baru
+  assert.equal((await a('POST', '/checkin', { status: 'WFH', photo: PHOTO })).status, 409); assert.equal((await q("SELECT COUNT(*) n FROM files WHERE owner_type='attendance'"))[0].n, 1);
+  // hari ini / riwayat memuat tautan foto
+  assert.equal((await a('GET', '/checkin/today')).data.attendance.photo_url, att.photo_url); assert.equal((await a('GET', '/checkin/history')).data.days[0].attendance.has_photo, true);
+
+  // akses: pemilik, HR berizin; orang lain tidak; /uploads tidak membuka berkas absensi
+  let g = await get(A, att.photo_url); assert.equal(g.status, 200); assert.equal(g.type, 'image/jpeg'); assert.ok(g.buf.equals(JPEG(64)));
+  assert.equal((await get(B, att.photo_url)).status, 404);                                          // pegawai lain: tidak ada
+  assert.equal((await get(H, att.photo_url)).status, 403);                                          // HR tanpa izin check in tidak lewat jalur pegawai
+  g = await get(H, `/api/checkin-rekap/photo/${att.id}`); assert.equal(g.status, 200); assert.ok(g.buf.equals(JPEG(64)));
+  assert.equal((await get(B, `/api/checkin-rekap/photo/${att.id}`)).status, 403);                    // tanpa checkin_rekap.view
+  assert.equal((await get(1, `/api/checkin-rekap/photo/${att.id}`)).status, 200);                    // Super Admin
+  assert.equal((await get(H, '/api/checkin-rekap/photo/999999')).status, 404);
+  const viaToken = await fetch(`${app.base.replace(/\/api$/, '')}${att.photo_url}?t=${jwt.sign({ id: A }, cfg.secret)}`); assert.equal(viaToken.status, 200);   // <img> memakai ?t=
+  assert.equal((await fetch(`${app.base.replace(/\/api$/, '')}${att.photo_url}`)).status, 401);
+  for (const id of [1, A, H]) assert.equal((await fetch(`${app.base.replace(/\/api$/, '')}/uploads/${f.path}?t=${jwt.sign({ id }, cfg.secret)}`)).status, 403, 'uploads ' + id);
+
+  // rekap HR: tanda dan tautan foto; Excel kolom Foto; input HR tidak punya foto
+  await q("INSERT INTO attendance (user_id, work_date, status, note, source) VALUES (?, '2026-10-14', 'SCK', 'Demam', 'HR')", [B]);
+  const rk = (await h('GET', '/checkin-rekap?date=2026-10-14')).data, by = Object.fromEntries(rk.rows.map(x => [x.name, x]));
+  assert.deepEqual([by.ADE.day.has_photo, by.ADE.day.photo_url], [true, `/api/checkin-rekap/photo/${att.id}`]); assert.deepEqual([by.BUDI.day.has_photo, by.BUDI.day.photo_url], [false, null]);
+  const det = (await h('GET', `/checkin-rekap/user/${A}?from=2026-10-14&to=2026-10-14`)).data.days[0].attendance; assert.equal(det.photo_url, `/api/checkin-rekap/photo/${att.id}`);
+  const buf = Buffer.from(await (await fetch(`${app.base}/checkin-rekap/export?date=2026-10-14`, { headers: { Authorization: 'Bearer ' + jwt.sign({ id: H }, cfg.secret) } })).arrayBuffer());
+  const wb = new ExcelJS.Workbook(); await wb.xlsx.load(buf); const ws = wb.getWorksheet('Rekap Harian'); assert.ok(ws.getRow(1).values.includes('Foto'));
+  const col = ws.getRow(1).values.indexOf('Foto'); assert.deepEqual([...Array(ws.rowCount - 1)].map((_, i) => ws.getRow(i + 2).getCell(col).value).sort(), ['-', 'Ada'].concat(Array(ws.rowCount - 3).fill('-')).sort());
 });
