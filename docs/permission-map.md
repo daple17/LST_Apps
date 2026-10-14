@@ -48,14 +48,14 @@ Seluruh router: `GET /upcoming`, `/plan`, `/tickets`.
 **Check In & Daily Report (`checkin.*`)** — `/api/checkin/*`, selalu dibatasi ke user yang login
 | Metode + path | Izin |
 |---|---|
-| GET `/today`, `/history` | `checkin.view` |
+| GET `/today`, `/history`, `/photo/:id` (hanya foto milik sendiri) | `checkin.view` |
 | POST `/` (check in), POST `/report` | `checkin.create` |
 | PUT `/report/:id` (hanya baris sendiri dan bertanggal hari ini; selain itu 403) | `checkin.update` |
 
 **Rekap Absensi (`checkin_rekap.*`)** — `/api/checkin-rekap/*`
 | Metode + path | Izin |
 |---|---|
-| GET `/`, GET `/user/:id` | `checkin_rekap.view` |
+| GET `/`, GET `/user/:id`, GET `/photo/:id` | `checkin_rekap.view` |
 | GET `/export` | `checkin_rekap.export` *(pengecualian)* |
 | PUT `/override`, PUT `/report/:id` | `checkin_rekap.update` |
 `checkin` dan `checkin_rekap` terpisah: rekap saja tidak boleh check in, dan check in saja tidak melihat rekap.
@@ -73,7 +73,7 @@ Seluruh router: `GET /upcoming`, `/plan`, `/tickets`.
 | DELETE `/api/roles/:id` | `role.delete` (role sistem dan role yang masih dipakai ditolak) |
 
 ## Cukup login
-`GET /api/lookups`, `GET /api/me`, `POST /api/me/password`. Unduhan PDF/ZIP lewat `?t=<token>` tetap dicek izinnya (`ho.export`). Berkas `/uploads/*` butuh `jo.view` atau `ho.view`.
+`GET /api/lookups`, `GET /api/me`, `POST /api/me/password`. Unduhan PDF/ZIP lewat `?t=<token>` tetap dicek izinnya (`ho.export`). Berkas `/uploads/*` butuh `jo.view` atau `ho.view`; berkas foto absensi (`att-*`) tidak pernah bisa dibuka lewat `/uploads` (403), hanya lewat endpoint foto di atas.
 
 ## Aturan khusus
 - Wajib ganti password (`must_change_password=1`): semua endpoint kecuali `/me`, `/me/password`, `/lookups` ditolak (403) sampai password diganti.
