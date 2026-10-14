@@ -1,9 +1,10 @@
-/* Home: ringkasan pekerjaan hari ini (spesifikasi: docs/spec-home.md).
+/* Dashboard (rute #home): ringkasan pekerjaan hari ini (spesifikasi: docs/spec-home.md).
    Tahap 2 = kerangka (header, sapaan, tanggal, tata letak, bingkai kartu). Isi kartu diisi di tahap berikutnya. */
 const HOME_COLS = [
   [{ id: 'upcoming', title: 'Upcoming Plan', more: '#plan' }, { id: 'ho', title: 'Handling Ops', more: '#ho' }],
   [{ id: 'settlement', title: 'Settlement', more: null }, { id: 'trailer', title: "Trailer's Schedule", more: null }],
 ];
+const HOME_PENDING = ['settlement', 'trailer', 'faktur'];
 const HOME_FULL = { id: 'faktur', title: 'Faktur Pajak Reimburse', more: null };
 
 const homeCard = c => `<section class="card hcard" id="c-${c.id}" aria-labelledby="t-${c.id}">
@@ -60,6 +61,8 @@ function homeRoute() {
     <div class="hlinks"><button class="btn sec sm" type="button" disabled title="Menu belum aktif">Data &amp; Profil <span class="soon">segera</span></button><button class="btn sm" type="button" disabled title="Menu belum aktif">Check In <span class="soon">segera</span></button></div></div>
     <div class="home">${HOME_COLS.map(col => `<div class="hcol">${col.map(homeCard).join('')}</div>`).join('')}<div class="hfull">${homeCard(HOME_FULL)}</div></div>`;
   Object.keys(HOME_LOADERS).forEach(homeLoad);
+  // menu sumbernya belum dikembangkan: tidak ada data, jangan dipaksakan. Ganti dengan loader saat menunya jadi.
+  HOME_PENDING.forEach(id => { $('#b-' + id).innerHTML = '<p class="hc-empty">No Data Found</p>'; });
 }
 
 /* ---------- halaman penuh: Rencana delivery ---------- */
@@ -72,7 +75,7 @@ function planRoute() {
 }
 const planLoad = run(async () => {
   const d = await api('/home/plan?' + new URLSearchParams(planSt));
-  $('#plv').innerHTML = `<div class="tabs"><a class="btn sec sm" href="#home">‹ Home</a></div>
+  $('#plv').innerHTML = `<div class="tabs"><a class="btn sec sm" href="#home">‹ Dashboard</a></div>
     <div class="bar fbar"><label class="inl">ETA/ETD <input type="date" id="pf" value="${planSt.from}"> – <input type="date" id="pt" value="${planSt.to}"></label><button class="btn sec" onclick="planReset()">Reset</button><span style="flex:1"></span><span class="tag" style="color:var(--ink)">${fmtN(d.total)} rencana</span></div>
     <div class="card tw"><table>${PLAN_HEAD}${d.rows.length ? planRows(d.rows) : '<tr><td colspan="5" style="text-align:center;color:var(--mut)">Tidak ada rencana pada rentang tanggal ini.</td></tr>'}</table>${pagerNum(d.page, d.pages, d.total, 'planGoto')}</div>`;
   $('#pf').onchange = e => { planSt.from = e.target.value || IdFmt.jktDay(new Date()); planSt.page = 1; planLoad(); };
