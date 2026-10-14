@@ -1,0 +1,2773 @@
+{
+ "source": "account_codes (5).xlsx",
+ "headers": [
+  {
+   "jenis": "ASET",
+   "sub_header": "Aktiva Lancar",
+   "group_account": "",
+   "sort_order": 10
+  },
+  {
+   "jenis": "ASET",
+   "sub_header": "Aktiva Tetap",
+   "group_account": "",
+   "sort_order": 20
+  },
+  {
+   "jenis": "ASET",
+   "sub_header": "Aktiva Tidak Lancar",
+   "group_account": "",
+   "sort_order": 30
+  },
+  {
+   "jenis": "LIABILITAS",
+   "sub_header": "Kewajiban Lancar",
+   "group_account": "",
+   "sort_order": 10
+  },
+  {
+   "jenis": "LIABILITAS",
+   "sub_header": "Kewajiban Jangka Panjang",
+   "group_account": "",
+   "sort_order": 20
+  },
+  {
+   "jenis": "EKUITAS",
+   "sub_header": "Modal Disetor",
+   "group_account": "",
+   "sort_order": 10
+  },
+  {
+   "jenis": "EKUITAS",
+   "sub_header": "Modal Ditahan",
+   "group_account": "",
+   "sort_order": 20
+  },
+  {
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding",
+   "sort_order": 10
+  },
+  {
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Trucking",
+   "sort_order": 20
+  },
+  {
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement",
+   "sort_order": 30
+  },
+  {
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Lain-lain",
+   "sort_order": 40
+  },
+  {
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Lain-lain",
+   "sort_order": 50
+  },
+  {
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding",
+   "sort_order": 10
+  },
+  {
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Trucking",
+   "sort_order": 20
+  },
+  {
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Pembelian Spare Part",
+   "sort_order": 30
+  },
+  {
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Maintenance",
+   "sort_order": 40
+  },
+  {
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Penyusutan",
+   "sort_order": 50
+  },
+  {
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement",
+   "sort_order": 60
+  },
+  {
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Bunga",
+   "sort_order": 70
+  },
+  {
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Bank",
+   "sort_order": 80
+  },
+  {
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Lain",
+   "sort_order": 90
+  },
+  {
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Gaji dan Tunjangan",
+   "sort_order": 100
+  },
+  {
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Sewa Kantor",
+   "sort_order": 110
+  },
+  {
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Sewa Garasi",
+   "sort_order": 120
+  },
+  {
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya ATK",
+   "sort_order": 130
+  },
+  {
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Marketing",
+   "sort_order": 140
+  },
+  {
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Utilitas Kantor",
+   "sort_order": 150
+  },
+  {
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Legalitas",
+   "sort_order": 160
+  },
+  {
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Administrasi dan Umum",
+   "sort_order": 170
+  },
+  {
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya ATK",
+   "sort_order": 180
+  }
+ ],
+ "accounts": [
+  {
+   "code": 11010,
+   "name": "KAS KECIL",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Lancar",
+   "group_account": ""
+  },
+  {
+   "code": 11011,
+   "name": "KAS BESAR",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Lancar",
+   "group_account": ""
+  },
+  {
+   "code": 12010,
+   "name": "BANK MANDIRI",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Lancar",
+   "group_account": ""
+  },
+  {
+   "code": 12011,
+   "name": "BANK BNI",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Lancar",
+   "group_account": ""
+  },
+  {
+   "code": 12012,
+   "name": "BANK BRI",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Lancar",
+   "group_account": ""
+  },
+  {
+   "code": 12013,
+   "name": "BANK BCA",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Lancar",
+   "group_account": ""
+  },
+  {
+   "code": 13011,
+   "name": "CADANGAN KERUGIAN PIUTANG",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Lancar",
+   "group_account": ""
+  },
+  {
+   "code": 13020,
+   "name": "PIUTANG PEMEGANG SAHAM",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Lancar",
+   "group_account": ""
+  },
+  {
+   "code": 13030,
+   "name": "PIUTANG KARYAWAN",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Lancar",
+   "group_account": ""
+  },
+  {
+   "code": 14010,
+   "name": "PERSEDIAAN BARANG",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Lancar",
+   "group_account": ""
+  },
+  {
+   "code": 15011,
+   "name": "UANG MUKA OPERASIONAL",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Tetap",
+   "group_account": ""
+  },
+  {
+   "code": 15030,
+   "name": "SEWA DIBAYAR DIMUKA",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Tetap",
+   "group_account": ""
+  },
+  {
+   "code": 15031,
+   "name": "UANG MUKA UMUM",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Tetap",
+   "group_account": ""
+  },
+  {
+   "code": 15040,
+   "name": "ASURANSI DIBAYAR DIMUKA",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Tetap",
+   "group_account": ""
+  },
+  {
+   "code": 16010,
+   "name": "INVESTASI SAHAM",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Tetap",
+   "group_account": ""
+  },
+  {
+   "code": 17010,
+   "name": "TANAH",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Tetap",
+   "group_account": ""
+  },
+  {
+   "code": 17020,
+   "name": "BANGUNAN",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Tetap",
+   "group_account": ""
+  },
+  {
+   "code": 17021,
+   "name": "AKUMULASI PENYUSUTAN BANGUNAN",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Tetap",
+   "group_account": ""
+  },
+  {
+   "code": 17030,
+   "name": "KENDARAAN OPERASIONAL",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Tetap",
+   "group_account": ""
+  },
+  {
+   "code": 17031,
+   "name": "AKUMULASI PENYUSUTAN KENDARAAN OPERASIONAL",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Tetap",
+   "group_account": ""
+  },
+  {
+   "code": 17040,
+   "name": "MOBIL",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Tetap",
+   "group_account": ""
+  },
+  {
+   "code": 17041,
+   "name": "AKUMULASI PENYUSUTAN MOBIL",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Tetap",
+   "group_account": ""
+  },
+  {
+   "code": 17050,
+   "name": "KENDARAAN BERMOTOR",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Tetap",
+   "group_account": ""
+  },
+  {
+   "code": 17051,
+   "name": "AKUMULASI PENYUSUTAN KENDARAAN BERMOTOR",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Tetap",
+   "group_account": ""
+  },
+  {
+   "code": 17060,
+   "name": "MESIN DAN PERALATAN",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Tetap",
+   "group_account": ""
+  },
+  {
+   "code": 17061,
+   "name": "AKUMULASI PENYUSUTAN MESIN DAN PERALATAN",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Tetap",
+   "group_account": ""
+  },
+  {
+   "code": 17070,
+   "name": "INVENTARIS KANTOR",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Tetap",
+   "group_account": ""
+  },
+  {
+   "code": 17071,
+   "name": "AKUMULASI PENYUSUTAN INVENTARIS KANTOR",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Tetap",
+   "group_account": ""
+  },
+  {
+   "code": 18010,
+   "name": "BIAYA PRA OPERASIONAL",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Tetap",
+   "group_account": ""
+  },
+  {
+   "code": 18011,
+   "name": "AKUMULASI AMORTISASI BIAYA PRA OPERASIONAL",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Tetap",
+   "group_account": ""
+  },
+  {
+   "code": 19010,
+   "name": "GOODWILL",
+   "jenis": "ASET",
+   "sub_header": "Aktiva Tidak Lancar",
+   "group_account": ""
+  },
+  {
+   "code": 21010,
+   "name": "HUTANG USAHA",
+   "jenis": "LIABILITAS",
+   "sub_header": "Kewajiban Jangka Panjang",
+   "group_account": ""
+  },
+  {
+   "code": 21020,
+   "name": "HUTANG BIAYA OPERASIONAL",
+   "jenis": "LIABILITAS",
+   "sub_header": "Kewajiban Lancar",
+   "group_account": ""
+  },
+  {
+   "code": 21030,
+   "name": "HUTANG BUNGA PINJAMAN",
+   "jenis": "LIABILITAS",
+   "sub_header": "Kewajiban Jangka Panjang",
+   "group_account": ""
+  },
+  {
+   "code": 21040,
+   "name": "HUTANG PEMEGANG SAHAM",
+   "jenis": "LIABILITAS",
+   "sub_header": "Kewajiban Jangka Panjang",
+   "group_account": ""
+  },
+  {
+   "code": 21050,
+   "name": "HUTANG KEPADA PIHAK LAIN",
+   "jenis": "LIABILITAS",
+   "sub_header": "Kewajiban Lancar",
+   "group_account": ""
+  },
+  {
+   "code": 21060,
+   "name": "HUTANG BANK",
+   "jenis": "LIABILITAS",
+   "sub_header": "Kewajiban Jangka Panjang",
+   "group_account": ""
+  },
+  {
+   "code": 21070,
+   "name": "HUTANG LEASING",
+   "jenis": "LIABILITAS",
+   "sub_header": "Kewajiban Jangka Panjang",
+   "group_account": ""
+  },
+  {
+   "code": 21080,
+   "name": "HUTANG PAJAK",
+   "jenis": "LIABILITAS",
+   "sub_header": "Kewajiban Lancar",
+   "group_account": ""
+  },
+  {
+   "code": 21081,
+   "name": "PPN (VAT 10%)",
+   "jenis": "LIABILITAS",
+   "sub_header": "Kewajiban Lancar",
+   "group_account": ""
+  },
+  {
+   "code": 22010,
+   "name": "PENDAPATAN DITERIMA DIMUKA",
+   "jenis": "LIABILITAS",
+   "sub_header": "Kewajiban Lancar",
+   "group_account": ""
+  },
+  {
+   "code": 31010,
+   "name": "MODAL DISETOR / DITEMPATKAN",
+   "jenis": "EKUITAS",
+   "sub_header": "Modal Disetor",
+   "group_account": ""
+  },
+  {
+   "code": 32010,
+   "name": "LABA DITAHAN",
+   "jenis": "EKUITAS",
+   "sub_header": "Modal Ditahan",
+   "group_account": ""
+  },
+  {
+   "code": 32020,
+   "name": "LABA TAHUN BERJALAN",
+   "jenis": "EKUITAS",
+   "sub_header": "Modal Ditahan",
+   "group_account": ""
+  },
+  {
+   "code": 32030,
+   "name": "PENGIMBANGAN NERACA",
+   "jenis": "EKUITAS",
+   "sub_header": "Modal Ditahan",
+   "group_account": ""
+  },
+  {
+   "code": 41010,
+   "name": "HANDLING IMPOR",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 41011,
+   "name": "HANDLING IMPOR FIRST CONTAINER",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 41012,
+   "name": "HANDLING IMPOR NEXT CONTAINER",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 41013,
+   "name": "HANDLING IMPOR FIRST 10 MT",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 41014,
+   "name": "HANDLING IMPOR FIRST 30 MT",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 41015,
+   "name": "HANDLING IMPOR NEXT MT",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 41016,
+   "name": "HANDLING IMPOR ALL IN",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 41017,
+   "name": "HANDLING DOC BC 1.6",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 41018,
+   "name": "HANDLING DOC BC 2.8",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 41019,
+   "name": "HANDLING IN BULK",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 41020,
+   "name": "HANDLING OUT BULK",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 41021,
+   "name": "HANDLING EXTRA IMPOR",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 41022,
+   "name": "JALUR MERAH IMPOR",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 41023,
+   "name": "JALUR KUNING IMPOR",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 41030,
+   "name": "PIB / PEB (EDII)",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 42010,
+   "name": "HANDLING EKSPOR",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 42011,
+   "name": "HANDLING EKSPOR FIRST CONTAINER",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 42012,
+   "name": "HANDLING EKSPOR NEXT CONTAINER",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 42013,
+   "name": "HANDLING EKSPOR ALL IN",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 42014,
+   "name": "HANDLING EXTRA EKSPOR",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 42015,
+   "name": "JALUR MERAH EKSPOR",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 43010,
+   "name": "HANDLING LOKAL",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 43011,
+   "name": "HANDLING ALL IN LOKAL",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 43012,
+   "name": "HANDLING EXTRA LOKAL",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 43013,
+   "name": "HANDLING STRIPPING",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 43014,
+   "name": "HANDLING STUFFING",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 43017,
+   "name": "STORAGE GUDANG LST",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 43018,
+   "name": "STORAGE GUDANG PLB",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 44010,
+   "name": "HANDLING TRUCKING",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 44011,
+   "name": "TRUCKING CONTAINER LST",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Trucking"
+  },
+  {
+   "code": 44012,
+   "name": "TRUCKING BREAKBULK LST",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Trucking"
+  },
+  {
+   "code": 44013,
+   "name": "TRUCKING CONTAINER",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Trucking"
+  },
+  {
+   "code": 44014,
+   "name": "TRUCKING BREAKBULK",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Trucking"
+  },
+  {
+   "code": 44015,
+   "name": "TRUCKING LCL",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Trucking"
+  },
+  {
+   "code": 44016,
+   "name": "TRUCKING LOWBED",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Trucking"
+  },
+  {
+   "code": 44017,
+   "name": "TRUCK LOOSING",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Trucking"
+  },
+  {
+   "code": 44018,
+   "name": "TRUCKING CHARGE INAP",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Trucking"
+  },
+  {
+   "code": 44019,
+   "name": "TRUCK PENITIPAN KONTAINER",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Trucking"
+  },
+  {
+   "code": 44020,
+   "name": "PENITIPAN CONTAINER",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Trucking"
+  },
+  {
+   "code": 44021,
+   "name": "KAWALAN",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Trucking"
+  },
+  {
+   "code": 44022,
+   "name": "ODOL (OVER DIMENSI OVER LOAD)",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Trucking"
+  },
+  {
+   "code": 44023,
+   "name": "MOB DEMOB",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Trucking"
+  },
+  {
+   "code": 44024,
+   "name": "UANG JALAN CONTAINER",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Trucking"
+  },
+  {
+   "code": 44025,
+   "name": "UANG JALAN BREAKBULK",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Trucking"
+  },
+  {
+   "code": 44026,
+   "name": "UANG BONGKAR",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Trucking"
+  },
+  {
+   "code": 44027,
+   "name": "UANG TONASE",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Trucking"
+  },
+  {
+   "code": 44028,
+   "name": "UANG LEMBUR",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Trucking"
+  },
+  {
+   "code": 44029,
+   "name": "TOESLAGH",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Trucking"
+  },
+  {
+   "code": 44030,
+   "name": "PARKIR",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 44031,
+   "name": "TRUCKING WING BOX",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Trucking"
+  },
+  {
+   "code": 44032,
+   "name": "TRUCKING DOLLY",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Trucking"
+  },
+  {
+   "code": 45110,
+   "name": "TERMINAL HANDLING CHARGE",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45111,
+   "name": "ADM DO",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45112,
+   "name": "DOC FEE",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45113,
+   "name": "B/L FEE",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45114,
+   "name": "TELEX RELEASE",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45115,
+   "name": "OCEAN FREIGHT / AIR FREIGHT",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45116,
+   "name": "DEMMURAGE / DETENTION",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45117,
+   "name": "AGENCY FEE",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45118,
+   "name": "CFS CHARGES",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45119,
+   "name": "MEKANIK",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45120,
+   "name": "FORWARDING FEE",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45121,
+   "name": "WAREHOUSE",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45122,
+   "name": "DEVANING",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45123,
+   "name": "CONTAINER HANDLING CHARGES",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45124,
+   "name": "PENUMPUKAN DAN GERAKAN (KOTAINER)",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45125,
+   "name": "GERAKAN JALUR MERAH (KONTAINER)",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45126,
+   "name": "STORAGE KONTAINER",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45127,
+   "name": "STORAGE GUDANG BB/LCL",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45128,
+   "name": "OPT GUDANG BB/LCL",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45129,
+   "name": "STORAGE DAN OPT GUDANG BB/LCL",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45130,
+   "name": "LIFT OFF DEPO EMPTY",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45131,
+   "name": "LIFT ON DEPO EMPTY",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45132,
+   "name": "LIFT ON GD. PLB",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 45133,
+   "name": "LIFT OFF GD. PLB",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 45134,
+   "name": "REPAIR KONTAINER",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45135,
+   "name": "ADM REPAIR KONTAINER",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45136,
+   "name": "SEGEL / SEAL",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45137,
+   "name": "WASHING",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45138,
+   "name": "CLEANING DEPO EMPTY",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45139,
+   "name": "PENITIPAN KONTAINER",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45140,
+   "name": "BEA MASUK IMPOR",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45141,
+   "name": "PPH IMPOR",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45142,
+   "name": "PPN IMPOR",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45143,
+   "name": "ASURANSI",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45144,
+   "name": "PERIJINAN/ PERTEK",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 45145,
+   "name": "STRIPPING",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 45146,
+   "name": "STUFFING",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 45147,
+   "name": "FUMIGASI",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 45148,
+   "name": "BURUH STRIPPING",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 45149,
+   "name": "LASHING",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 45150,
+   "name": "SEWA KAPAL",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 45151,
+   "name": "REPO FULL",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Trucking"
+  },
+  {
+   "code": 45152,
+   "name": "REPO EMPTY",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Trucking"
+  },
+  {
+   "code": 45153,
+   "name": "MOB DEMOB",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Trucking"
+  },
+  {
+   "code": 45154,
+   "name": "FORKLIFT",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 45155,
+   "name": "CRANE",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 45156,
+   "name": "KOORDINASI",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 45157,
+   "name": "OVERTIME",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 45158,
+   "name": "SURVEY",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 45159,
+   "name": "PACKAGING",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 45160,
+   "name": "ADM LIFT OFF",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45161,
+   "name": "REDRESS",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45162,
+   "name": "JAMINAN KONTAINER",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45163,
+   "name": "UNDERTABLE",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Lain-lain"
+  },
+  {
+   "code": 45164,
+   "name": "LAPORAN SURVEYOR",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45165,
+   "name": "ADM LIFT ON",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45166,
+   "name": "PPH",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45167,
+   "name": "GENERATOR SET CHARGE",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45168,
+   "name": "PNBP - Penerimaan Negara Bukan Pajak",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45169,
+   "name": "BEA MATERAI",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45171,
+   "name": "MULTI DROP",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Trucking"
+  },
+  {
+   "code": 45172,
+   "name": "GATE PASS PELABUHAN",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45173,
+   "name": "LOW SULPHUR CHARGE",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45174,
+   "name": "BOOKING CONTAINER",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45175,
+   "name": "BURUH STUFFING",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 45176,
+   "name": "RUSH HANDLING",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 45181,
+   "name": "PAJAK IMPOR",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Reimbursement"
+  },
+  {
+   "code": 45190,
+   "name": "CUSTOM CLEARANCE",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 45191,
+   "name": "BIAYA TAK TERDUGA",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Lain-lain"
+  },
+  {
+   "code": 46100,
+   "name": "OTHERS",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Lain-lain"
+  },
+  {
+   "code": 47000,
+   "name": "DOWN PAYMENT OPERATIONAL",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Operasional",
+   "group_account": "Pendapatan Forwarding"
+  },
+  {
+   "code": 49001,
+   "name": "IPKL (Pengelolaan Lingkungan)",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Lain-lain"
+  },
+  {
+   "code": 49002,
+   "name": "LISTRIK",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Lain-lain"
+  },
+  {
+   "code": 49003,
+   "name": "AIR PDAM",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Lain-lain"
+  },
+  {
+   "code": 50001,
+   "name": "CSR (CORPORATE SOCIAL RESPONSIBILITY)",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Administrasi dan Umum"
+  },
+  {
+   "code": 50002,
+   "name": "ANTAR INVOICE",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 50003,
+   "name": "MAKAN",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Marketing"
+  },
+  {
+   "code": 50004,
+   "name": "TOL",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Marketing"
+  },
+  {
+   "code": 50005,
+   "name": "BENSIN",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Marketing"
+  },
+  {
+   "code": 50006,
+   "name": "REIMBURSE PENGOBATAN",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Gaji dan Tunjangan"
+  },
+  {
+   "code": 50007,
+   "name": "NOTARIS",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Legalitas"
+  },
+  {
+   "code": 51010,
+   "name": "HANDLING IMPOR",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 51011,
+   "name": "HANDLING IMPOR FIRST CONTAINER",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 51012,
+   "name": "HANDLING IMPOR NEXT CONTAINER",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 51013,
+   "name": "HANDLING IMPOR FIRST 10 MT",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 51014,
+   "name": "HANDLING IMPOR NEXT MT",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 51015,
+   "name": "HANDLING IMPOR ALL IN",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 51016,
+   "name": "HANDLING DOC BC 1.6",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 51017,
+   "name": "HANDLING DOC BC 2.8",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 51018,
+   "name": "HANDLING IN BULK",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 51019,
+   "name": "HANDLING OUT BULK",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 51020,
+   "name": "HANDLING EXTRA IMPOR",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 51021,
+   "name": "JALUR MERAH IMPOR",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 51022,
+   "name": "JALUR KUNING IMPOR",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 51023,
+   "name": "ATA CARNET",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 51030,
+   "name": "PIB / PEB (EDII)",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 52010,
+   "name": "HANDLING EKSPOR",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 52011,
+   "name": "HANDLING EKSPOR ALL IN",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 52012,
+   "name": "HANDLING EXTRA EXPORT",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 52013,
+   "name": "JALUR MERAH EKSPOR",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 52014,
+   "name": "BIAYA LUMP SUMP HANDLING,STEVEDORING , LASHING ON BOARD AND LASHING CERTIFICATE",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 52034,
+   "name": "KOORDINASI KEAMANAN GARASI",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 52035,
+   "name": "PEMBELIAN SPARE PART",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Pembelian Spare Part"
+  },
+  {
+   "code": 52036,
+   "name": "Biaya Perpanjangan Pajak Kendaraan",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Maintenance"
+  },
+  {
+   "code": 52037,
+   "name": "Biaya Asuransi Jasa Raharja",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Maintenance"
+  },
+  {
+   "code": 52038,
+   "name": "Biaya ACC STNK Kendaraan",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Maintenance"
+  },
+  {
+   "code": 52039,
+   "name": "Biaya Operasional",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Maintenance"
+  },
+  {
+   "code": 52040,
+   "name": "Perbaikan Mobil",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Maintenance"
+  },
+  {
+   "code": 52045,
+   "name": "Biaya KIR",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Maintenance"
+  },
+  {
+   "code": 53010,
+   "name": "HANDLING LOKAL",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 53011,
+   "name": "HANDLING ALL IN LOKAL",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 53012,
+   "name": "HANDLING EXTRA LOKAL",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 53013,
+   "name": "HANDLING STRIPPING",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 53014,
+   "name": "HANDLING STUFFING",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 53015,
+   "name": "HANDLING COO",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 53016,
+   "name": "HANDLING GUDANG",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 53017,
+   "name": "GUDANG VENDOR",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 53018,
+   "name": "HANDLING SAFETY",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 54010,
+   "name": "HANDLING TRUCKING",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Trucking"
+  },
+  {
+   "code": 54011,
+   "name": "TRUCKING CONTAINER LST",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Trucking"
+  },
+  {
+   "code": 54012,
+   "name": "TRUCKING BREAKBULK LST",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Trucking"
+  },
+  {
+   "code": 54013,
+   "name": "TRUCKING CONTAINER",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Trucking"
+  },
+  {
+   "code": 54014,
+   "name": "TRUCKING BREAKBULK",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Trucking"
+  },
+  {
+   "code": 54015,
+   "name": "TRUCKING LCL",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Trucking"
+  },
+  {
+   "code": 54016,
+   "name": "TRUCKING LOWBED",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Trucking"
+  },
+  {
+   "code": 54017,
+   "name": "TRUCK LOOSING",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Trucking"
+  },
+  {
+   "code": 54018,
+   "name": "TRUCKING CHARGE INAP",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Trucking"
+  },
+  {
+   "code": 54019,
+   "name": "TRUCK PENITIPAN KONTAINER",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Trucking"
+  },
+  {
+   "code": 54020,
+   "name": "PENITIPAN CONTAINER",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Trucking"
+  },
+  {
+   "code": 54021,
+   "name": "KAWALAN",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Trucking"
+  },
+  {
+   "code": 54022,
+   "name": "ODOL (OVER DIMENSI OVER LOAD)",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Trucking"
+  },
+  {
+   "code": 54023,
+   "name": "MOB DEMOB",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Trucking"
+  },
+  {
+   "code": 54024,
+   "name": "UANG JALAN CONTAINER",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Trucking"
+  },
+  {
+   "code": 54025,
+   "name": "UANG JALAN BREAKBULK",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Trucking"
+  },
+  {
+   "code": 54026,
+   "name": "UANG BONGKAR",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Trucking"
+  },
+  {
+   "code": 54027,
+   "name": "UANG TONASE",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Trucking"
+  },
+  {
+   "code": 54028,
+   "name": "UANG LEMBUR",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Trucking"
+  },
+  {
+   "code": 54029,
+   "name": "TOESLAGH",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Trucking"
+  },
+  {
+   "code": 54030,
+   "name": "PARKIR",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 54031,
+   "name": "TRUCKING WING BOX",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Trucking"
+  },
+  {
+   "code": 55010,
+   "name": "ADD STRIPPING",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 55110,
+   "name": "TERMINAL HANDLING CHARGE",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55111,
+   "name": "ADM DO",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55112,
+   "name": "DOC FEE",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55113,
+   "name": "B/L FEE",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55114,
+   "name": "TELEX RELEASE",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55115,
+   "name": "OCEAN FREIGHT / AIR FREIGHT",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55116,
+   "name": "DEMMURAGE / DETENTION",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55117,
+   "name": "AGENCY FEE",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55118,
+   "name": "CFS CHARGES",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55119,
+   "name": "MEKANIK",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55120,
+   "name": "FORWARDING FEE",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55121,
+   "name": "WAREHOUSE",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55122,
+   "name": "DEVANING",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55123,
+   "name": "CONTAINER HANDLING CHARGES",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55124,
+   "name": "PENUMPUKAN DAN GERAKAN (KOTAINER)",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55125,
+   "name": "GERAKAN JALUR MERAH (KONTAINER)",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55126,
+   "name": "STORAGE KONTAINER",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55127,
+   "name": "STORAGE GUDANG BB/LCL",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55128,
+   "name": "OPT GUDANG BB/LCL",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55129,
+   "name": "STORAGE DAN OPT GUDANG BB/LCL",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55130,
+   "name": "LIFT OFF DEPO EMPTY",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55131,
+   "name": "LIFT ON DEPO EMPTY",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55132,
+   "name": "LIFT ON GD. PLB",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 55133,
+   "name": "LIFT OFF GD. PLB",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 55134,
+   "name": "REPAIR KONTAINER",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55135,
+   "name": "ADM REPAIR KONTAINER",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55136,
+   "name": "SEGEL / SEAL",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55137,
+   "name": "WASHING",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55138,
+   "name": "CLEANING DEPO EMPTY",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55139,
+   "name": "PENITIPAN KONTAINER",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55140,
+   "name": "BEA MASUK IMPOR",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55141,
+   "name": "PPH IMPOR",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55142,
+   "name": "PPN IMPOR",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55143,
+   "name": "ASURANSI",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55144,
+   "name": "PERIJINAN/ PERTEK",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 55145,
+   "name": "STRIPPING",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 55146,
+   "name": "STUFFING",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 55147,
+   "name": "FUMIGASI",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55148,
+   "name": "BURUH STRIPPING",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 55149,
+   "name": "LASHING",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 55150,
+   "name": "SEWA KAPAL",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 55151,
+   "name": "REPO FULL",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Trucking"
+  },
+  {
+   "code": 55152,
+   "name": "REPO EMPTY",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Trucking"
+  },
+  {
+   "code": 55153,
+   "name": "MOB DEMOB",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Trucking"
+  },
+  {
+   "code": 55154,
+   "name": "FORKLIFT",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 55155,
+   "name": "CRANE",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 55156,
+   "name": "KOORDINASI",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 55157,
+   "name": "OVERTIME",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 55158,
+   "name": "SURVEY",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 55159,
+   "name": "PACKAGING",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 55160,
+   "name": "ADM LIFT OFF",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55161,
+   "name": "REDRESS",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55162,
+   "name": "JAMINAN KONTAINER",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55163,
+   "name": "UNDERTABLE",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 55164,
+   "name": "LAPORAN SURVEYOR",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55165,
+   "name": "ADM LIFT ON",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55166,
+   "name": "PPH",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55167,
+   "name": "GENERATOR SET CHARGE",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55168,
+   "name": "PNBP - Penerimaan Negara Bukan Pajak",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55169,
+   "name": "BEA MATERAI",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Administrasi dan Umum"
+  },
+  {
+   "code": 55170,
+   "name": "KOMISI RITASE",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Trucking"
+  },
+  {
+   "code": 55171,
+   "name": "MULTI DROP",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Trucking"
+  },
+  {
+   "code": 55172,
+   "name": "GATE PASS PELABUHAN",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55173,
+   "name": "LOW SULPHUR CHARGE",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55174,
+   "name": "BOOKING CONTAINER",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 55175,
+   "name": "BURUH STUFFING",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 55176,
+   "name": "RUSH HANDLING",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 55177,
+   "name": "EXTEND STORAGE",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Reimbursement"
+  },
+  {
+   "code": 55178,
+   "name": "PBM",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 55210,
+   "name": "BIAYA PLB (BC 16, 28, LIFT ON/OFF, STRIPP/STUFF)",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 56010,
+   "name": "BIAYA UMUM",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Administrasi dan Umum"
+  },
+  {
+   "code": 56020,
+   "name": "VEHICLE MAINTENANCE",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Maintenance"
+  },
+  {
+   "code": 56021,
+   "name": "TAMBAL BAN",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Maintenance"
+  },
+  {
+   "code": 56022,
+   "name": "JASA VULKANISIR BAN",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Maintenance"
+  },
+  {
+   "code": 56030,
+   "name": "MARKETING",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Marketing"
+  },
+  {
+   "code": 56040,
+   "name": "MEETING",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Marketing"
+  },
+  {
+   "code": 56050,
+   "name": "ENTERTAIN",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Marketing"
+  },
+  {
+   "code": 56060,
+   "name": "INVENTARY PURCHASE",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Pembelian Spare Part"
+  },
+  {
+   "code": 56061,
+   "name": "PEMBELIAN BAN",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Pembelian Spare Part"
+  },
+  {
+   "code": 56062,
+   "name": "PEMBELIAN ALAT LASHING",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Pembelian Spare Part"
+  },
+  {
+   "code": 56070,
+   "name": "OFFICE SUPPLIES",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya ATK"
+  },
+  {
+   "code": 56080,
+   "name": "MESSENGGER",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Administrasi dan Umum"
+  },
+  {
+   "code": 56090,
+   "name": "PETTY CASH",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Administrasi dan Umum"
+  },
+  {
+   "code": 56100,
+   "name": "OTHERS",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Administrasi dan Umum"
+  },
+  {
+   "code": 59000,
+   "name": "TRUCKING BOX",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Forwarding"
+  },
+  {
+   "code": 60001,
+   "name": "BIAYA GAJI",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Gaji dan Tunjangan"
+  },
+  {
+   "code": 60002,
+   "name": "Insentif Supir",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Gaji dan Tunjangan"
+  },
+  {
+   "code": 61011,
+   "name": "TUNJANGAN JABATAN",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Gaji dan Tunjangan"
+  },
+  {
+   "code": 61012,
+   "name": "TUNJANGAN KHUSUS",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Gaji dan Tunjangan"
+  },
+  {
+   "code": 61013,
+   "name": "TUNJANGAN OPERASIONAL",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Gaji dan Tunjangan"
+  },
+  {
+   "code": 61014,
+   "name": "TUNJANGAN TRANSPORTASI",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Gaji dan Tunjangan"
+  },
+  {
+   "code": 61015,
+   "name": "TUNJANGAN PENGOBATAN",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Gaji dan Tunjangan"
+  },
+  {
+   "code": 61016,
+   "name": "TUNJANGAN HARI RAYA",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Gaji dan Tunjangan"
+  },
+  {
+   "code": 61017,
+   "name": "UANG MAKAN",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Gaji dan Tunjangan"
+  },
+  {
+   "code": 61018,
+   "name": "BONUS / PREMI",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Gaji dan Tunjangan"
+  },
+  {
+   "code": 61019,
+   "name": "ASURANSI",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Gaji dan Tunjangan"
+  },
+  {
+   "code": 61020,
+   "name": "BPJS",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Gaji dan Tunjangan"
+  },
+  {
+   "code": 61021,
+   "name": "Peningkatan SDM (Sumber Daya Manusia)",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Administrasi dan Umum"
+  },
+  {
+   "code": 62010,
+   "name": "LISTRIK",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Utilitas Kantor"
+  },
+  {
+   "code": 62011,
+   "name": "TELEPHONE DAN INTERNET",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Utilitas Kantor"
+  },
+  {
+   "code": 62012,
+   "name": "KEBUTUHAN DAPUR",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Utilitas Kantor"
+  },
+  {
+   "code": 62013,
+   "name": "SEWA KANTOR",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Sewa Kantor"
+  },
+  {
+   "code": 62014,
+   "name": "PERAWATAN KANTOR",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Utilitas Kantor"
+  },
+  {
+   "code": 62015,
+   "name": "PERAWATAN MOBIL DAN KENDARAAN",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Maintenance"
+  },
+  {
+   "code": 62016,
+   "name": "BIAYA ADMINISTRASI KANTOR",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Administrasi dan Umum"
+  },
+  {
+   "code": 62017,
+   "name": "PAJAK KENDARAAN BERMOTOR",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Administrasi dan Umum"
+  },
+  {
+   "code": 62018,
+   "name": "TRANPORTASI, KURIR, BBM",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Utilitas Kantor"
+  },
+  {
+   "code": 62019,
+   "name": "SERAGAM",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Utilitas Kantor"
+  },
+  {
+   "code": 62020,
+   "name": "IPKL - IURAN PERAWATAN KEBERSIHAN LINGKUNGAN",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Utilitas Kantor"
+  },
+  {
+   "code": 62021,
+   "name": "PARKIR KENDARAAN",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Utilitas Kantor"
+  },
+  {
+   "code": 62022,
+   "name": "SEWA GARASI TRAILER",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Sewa Garasi"
+  },
+  {
+   "code": 62023,
+   "name": "AIR PAM (PDAM)",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Utilitas Kantor"
+  },
+  {
+   "code": 63010,
+   "name": "PENYUSUTAN BANGUNAN",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Penyusutan"
+  },
+  {
+   "code": 63011,
+   "name": "PENYUSUTAN KENDARAAN OPERASIONAL",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Penyusutan"
+  },
+  {
+   "code": 63012,
+   "name": "PENYUSUTAN MOBIL",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Penyusutan"
+  },
+  {
+   "code": 63013,
+   "name": "PENYUSUTAN KENDARAAN BERMOTOR",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Penyusutan"
+  },
+  {
+   "code": 63014,
+   "name": "PENYUSUTAN MESIN DAN PERALATAN",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Penyusutan"
+  },
+  {
+   "code": 63015,
+   "name": "PENYUSUTAN INVENTARIS KANTOR",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Operasional",
+   "group_account": "Biaya Penyusutan"
+  },
+  {
+   "code": 63016,
+   "name": "AMORTISASI BIAYA PRA OPERASIONAL",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Administrasi dan Umum"
+  },
+  {
+   "code": 64010,
+   "name": "ANGSURAN KENDARAAN OPERASIONAL",
+   "jenis": "LIABILITAS",
+   "sub_header": "Kewajiban Jangka Panjang",
+   "group_account": ""
+  },
+  {
+   "code": 64011,
+   "name": "ANGSURAN KENDARAAN JASA",
+   "jenis": "LIABILITAS",
+   "sub_header": "Kewajiban Jangka Panjang",
+   "group_account": ""
+  },
+  {
+   "code": 71010,
+   "name": "PENDAPATAN BUNGA BANK. DEPOSITO",
+   "jenis": "REVENUE",
+   "sub_header": "Pendapatan Non Ops",
+   "group_account": "Pendapatan Lain-lain"
+  },
+  {
+   "code": 81010,
+   "name": "BIAYA BUNGA PINJAMAN",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Bunga"
+  },
+  {
+   "code": 81011,
+   "name": "BIAYA BANK",
+   "jenis": "BEBAN",
+   "sub_header": "Biaya Non Ops",
+   "group_account": "Biaya Bank"
+  },
+  {
+   "code": 91010,
+   "name": "PPH 21",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Administrasi dan Umum"
+  },
+  {
+   "code": 91011,
+   "name": "PPH BADAN",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Administrasi dan Umum"
+  },
+  {
+   "code": 91012,
+   "name": "PPH 23",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Administrasi dan Umum"
+  },
+  {
+   "code": 91013,
+   "name": "PPN",
+   "jenis": "BEBAN",
+   "sub_header": "Beban Operasi",
+   "group_account": "Biaya Administrasi dan Umum"
+  }
+ ],
+ "conflicts": [
+  {
+   "code": 45155,
+   "kept": {
+    "row": 143,
+    "name": "CRANE"
+   },
+   "dropped": [
+    {
+     "row": 144,
+     "name": "EXCAVATOR"
+    }
+   ],
+   "reason": "Kode dipakai dua akun; unik harus dijaga. Keputusan sementara, menunggu konfirmasi pemilik produk."
+  },
+  {
+   "code": 45165,
+   "kept": {
+    "row": 155,
+    "name": "ADM LIFT ON"
+   },
+   "dropped": [
+    {
+     "row": 154,
+     "name": "OCEAN FREIGHT FEE"
+    }
+   ],
+   "reason": "Kode dipakai dua akun; unik harus dijaga. Keputusan sementara, menunggu konfirmasi pemilik produk."
+  }
+ ],
+ "warnings": []
+}
