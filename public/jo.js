@@ -4,10 +4,11 @@ let joSt = joBlank();
 const joQs = (extra = {}) => new URLSearchParams({ ...joSt, ...extra });
 
 function joRoute(rest) {
+  if (rest[0]) return joDetail(+rest[0], rest[1] || 'material');
+  joCur = null;
   $('#ttl').textContent = 'Job Order & Doc';
   $('#view').innerHTML = '<div id="sum"></div><div id="pg"></div>';
   joList();
-  if (rest[0]) detail(+rest[0], rest[1]);
 }
 
 async function joList() {
@@ -25,12 +26,12 @@ async function joList() {
     <button class="btn sec" onclick="joReset()">Reset</button><span style="flex:1"></span>
     <button class="btn sec out" onclick="joExport()">Download Excel</button><button class="btn" onclick="joNew()">+ Job Order</button></div>
     <div class="card tw"><table><tr>${th('no_jo', 'No. JO')}<th>Type</th>${th('customer', 'Customer')}<th>Aju Ceisa</th><th>No. BL</th><th>No. Invoice</th><th>No. SI/PO</th><th>Vessel</th><th>Party</th><th>Weight</th>${th('eta', 'ETA/ETD')}${th('delivery_plan', 'Rencana Delivery')}<th>Status</th><th>Aksi</th></tr>
-    ${d.rows.map(r => `<tr class="row" style="cursor:pointer" onclick="detail(${r.id})"><td><b>${esc(r.no_jo)}</b></td><td><span><span class="dot t-${esc(r.type)}"></span>${esc(typeLabel(r.type))}</span></td><td class="wrap">${esc(r.customer_name)}</td>
+    ${d.rows.map(r => `<tr class="row" style="cursor:pointer" onclick="joOpen(${r.id})"><td><b>${esc(r.no_jo)}</b></td><td><span><span class="dot t-${esc(r.type)}"></span>${esc(typeLabel(r.type))}</span></td><td class="wrap">${esc(r.customer_name)}</td>
       <td>${multi(r.refs.AJU)}</td><td>${multi(r.refs.BL)}</td><td>${multi(r.refs.INVOICE)}</td><td>${multi([...r.refs.SI_PO, ...r.refs.SI_DO])}</td>
       <td>${esc(r.vessel)}</td><td>${esc(r.party)}</td><td class="num">${fmtN(r.weight)}</td><td>${fmtD(r.eta_etd)}</td><td ${late(r) ? 'style="color:var(--bad);font-weight:600" title="Lewat rencana delivery"' : ''}>${fmtD(r.delivery_plan)}</td>
       <td><span class="tag ${r.status}">${r.status === 'COMPLETE' ? 'Complete' : 'Not Comp'}</span></td>
       <td onclick="event.stopPropagation()"><div class="menu"><button class="ib" aria-label="Aksi ${esc(r.no_jo)}" aria-haspopup="true" onclick="menuToggle(this)">⋯</button><div class="menu-list" role="menu">
-        <button role="menuitem" onclick="detail(${r.id})">Detail</button><button role="menuitem" onclick="detail(${r.id},'dokumen')">Dokumen</button><button role="menuitem" onclick="detail(${r.id},'preview')">Preview</button>
+        <button role="menuitem" onclick="joOpen(${r.id})">Detail</button><button role="menuitem" onclick="joOpen(${r.id},'dokumen')">Dokumen</button><button role="menuitem" onclick="joOpen(${r.id},'preview')">Preview</button>
         <button role="menuitem" ${r.status === 'COMPLETE' ? 'disabled title="JO Complete tidak bisa diedit"' : ''} onclick="joForm(${r.id})">Edit</button></div></div></td></tr>`).join('') || '<tr><td colspan="14" style="text-align:center;color:var(--mut)">Belum ada data</td></tr>'}</table>
     ${pagerNum(joSt.page, d.pages, d.total, 'joGoto')}</div>`;
   $('#fs').value = joSt.status; $('#fc').value = joSt.customer_id;
@@ -208,7 +209,7 @@ async function joSubmit(e) {
         }
       } catch (x) { failed.push(`${row.newFile?.name || 'file'}: ${x.message}`); }
     }
-    closeMd(); joList(); detail(joId);
+    closeMd(); joOpen(joId, location.hash.split('/')[2]);
     if (failed.length) alert('JO tersimpan, tetapi ada file yang gagal diunggah:\n' + failed.join('\n'));
   } catch (x) { err.textContent = x.message; (x.fields || []).forEach(n => f.querySelector(`[name=${n}]`)?.setAttribute('aria-invalid', 'true')); btn.disabled = false; }
 }
@@ -231,34 +232,3 @@ function quickAdd(kind) {
     } catch (x) { $('#qe').textContent = x.message; }
   };
 }
-
-const detail = run(async id => {
-  const j = await api('/job-orders/' + id), done = j.status === 'COMPLETE', ck = Object.fromEntries(j.checklist.map(x => [x.item, x]));
-  const kv = (k, v) => `<div><span>${k}:</span> <b>${esc(v || '-')}</b></div>`, refs = k => (j.refs[k] || []).join(', ');
-  $('#md').innerHTML = `<div class="modal"><div class="card"><div class="paper"><h3>${esc(j.no_jo)} — JOB ORDER <small style="float:right">${esc(typeLabel(j.type))}${j.type_bc ? ' · ' + esc(j.type_bc) : ''} · ${done ? 'COMPLETE' : 'NOT COMP'}</small></h3>
-    <div class="kv">${kv('Customer', j.customer_name)}${kv('Jenis Muatan', [R().JENIS_MUATAN.find(x => x.code === j.jenis_muatan)?.label, j.cargo_desc].filter(Boolean).join(' · '))}${kv('Shipper/Ship To', j.shipper_name)}${kv('Party', j.party)}
-    ${kv('No. Invoice', refs('INVOICE'))}${kv('Weight (ton)', fmtN(j.weight))}${kv('No. MBL / HBL', refs('BL'))}${kv('Vessel', j.vessel)}${kv('No. SI / DO', refs('SI_DO'))}${kv('No. SI / PO', refs('SI_PO'))}${kv('ETA/ETD', fmtD(j.eta_etd))}${kv('No. Aju PIB/PEB', refs('AJU'))}${kv('Rencana Delivery', fmtD(j.delivery_plan))}</div>
-    <p><b>Remarks</b><br>${esc(j.remarks || '-').replace(/\n/g, '<br>')}</p><b>Checklist Kelengkapan</b>
-    <div class="chk">${R().CHECKLIST_ITEMS.map(it => `<div><b>${it.label}</b><span>${ck[it.code]?.inv ? '☑' : '☐'} INV</span><span>${ck[it.code]?.fp ? '☑' : '☐'} FP</span></div>`).join('')}</div>
-    <div class="scr">Catatan operasional (tulis tangan)</div></div>
-    <div class="noprint" style="margin-top:14px"><b>Dokumen</b>
-      <div class="bar" style="margin:8px 0"><select id="dc" style="max-width:170px">${R().DOC_TYPES.map(x => `<option value="${x.code}">${x.label}</option>`).join('')}</select><input type="file" id="fu" multiple accept=".pdf,.jpg,.jpeg,.png" style="max-width:300px"></div>
-      <ul id="dl">${j.documents.map(d => `<li>[${esc(docLabel(d.doc_type))}] <a href="/uploads/${d.path}?t=${token}" target="_blank">${esc(d.filename)}</a> <button class="btn bad sm" onclick="delDoc(${d.id},${id})">hapus</button></li>`).join('') || '<li style="color:var(--mut)">Belum ada dokumen</li>'}</ul>
-      <details><summary><b>Riwayat</b> (${j.logs.length})</summary><ul>${j.logs.map(l => `<li><span style="color:var(--mut)">${fmtDT(l.created_at)}</span> ${esc(l.user_name)} — ${esc(l.action)}${l.note ? ': ' + esc(l.note) : ''}</li>`).join('')}</ul></details></div>
-    <div class="acts"><button class="btn sec" onclick="closeMd()">Tutup</button><button class="btn sec" onclick="dupJo(${id})">Duplikat</button>
-      ${done ? `<button class="btn sec" onclick="setSt(${id},'NOT_COMP')">Buka Kembali</button>` : `<button class="btn sec" onclick="joForm(${id})">Edit</button><button class="btn bad" onclick="delJo(${id})">Hapus</button><button class="btn" onclick="setSt(${id},'COMPLETE')">Tandai Complete</button>`}
-      <button class="btn" onclick="window.print()">Print</button></div></div></div>`;
-  $('#fu').onchange = run(async e => {
-    for (const f of e.target.files) {
-      if (f.size > R().LIMITS.FILE_MAX_MB * 1048576) { alert(`${f.name}: maksimal ${R().LIMITS.FILE_MAX_MB} MB`); continue; }
-      const data = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result.split(',')[1]); fr.readAsDataURL(f); });
-      await api(`/job-orders/${id}/documents`, 'POST', { filename: f.name, data, doc_type: $('#dc').value });
-    }
-    detail(id);
-  });
-});
-const setSt = run(async (id, status) => { await api(`/job-orders/${id}/status`, 'PATCH', { status }); joList(); detail(id); });
-const delJo = run(async id => { if (confirm('Hapus Job Order ini beserta dokumennya?')) { await api('/job-orders/' + id, 'DELETE'); closeMd(); joList(); } });
-const delDoc = run(async (d, id) => { if (confirm('Hapus dokumen?')) { await api('/documents/' + d, 'DELETE'); detail(id); } });
-const dupJo = run(async id => { if (confirm('Buat JO baru dari data JO ini?')) { const r = await api(`/job-orders/${id}/duplicate`, 'POST'); joList(); detail(r.id); } });
-

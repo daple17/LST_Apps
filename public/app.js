@@ -31,9 +31,11 @@ const monthRange = () => {
   const d = new Date(), y = d.getFullYear(), m = d.getMonth(), iso = x => new Date(Date.UTC(y, m, x)).toISOString().slice(0, 10);
   return { from: iso(1), to: iso(new Date(y, m + 1, 0).getDate()) };
 };
+// pesan singkat non-blokir
+function toast(msg, warn = false) { document.querySelector('.toast')?.remove(); const t = Object.assign(document.createElement('div'), { className: 'toast' + (warn ? ' warn' : ''), textContent: msg, role: 'status' }); document.body.appendChild(t); setTimeout(() => t.remove(), 3500); }
 // kartu/baris yang bisa diklik (mouse & keyboard)
 const clickAttr = js => `role="button" tabindex="0" style="cursor:pointer" onclick="${js}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();${js}}"`;
-const closeMd = () => { $('#md').innerHTML = ''; if (/^#jo\//.test(location.hash)) history.replaceState(null, '', '#jo'); };
+const closeMd = () => { $('#md').innerHTML = ''; };
 // paginasi bernomor: |< < 1 2 3 4 5 .. N > >|  (fn = nama fungsi global yang menerima nomor halaman)
 function pagerNum(page, pages, total, fn) {
   pages = Math.max(1, pages);

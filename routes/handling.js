@@ -424,5 +424,7 @@ module.exports = pool => {
   }));
 
   r.refresh = refresh;
+  // dipanggil saat material JO berubah dari halaman JO: hitung ulang progres semua tiket yang memuat JO itu
+  r.refreshForJo = async joId => { for (const t of (await pool.query('SELECT DISTINCT ticket_id FROM ticket_job_orders WHERE jo_id=?', [joId]))[0]) await refresh(t.ticket_id); };
   return r;
 };

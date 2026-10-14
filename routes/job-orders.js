@@ -178,13 +178,42 @@ module.exports = pool => {
     res.json({ ok: true });
   }));
 
+  // centang checklist satu per satu; catat siapa & kapan (hanya yang berubah)
+  r.put('/:id/checklist', wrap(async (req, res) => {
+    const id = +req.params.id, { item, inv, fp } = req.body;
+    if (!rules.CHECKLIST_ITEMS.some(i => i.code === item)) return bad(res, 'Item checklist tidak valid');
+    if (inv === undefined && fp === undefined) return bad(res, 'Tidak ada perubahan');
+    await tx(pool, async conn => {
+      const [[j]] = await conn.query('SELECT id FROM job_orders WHERE id=? FOR UPDATE', [id]);
+      if (!j) throw httpError(404, 'JO tidak ditemukan');
+      await conn.query('INSERT IGNORE INTO jo_checklist (jo_id, item) VALUES (?,?)', [id, item]);
+      const [[cur]] = await conn.query('SELECT inv, fp FROM jo_checklist WHERE jo_id=? AND item=?', [id, item]);
+      const label = rules.CHECKLIST_ITEMS.find(i => i.code === item).label, notes = [];
+      for (const [field, val] of [['inv', inv], ['fp', fp]]) {
+        if (val === undefined || (val ? 1 : 0) === cur[field]) continue;
+        await conn.query(`UPDATE jo_checklist SET ${field}=?, ${field}_by=?, ${field}_at=NOW() WHERE jo_id=? AND item=?`, [val ? 1 : 0, req.user.name, id, item]);
+        notes.push(`${label} ${field.toUpperCase()}: ${val ? 'dicentang' : 'dibatalkan'}`);
+      }
+      for (const n of notes) await audit.log(conn, { entity: 'job_order', id, action: 'Checklist', note: n, user: req.user });
+    });
+    res.json({ ok: true, checklist: await checklistOf(pool, id) });
+  }));
+
+  r.patch('/:id/remarks', wrap(async (req, res) => {
+    const id = +req.params.id, remarks = nul(String(req.body.remarks ?? '').slice(0, 5000));
+    const [r2] = await pool.query('UPDATE job_orders SET remarks=?, updated_by=? WHERE id=?', [remarks, req.user.id, id]);
+    if (!r2.affectedRows) throw httpError(404, 'JO tidak ditemukan');
+    await audit.log(pool, { entity: 'job_order', id, action: 'Remarks diubah', user: req.user });
+    res.json({ ok: true });
+  }));
+
   r.get('/:id', wrap(async (req, res) => {
     const [[jo]] = await pool.query(`${BASE} WHERE j.id=?`, [req.params.id]);
     if (!jo) return res.sendStatus(404);
     const out = shape(jo);
     out.references = (await loadRefs(pool, [jo.id])).get(jo.id); out.refs = refSummary(out.references);
     out.checklist = await checklistOf(pool, jo.id);
-    out.documents = (await pool.query(`SELECT d.id, d.doc_type, d.doc_no, d.created_at, f.id file_id, f.filename, f.path, f.size, f.mime FROM jo_documents d JOIN files f ON f.id=d.file_id WHERE d.jo_id=? ORDER BY d.id`, [jo.id]))[0];
+    out.documents = (await pool.query(`SELECT d.id, d.doc_type, d.doc_no, d.created_at, f.id file_id, f.filename, f.path, f.size, f.mime, u.name uploaded_by FROM jo_documents d JOIN files f ON f.id=d.file_id LEFT JOIN users u ON u.id=f.uploaded_by WHERE d.jo_id=? ORDER BY d.id`, [jo.id]))[0];
     out.logs = (await pool.query("SELECT user_name, action, note, created_at FROM audit_log WHERE entity_type='job_order' AND entity_id=? ORDER BY id DESC LIMIT 50", [jo.id]))[0];
     const [[m]] = await pool.query('SELECT COUNT(*) n, COALESCE(SUM(net_weight),0) net FROM jo_materials WHERE jo_id=?', [jo.id]);
     out.material_count = m.n; out.material_net_kg = Number(m.net);
@@ -296,9 +325,25 @@ module.exports = pool => {
   return r;
 };
 
-// dokumen: hapus (router terpisah supaya path-nya /api/documents/:id)
+// dokumen: ganti file / hapus (router terpisah supaya path-nya /api/documents/:id)
 module.exports.documentsRouter = pool => {
   const r = express.Router();
+  // "Upload" di daftar dokumen = ganti file; baris dan nomor dokumen tetap
+  r.put('/:id/file', wrap(async (req, res) => {
+    const { filename, data } = req.body;
+    if (!filename || !data) throw httpError(400, 'File wajib diisi');
+    await tx(pool, async conn => {
+      const [[d]] = await conn.query('SELECT d.id, d.jo_id, d.file_id, d.doc_type FROM jo_documents d WHERE d.id=? FOR UPDATE', [req.params.id]);
+      if (!d) throw httpError(404, 'Dokumen tidak ditemukan');
+      const [[old]] = await conn.query('SELECT owner_type, owner_id, kind FROM files WHERE id=?', [d.file_id]);
+      const fid = await files.create(conn, { ownerType: old?.owner_type || 'jo_document', ownerId: old?.owner_id || d.id, kind: old?.kind || null, filename, buffer: files.fromBase64(data), user: req.user });
+      await conn.query('UPDATE jo_documents SET file_id=?, updated_by=? WHERE id=?', [fid, req.user.id, d.id]);
+      await conn.query('UPDATE jo_references SET file_id=? WHERE file_id=?', [fid, d.file_id]); // dokumen yang berasal dari form referensi ikut diganti
+      await files.removeById(conn, d.file_id);
+      await audit.log(conn, { entity: 'job_order', id: d.jo_id, action: 'Ganti file dokumen', note: filename, user: req.user });
+    });
+    res.json({ ok: true });
+  }));
   r.delete('/:id', wrap(async (req, res) => {
     const [[d]] = await pool.query('SELECT d.id, d.jo_id, d.file_id, f.filename FROM jo_documents d JOIN files f ON f.id=d.file_id WHERE d.id=?', [req.params.id]);
     if (d) await tx(pool, async conn => {
