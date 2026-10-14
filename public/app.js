@@ -89,7 +89,7 @@ function login() {
             </button></div>
           <p class="login__field-error" id="err-password" hidden>Password wajib diisi.</p></div>
         <button class="login__btn" type="submit" id="submit-btn">Login</button>
-        <div class="login__foot"><a class="login__link" href="#" id="forgot">Lupa Kata Sandi?</a><span class="login__help">IT Support · it@limasarana.example</span></div>
+        <div class="login__foot"><a class="login__link" href="#" id="forgot">Lupa Kata Sandi?</a></div>
       </form></section></main>`;
   const pw = $('#password'), tg = $('#toggle-password'), alertBox = $('#form-alert'), btn = $('#submit-btn');
   tg.onclick = () => { const show = pw.type === 'password'; pw.type = show ? 'text' : 'password'; tg.setAttribute('aria-pressed', String(show)); tg.setAttribute('aria-label', show ? 'Sembunyikan password' : 'Tampilkan password'); $('#eye-on').hidden = show; $('#eye-off').hidden = !show; };
