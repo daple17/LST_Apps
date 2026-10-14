@@ -98,3 +98,44 @@ test('Handling Ops: aturan tiket, progres, penomoran, material', async t => {
     assert.equal((await app.get(`/ho/tickets/${tk}`)).data.del_pct, 100);
   });
 });
+
+test('Handling Ops: unduhan Excel, damage report PDF, ZIP per tiket', async t => {
+  if (!(await dbAvailable())) return t.skip('MySQL tidak tersedia');
+  const fs = require('node:fs'), os = require('node:os'), path = require('node:path'), { execFileSync } = require('node:child_process'), ExcelJS = require('exceljs');
+  const app = await startApp('lesat_test_dl');
+  t.after(() => app.close());
+  const PNG = { filename: 'f.png', data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==' };
+  const jo = (await app.post('/job-orders', joBody({ vessel: 'MSC / BEIRA' }))).data.id, tk = (await app.post('/ho/tickets', { jo_ids: [jo] })).data;
+  const mat = no => ({ jo_id: jo, product_no: no, description: 'COIL', spec: 'SPCC', net_weight: 1000, gross_weight: 1010, qty: 1, unit: 'COIL', origin: 'PRIOK', destination: 'CIBITUNG' });
+  await app.post(`/ho/tickets/${tk.id}/materials`, { rows: [mat('G-1'), mat('D-1'), mat('N-1')] });
+  const m = Object.fromEntries((await app.get(`/ho/tickets/${tk.id}/materials`)).data.rows.map(r => [r.product_no, r.id]));
+  await app.patch(`/ho/tickets/${tk.id}/materials/${m['G-1']}/report`, { check_status: 'OK' });
+  await app.post(`/ho/tickets/${tk.id}/materials/${m['D-1']}/photos`, PNG);
+  await app.patch(`/ho/tickets/${tk.id}/materials/${m['D-1']}/report`, { check_status: 'DAMAGE', remarks: 'penyok' });
+  const sj = (await app.post(`/ho/tickets/${tk.id}/sj`, { nopol: 'b 1 zip', driver: 'ANI', items: [{ material_id: m['G-1'], qty: 1, weight: 1000 }] })).data;
+  await app.post(`/ho/sj/${sj.id}/photos`, PNG);
+
+  await t.test('Excel daftar tiket dan Report Material (xlsx sungguhan)', async () => {
+    const a = await app.raw('/ho/tickets/export'); assert.equal(a.status, 200); assert.match(a.type, /spreadsheetml/);
+    let wb = new ExcelJS.Workbook(); await wb.xlsx.load(a.buf);
+    const ws = wb.getWorksheet('Handling Ops'); assert.equal(ws.getRow(2).getCell('A').value, tk.ticket_no); assert.equal(ws.getRow(1).getCell('H').value, 'Report Material (%)');
+    const b = await app.raw(`/ho/tickets/${tk.id}/export`); wb = new ExcelJS.Workbook(); await wb.xlsx.load(b.buf);
+    const rm = wb.getWorksheet('Report Material'), rows = [2, 3, 4].map(n => [rm.getRow(n).getCell('C').value, rm.getRow(n).getCell('O').value, rm.getRow(n).getCell('P').value]);
+    assert.deepEqual(rows, [['G-1', 'OK', null], ['D-1', 'Damage', 'penyok'], ['N-1', 'Not Checked', null]]);
+  });
+  await t.test('damage report PDF hanya untuk status Damage dan memuat foto', async () => {
+    const ok = await app.raw(`/ho/tickets/${tk.id}/materials/${m['D-1']}/pdf`);
+    assert.equal(ok.status, 200); assert.equal(ok.type, 'application/pdf'); assert.equal(ok.buf.subarray(0, 5).toString(), '%PDF-');
+    assert.equal((await app.raw(`/ho/tickets/${tk.id}/materials/${m['G-1']}/pdf`)).status, 400);
+  });
+  await t.test('ZIP: struktur folder sesuai requirement', async () => {
+    const z = await app.raw(`/ho/tickets/${tk.id}/zip`); assert.equal(z.status, 200); assert.equal(z.type, 'application/zip');
+    const f = path.join(os.tmpdir(), `lesat-${Date.now()}.zip`); fs.writeFileSync(f, z.buf);
+    let names; try { names = execFileSync('unzip', ['-Z1', f]).toString().trim().split('\n'); } catch { return t.skip('perintah unzip tidak tersedia'); } finally { fs.rmSync(f, { force: true }); }
+    assert.ok(names.every(n => n.startsWith(`${tk.ticket_no} - `)), 'semua berkas di bawah folder {No Tiket} - {Customer} - {Kapal}');
+    assert.ok(names[0].includes(' - MSC _ BEIRA/'), 'karakter terlarang di nama kapal diganti');
+    const rel = names.map(n => n.slice(n.indexOf('/') + 1)).filter(Boolean).sort(), sjDir = `Surat Jalan/${sj.sj_no} - B 1 ZIP`;
+    assert.deepEqual(rel, ['Product/D-1 - Damage/', 'Product/D-1 - Damage/damage report.pdf', 'Product/D-1 - Damage/foto-1.png', 'Product/G-1 - Good/', `${sjDir}/`, `${sjDir}/foto-1.png`, `${sjDir}/surat jalan.pdf`].sort());
+    assert.ok(!rel.some(n => n.includes('N-1')), 'material belum diperiksa tidak masuk ZIP');
+  });
+});

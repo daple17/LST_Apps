@@ -3,7 +3,8 @@ const express = require('express');
 const rules = require('../lib/rules'), calc = require('../lib/calc'), fmt = require('../lib/format');
 const numbering = require('../lib/numbering'), audit = require('../lib/audit'), files = require('../lib/files');
 const { wrap, bad, httpError, tx } = require('../lib/http');
-const { sjPdf } = require('../lib/pdf'), { ticketReportText } = require('../lib/report-text');
+const { sjPdf, damagePdf } = require('../lib/pdf'), { ticketReportText } = require('../lib/report-text');
+const excel = require('../lib/excel'), exportsLib = require('../lib/exports'), { ZipArchive } = require('archiver');
 
 const nul = v => (v === '' || v === undefined ? null : v);
 const num = v => (v === '' || v == null || isNaN(v) ? 0 : +v);
@@ -83,9 +84,7 @@ module.exports = pool => {
   r.get('/tickets/export', wrap(async (req, res) => {
     let list = await ticketList(req.query);
     if (req.query.progress) list = list.filter(t => calc.progressBucket(t.prog) === req.query.progress);
-    const cell = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const head = ['Ticket', 'PIC', 'Customer', 'Vessel', 'Party', 'Weight (ton)', 'Dwelling time', 'Report Material %', 'Trucking Delivery %', 'Dibuat'];
-    res.type('text/csv').send('﻿' + [head, ...list.map(t => [t.ticket_no, t.pic_name, t.customer, t.vessel, t.party, t.weight, calc.formatDwell(t.dwell_min), t.mat_pct, t.del_pct, t.created_at])].map(l => l.map(cell).join(',')).join('\r\n'));
+    await excel.send(res, `handling-ops-${new Date().toISOString().slice(0, 10)}.xlsx`, exportsLib.ticketSheets(list));
   }));
 
   // JO yang boleh dipilih: belum Complete dan tidak sedang ada di tiket aktif lain (keputusan 9)
@@ -417,15 +416,20 @@ module.exports = pool => {
   }));
 
   // PDF Surat Jalan (A4) dibuat di server
-  r.get('/sj/:id/pdf', wrap(async (req, res) => {
-    const s = await sjFull(req.params.id);
-    if (!s) return res.sendStatus(404);
-    const uniqJoin = f => uniq(s.jos.map(j => j[f])).join(', ');
-    const buf = await sjPdf({ no_sj: s.sj_no, nopol: s.nopol, driver: s.driver, phone: s.phone, vendor_name: s.vendor_name, start_loading: s.start_at, finish_loading: s.finish_at, entry_at: s.entry_at, exit_at: s.exit_at, pic_name: s.pic_name,
+  async function sjPdfBuffer(id) {
+    const s = await sjFull(id);
+    if (!s) return null;
+    const uniqJoin = f => uniq(s.jos.map(j => j[f])).join(', '), totalKg = s.items.reduce((a, i) => a + +i.weight, 0);
+    return sjPdf({ no_sj: s.sj_no, nopol: s.nopol, driver: s.driver, phone: s.phone, vendor_name: s.vendor_name, start_loading: s.start_at, finish_loading: s.finish_at, entry_at: s.entry_at, exit_at: s.exit_at, pic_name: s.pic_name,
       customer: uniqJoin('customer_name'), origin: s.origin, destination: s.destination, jo_numbers: uniqJoin('jo_no'), invoices: uniqJoin('invoice_no'), bl: uniqJoin('bl_no'), vessel: uniqJoin('vessel'), party: uniqJoin('party'),
-      weight_ton: calc.kgToTon(s.items.reduce((a, i) => a + +i.weight, 0)), nopen: s.nopen, aju: uniqJoin('aju_no'),
-      items: s.items.map(i => ({ product_no: i.product_no, description: i.description, spec: i.spec, qty: i.qty, weight: +i.weight, mark: i.mark })), unit: s.unit, total_qty: s.qty, total_weight_kg: s.items.reduce((a, i) => a + +i.weight, 0) });
-    res.type('application/pdf').set('Content-Disposition', `inline; filename="surat-jalan-${s.sj_no}.pdf"`).send(buf);
+      weight_ton: calc.kgToTon(totalKg), nopen: s.nopen, aju: uniqJoin('aju_no'),
+      items: s.items.map(i => ({ product_no: i.product_no, description: i.description, spec: i.spec, qty: i.qty, weight: +i.weight, mark: i.mark })), unit: s.unit, total_qty: s.qty, total_weight_kg: totalKg });
+  }
+  r.get('/sj/:id/pdf', wrap(async (req, res) => {
+    const buf = await sjPdfBuffer(req.params.id);
+    if (!buf) return res.sendStatus(404);
+    const [[s]] = await pool.query('SELECT no_sj FROM delivery_notes WHERE id=?', [req.params.id]);
+    res.type('application/pdf').set('Content-Disposition', `inline; filename="surat-jalan-${s.no_sj}.pdf"`).send(buf);
   }));
 
   r.delete('/sj/:id', wrap(async (req, res) => {
@@ -448,10 +452,10 @@ module.exports = pool => {
 
   /* ---------- ekspor & Copy Report (CSV sementara; xlsx di tahap 10) ---------- */
   r.get('/tickets/:id/export', wrap(async (req, res) => {
-    const [rows] = await pool.query(`${MSEL} WHERE tj.ticket_id=? ORDER BY m.id`, [req.params.id]);
-    const cell = v => `"${String(v ?? '').replace(/"/g, '""')}"`, st = { NOT_CHECKED: '-', OK: 'OK', DAMAGE: 'DM' };
-    const head = ['JO', 'Product/Container No', 'Description', 'Spec', 'Thickness', 'Width', 'No. BL', 'Net Weight', 'Gross Weight', 'Qty', 'Satuan', 'Dari', 'Tujuan', 'Status', 'Remarks', 'Surat Jalan'];
-    res.type('text/csv').send('﻿' + [head.join(','), ...rows.map(x => [x.jo_no, x.product_no, x.description, x.spec, x.thickness, x.width, x.bl_no, x.net_weight, x.gross_weight, x.qty, x.unit, x.origin, x.destination, st[x.check_status], x.remarks, x.sj_nos].map(cell).join(','))].join('\r\n'));
+    const t = await ticketRow(req.params.id);
+    if (!t) return res.sendStatus(404);
+    const [rows] = await pool.query(`${MSEL} WHERE tj.ticket_id=? ORDER BY m.id`, [t.id]);
+    await excel.send(res, `report-material-${t.ticket_no}.xlsx`, exportsLib.reportMaterialSheets(rows));
   }));
 
   r.get('/tickets/:id/report-text', wrap(async (req, res) => {
@@ -461,6 +465,56 @@ module.exports = pool => {
       FROM jo_materials m JOIN ticket_job_orders tj ON tj.jo_id=m.jo_id LEFT JOIN material_reports r ON r.material_id=m.id AND r.ticket_id=tj.ticket_id WHERE tj.ticket_id=?`, [t.id]);
     const [sj] = await pool.query(`${DNSEL} WHERE d.ticket_id=? GROUP BY d.id ORDER BY d.id`, [t.id]);
     res.json({ text: ticketReportText({ ...t, ok: +m.ok, dm: +m.dm, nc: +m.nc, trips: sj.map(s => ({ ...s, qty: +s.qty })) }) });
+  }));
+
+
+  /* ---------- Damage report (PDF) & ZIP per tiket ---------- */
+  const safeName = (v, max = 80) => String(v ?? '').replace(/[\\/:*?"<>|\x00-\x1f]/g, '_').replace(/\s+/g, ' ').trim().slice(0, max) || '_';
+  const fileList = async (type, ownerId) => (await pool.query('SELECT filename, path FROM files WHERE owner_type=? AND owner_id=? ORDER BY id', [type, ownerId]))[0];
+
+  async function damageData(tid, mid) {
+    const m = await materialDetail(tid, mid);
+    if (!m) return null;
+    const t = await ticketRow(tid), [[j]] = await pool.query(`SELECT c.name customer, j.vessel, ${refStr('BL')} bl FROM job_orders j JOIN customers c ON c.id=j.customer_id WHERE j.id=?`, [m.jo_id]);
+    return { ...m, ticket_no: t.ticket_no, customer: j.customer, vessel: j.vessel, bl_no: m.bl_no || j.bl, photos: m.photos };
+  }
+  r.get('/tickets/:tid/materials/:mid/pdf', wrap(async (req, res) => {
+    const d = await damageData(req.params.tid, req.params.mid);
+    if (!d) return res.sendStatus(404);
+    if (d.check_status !== 'DAMAGE') throw httpError(400, 'Damage report hanya untuk material berstatus Damage');
+    const buf = await damagePdf({ ...d, photos: d.photos.map(p => files.diskPath(p.path)).filter(p => require('fs').existsSync(p)) });
+    res.type('application/pdf').set('Content-Disposition', `inline; filename="damage-report-${safeName(d.product_no)}.pdf"`).send(buf);
+  }));
+
+  // struktur sesuai requirement:
+  // {No Tiket} - {Customer} - {Kapal}/Product/{No Product} - {Good|Damage}/(foto + damage report.pdf)  dan  Surat Jalan/{No SJ} - {Nopol}/(foto + surat jalan.pdf)
+  r.get('/tickets/:id/zip', wrap(async (req, res) => {
+    const t = await ticketRow(req.params.id);
+    if (!t) return res.sendStatus(404);
+    const root = safeName(`${t.ticket_no} - ${t.customers.join(' & ')} - ${t.vessels.join(' & ')}`, 120), used = new Set();
+    const uniqPath = p => { let q = p, n = 2; while (used.has(q.toLowerCase())) q = p.replace(/(\.[^./]+)?$/, m => ` (${n++})${m}`); used.add(q.toLowerCase()); return q; };
+    const zip = new ZipArchive({ zlib: { level: 5 } });
+    res.type('application/zip').set('Content-Disposition', `attachment; filename="${safeName(t.ticket_no)}.zip"`);
+    zip.on('error', e => { console.error(e); res.destroy(e); });
+    zip.pipe(res);
+    const addFile = (folder, f, i) => { const fp = files.diskPath(f.path); if (require('fs').existsSync(fp)) zip.file(fp, { name: uniqPath(`${root}/${folder}/foto-${i + 1}${require('path').extname(f.filename) || '.jpg'}`) }); };
+
+    const [mats] = await pool.query(`${MSEL} WHERE tj.ticket_id=? AND COALESCE(r.status,'NOT_CHECKED')<>'NOT_CHECKED' ORDER BY m.id`, [t.id]);
+    for (const m of mats) {
+      const folder = `Product/${safeName(m.product_no)} - ${m.check_status === 'DAMAGE' ? 'Damage' : 'Good'}`, d = await damageData(t.id, m.id);
+      zip.append('', { name: uniqPath(`${root}/${folder}/`) }); // folder tetap ada walau belum ada foto
+      d.photos.forEach((p, i) => addFile(folder, p, i));
+      if (m.check_status === 'DAMAGE') zip.append(await damagePdf({ ...d, photos: d.photos.map(p => files.diskPath(p.path)).filter(p => require('fs').existsSync(p)) }), { name: uniqPath(`${root}/${folder}/damage report.pdf`) });
+    }
+    const [sjs] = await pool.query('SELECT id, no_sj, nopol FROM delivery_notes WHERE ticket_id=? ORDER BY id', [t.id]);
+    for (const sj of sjs) {
+      const folder = `Surat Jalan/${safeName(sj.no_sj)} - ${safeName(sj.nopol)}`;
+      zip.append('', { name: uniqPath(`${root}/${folder}/`) });
+      (await fileList('delivery_note', sj.id)).forEach((f, i) => addFile(folder, f, i));
+      zip.append(await sjPdfBuffer(sj.id), { name: uniqPath(`${root}/${folder}/surat jalan.pdf`) });
+    }
+    if (!mats.length && !sjs.length) zip.append('Belum ada material yang diperiksa atau surat jalan pada tiket ini.\n', { name: `${root}/README.txt` });
+    await zip.finalize();
   }));
 
   r.refresh = refresh;

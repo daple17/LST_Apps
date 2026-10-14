@@ -100,8 +100,8 @@ const hoOverview = run(async () => {
 const hoSetP = k => { hoSt.progress = k; hoSt.page = 1; hoOverview(); };
 const hoResetF = () => { hoSt = { q: '', progress: '', page: 1, ...monthRange() }; hoOverview(); };
 const hoGoto = n => { hoSt.page = n; hoOverview(); };
-const hoExport = run(() => download('/ho/tickets/export?' + hoQs(hoSt), `handling-ops-${today()}.csv`));
-const hoDl = run((id, no) => download(`/ho/tickets/${id}/export`, `report-${no}.csv`));
+const hoExport = run(() => download('/ho/tickets/export?' + hoQs(hoSt), `handling-ops-${today()}.xlsx`));
+const hoDl = run((id, no) => download(`/ho/tickets/${id}/export`, `report-material-${no}.xlsx`));
 const hoCopy = run(async id => {
   const { text } = await api(`/ho/tickets/${id}/report-text`);
   await navigator.clipboard.writeText(text);
@@ -165,7 +165,7 @@ function hoHead(t, tab) {
   const jos = t.jos, join = f => esc([...new Set(jos.map(j => j[f]).filter(Boolean))].join(', ') || '-');
   const stJo = jos.length && jos.every(j => j.status === 'COMPLETE') ? 'Complete' : 'Not Complete';
   return `<div class="tabs"><a class="btn sec sm" href="#ho">‹ Back</a><a class="btn ${tab === 'material' ? '' : 'sec'} sm" href="#ho/${t.id}/material">Report Material</a><a class="btn ${tab === 'trucking' ? '' : 'sec'} sm" href="#ho/${t.id}/trucking">Trucking Delivery</a>
-    <span style="flex:1"></span><button class="btn sec sm out" onclick="hoCopy(${t.id})">Copy Report</button><button class="btn sec sm" onclick="hoTicketForm(${t.id})">Edit JO</button>${t.sj_count ? '' : `<button class="btn bad sm" onclick="hoDelTicket(${t.id})">Hapus Ticket</button>`}</div>
+    <span style="flex:1"></span><button class="btn sec sm out" onclick="hoCopy(${t.id})">Copy Report</button><a class="btn sec sm out" href="/api/ho/tickets/${t.id}/zip?t=${token}" download>Download ZIP</a><button class="btn sec sm" onclick="hoTicketForm(${t.id})">Edit JO</button>${t.sj_count ? '' : `<button class="btn bad sm" onclick="hoDelTicket(${t.id})">Hapus Ticket</button>`}</div>
     <div class="card hd"><div class="kv"><div><span>Ticket:</span> <b>${esc(t.ticket_no)}</b></div><div><span>PIC:</span> <b>${esc(t.pic_name)}</b></div>
     <div><span>Job Order:</span> <b>${jos.map(x => `<a href="#jo/${x.id}" title="Buka Job Order">${esc(x.no_jo)}</a>`).join(', ') || '-'}</b></div><div><span>Party:</span> <b>${join('party')}</b></div>
     <div><span>Customer:</span> <b>${join('customer_name')}</b></div><div><span>Weight:</span> <b>${fmtN(t.weight)} Ton</b></div>
@@ -192,10 +192,10 @@ const hoMatList = run(async () => {
     <select id="ms"><option value="">Semua status</option><option value="NOT_CHECKED">Not Checked</option><option value="OK">OK</option><option value="DAMAGE">Damage</option></select>
     <span class="tag" style="color:var(--ink)">Net ${fmtN(s.net)}</span><span class="tag" style="color:var(--ink)">Gross ${fmtN(s.gross)}</span><span class="tag" style="color:var(--ink)">Qty ${fmtN(s.qty)}</span><span style="flex:1"></span>
     <button class="btn sec" onclick="hoScan()">Scan Barcode</button><button class="btn sec" onclick="hoDl(${t.id},'${esc(t.ticket_no)}')">Download Excel</button>
-    <button class="btn sec" ${sel ? '' : 'disabled'} onclick="hoImport()">Import</button><button class="btn" ${sel ? '' : 'disabled'} onclick="hoMatForm()">+ Material</button></div>
+    ${sel ? `<a class="btn" href="#jo/${t.jos[0].id}" title="Material dikelola di JO: tab List Detail Material">Kelola material di JO</a>` : ''}</div>
     <div class="card tw"><table><tr><th>No.</th><th>Product/Container No.</th><th>Description</th><th>Spec</th><th class="num">Thickness</th><th class="num">Width</th><th class="num">Net Weight</th><th class="num">Gross Weight</th><th class="num">Qty</th><th>Satuan</th><th>Dari</th><th>Tujuan</th><th>Status</th></tr>
     ${d.rows.map((m, i) => `<tr class="row" style="cursor:pointer" onclick="hoMatReport(${m.id})"><td>${(hoMq.page - 1) * 20 + i + 1}</td><td><a href="#" onclick="return false"><b>${esc(m.product_no)}</b></a></td><td>${esc(m.description)}</td><td>${esc(m.spec)}</td><td class="num">${fmtN(m.thickness)}</td><td class="num">${fmtN(m.width)}</td><td class="num">${fmtN(m.net_weight)}</td><td class="num">${fmtN(m.gross_weight)}</td><td class="num">${m.qty}</td><td>${esc(m.unit)}</td><td>${esc(m.origin)}</td><td>${esc(m.destination)}</td>
-      <td><span class="tag ${m.check_status}">${{ NOT_CHECKED: '-', OK: 'OK', DAMAGE: 'DM' }[m.check_status]}</span></td></tr>`).join('') || `<tr><td colspan="13" style="text-align:center;color:var(--mut)">${sel ? 'Belum ada material. Gunakan + Material atau Import.' : 'Ticket belum memiliki JO'}</td></tr>`}</table>
+      <td><span class="tag ${m.check_status}">${{ NOT_CHECKED: '-', OK: 'OK', DAMAGE: 'DM' }[m.check_status]}</span></td></tr>`).join('') || `<tr><td colspan="13" style="text-align:center;color:var(--mut)">${sel ? 'Belum ada material. Tambahkan di JO (tab List Detail Material: Add data atau Upload List).' : 'Ticket belum memiliki JO'}</td></tr>`}</table>
     ${pagerNum(hoMq.page, d.pages, d.total, 'hoMGoto')}</div>`;
   $('#ms').value = hoMq.status;
   searchBind('#mq', hoMq, hoMatList);
@@ -227,7 +227,7 @@ const hoMatReport = run(async id => {
     <div class="full"><label>Add Photos (maks ${R().LIMITS.MATERIAL_PHOTOS}) <span id="pq" style="color:var(--bad)" hidden>— Damage wajib minimal 1 foto</span></label><div id="pb"></div></div></div>
     ${m.checked_at ? `<p style="color:var(--mut);font-size:12px">Terakhir dicek ${fmtDT(m.checked_at)} oleh ${esc(m.checked_by)}</p>` : ''}
     <div class="err" id="fe"></div><div class="acts"><button type="button" class="btn sec" onclick="closeMd()">Cancel</button>
-    ${m.sent_qty ? '' : `<button type="button" class="btn bad" onclick="hoDelMat(${m.id})">Hapus</button>`}<button type="button" class="btn sec" onclick="hoMatForm(${m.id})">Edit Data</button><button class="btn">Save</button></div></form></div>`;
+    ${m.check_status === 'DAMAGE' ? `<a class="btn sec" href="/api/ho/tickets/${hoT.id}/materials/${id}/pdf?t=${token}" target="_blank" rel="noopener">Damage report PDF</a>` : ''}${m.sent_qty ? '' : `<button type="button" class="btn bad" onclick="hoDelMat(${m.id})">Hapus</button>`}<button type="button" class="btn sec" onclick="hoMatForm(${m.id})">Edit Data</button><button class="btn">Save</button></div></form></div>`;
   const f0 = $('#rf'), status = () => f0.elements.check_status.value;
   f0.querySelector(`input[name=check_status][value=${m.check_status}]`).checked = true;
   const box = photoBox('#pb', R().LIMITS.MATERIAL_PHOTOS, m.photos, '/ho/files/');
@@ -267,26 +267,6 @@ const hoMatForm = run(async id => {
     catch (x) { $('#fe').textContent = x.message; }
   };
 });
-
-const IMP_COLS = ['product_no', 'description', 'spec', 'thickness', 'width', 'bl_no', 'net_weight', 'gross_weight', 'qty', 'unit', 'origin', 'destination'];
-const hoImport = () => {
-  $('#md').innerHTML = `<div class="modal"><form class="card" id="imf"><h3 style="margin-top:0">Import Material</h3>
-    <div><label>Job Order untuk semua baris</label><select name="jo_id">${hoT.jos.map(j => `<option value="${j.id}">${esc(j.no_jo)} · ${esc(j.customer_name)}</option>`).join('')}</select></div>
-    <div style="margin-top:10px"><label>Tempel dari Excel (tab) atau CSV (koma), tanpa header. Urutan kolom: ${IMP_COLS.join(', ')}. Angka pakai titik desimal tanpa pemisah ribuan.</label>
-    <textarea name="rows" rows="10" placeholder="CQH4162B&#9;GALVANIZED COIL&#9;JAC270C&#9;0.7&#9;1245&#9;ASANKWJK12&#9;8120&#9;8187&#9;1&#9;COIL&#9;PRIOK&#9;CIBITUNG" required></textarea></div>
-    <div class="err" id="fe"></div><div class="acts"><button type="button" class="btn sec" onclick="closeMd()">Batal</button><button class="btn">Import</button></div></form></div>`;
-  $('#imf').onsubmit = async e => {
-    e.preventDefault();
-    const f = e.target, rows = f.rows.value.split(/\r?\n/).filter(l => l.trim()).map(l => {
-      const c = l.split(l.includes('\t') ? '\t' : ',').map(x => x.trim()), o = { jo_id: f.jo_id.value };
-      IMP_COLS.forEach((k, i) => o[k] = c[i] ?? '');
-      if (o.qty === '') o.qty = 1;
-      return o;
-    });
-    try { const r = await api(`/ho/tickets/${hoT.id}/materials`, 'POST', { rows }); alert(`${r.count} material diimport`); closeMd(); route(); }
-    catch (x) { $('#fe').textContent = x.message; }
-  };
-};
 
 /* ================= TRUCKING DELIVERY ================= */
 const hoTrucking = run(async id => {
