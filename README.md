@@ -1,6 +1,6 @@
 # LESAT — Sistem Internal PT Lima Sarana Trans
 
-Menu yang sudah jadi: **Job Order & Doc** dan **Handling Ops** (tiket, Report Material, Trucking Delivery / Surat Jalan).
+Menu yang sudah jadi: **Dashboard**, **Job Order & Doc**, **Handling Ops** (tiket, Report Material, Trucking Delivery / Surat Jalan), serta **User Management** dan **Role Management** (grup PENGATURAN).
 Menu lain di sidebar masih berlabel "segera". Spesifikasi: [docs/spec-jo-handling.md](docs/spec-jo-handling.md), audit awal: [docs/audit-jo-handling.md](docs/audit-jo-handling.md).
 
 ## Menjalankan
@@ -12,7 +12,13 @@ npm run seed                # opsional: data dummy JO + Handling Ops (aman diula
 npm test                    # unit + integrasi (butuh MySQL dari docker compose)
 npm run migrate             # jalankan migrasi manual (server juga menjalankannya)
 ```
-Login awal lokal: `admin` / `admin123`. Di production password admin wajib lewat env `ADMIN_PASSWORD`.
+Login awal lokal: `admin` / `admin123` (role Super Admin, email `admin@gmail.com`). Di production password admin wajib lewat env `ADMIN_PASSWORD`.
+
+### User & role (RBAC)
+- Menu **Pengaturan → Role Management**: atur izin per modul (Tanpa / Lihat / Kelola / Penuh, atau per aksi). Super Admin dikunci dan selalu memegang semua izin.
+- Menu **Pengaturan → User Management**: tambah user (username, email unik, kode PIC 2 huruf, role). Jika password dikosongkan, server membuat password sementara yang ditampilkan **sekali**; user wajib menggantinya saat login pertama.
+- Membuat user pertama selain admin: login sebagai `admin` → User Management → + Tambah User. User lama (hasil migrasi) otomatis berrole **PIC Operasional** (JO & Handling Ops Kelola, Dashboard Lihat); email-nya masih kosong dan wajib diisi saat diedit.
+- Izin dicek di server pada setiap permintaan; pemetaan route → izin: [docs/permission-map.md](docs/permission-map.md). OTP email belum ada (tahap berikutnya); email sudah wajib dan unik.
 
 ## Struktur
 | Lokasi | Isi |
@@ -23,8 +29,9 @@ Login awal lokal: `admin` / `admin123`. Di production password admin wajib lewat
 | `lib/pdf.js`, `lib/excel.js`, `lib/exports.js`, `lib/report-text.js` | PDF Surat Jalan & Damage Report, Excel, teks Copy Report. |
 | `lib/code128.js` | Barcode Code 128 — dipakai server (PDF) dan browser (`/shared/code128.js`). |
 | `migrations/` | Migrasi berurutan (`schema_migrations`), idempoten; data lama dipindahkan, tidak dihapus. |
-| `routes/` | `job-orders.js`, `jo-materials.js`, `handling.js`. |
-| `public/` | SPA: `app.js` (inti), `jo.js`, `jo-detail.js`, `ho.js`, `scan.js`, `style.css` (design token glass). |
+| `lib/permissions.js`, `lib/authz.js`, `lib/roles-seed.js` | Daftar izin (modul × aksi), middleware izin & batas login, role bawaan. |
+| `routes/` | `job-orders.js`, `jo-materials.js`, `handling.js`, `home.js`, `users.js`, `roles.js`. |
+| `public/` | SPA: `app.js` (inti), `jo.js`, `jo-detail.js`, `ho.js`, `scan.js`, `home.js` (Dashboard), `users.js`, `roles.js`, `style.css` (design token glass). |
 | `tests/` | `node --test` — formula, penomoran (termasuk simpan bersamaan), migrasi, validasi, PDF/Excel/ZIP, aturan tiket. |
 
 ## Konfigurasi (env)

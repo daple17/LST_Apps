@@ -8,14 +8,21 @@ const ico = d => `<svg class="ic" width="17" height="17" viewBox="0 0 24 24" fil
 const GICON = { HOME: 'M3 3h7v7H3z M14 3h7v7h-7z M14 14h7v7h-7z M3 14h7v7H3z', OPERASIONAL: 'M3 7h11v9H3z M14 10h4l3 3v3h-7z M5.5 17.5h3 M15.5 17.5h3',
   FAT: 'M6 3h9l4 4v14H6z M14 3v5h5 M9 13h7 M9 17h7', APPROVAL: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z M9 12l2 2 4-4',
   'HR (SDM)': 'M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6 M17 11a2.5 2.5 0 1 0 0-5 M21 19c0-2.5-1.5-4.5-4-5',
-  'DATA MASTER': 'M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6 M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6' };
+  PENGATURAN: 'M4 7h10 M18 7h2 M4 17h2 M10 17h10 M16 5v4 M8 15v4', 'DATA MASTER': 'M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6 M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6' };
 // grup sidebar sesuai Tab Menu; item tanpa kode rute tampil nonaktif "segera"
-const MENU = [['HOME', [['Dashboard', 'home']]],
-  ['OPERASIONAL', [['Job Order & Doc', 'jo'], ['Handling Ops', 'ho'], ['Trucking'], ['Submission'], ['Settlement'], ['Job Complete']]],
-  ['FAT', [['Invoice & Tax'], ['Penerimaan'], ['Overhead'], ['Liability'], ['Equity'], ['Asset'], ['Financial Statement'], ['COA']]],
-  ['APPROVAL', [['Submission'], ['Expenses'], ['Job Complete'], ['Payment']]],
+const MENU = [['HOME', [['Dashboard', 'home', 'home']]],
+  ['OPERASIONAL', [['Job Order & Doc', 'jo', 'jo'], ['Handling Ops', 'ho', 'ho'], ['Trucking', null, 'trucking'], ['Submission', null, 'submission'], ['Settlement', null, 'settlement'], ['Job Complete', null, 'job_complete']]],
+  ['FAT', [['Invoice & Tax'], ['Penerimaan'], ['Overhead'], ['Liability'], ['Equity'], ['Asset'], ['Financial Statement'], ['COA', null, 'coa']]],
+  ['APPROVAL', [['Submission', null, 'approval'], ['Expenses', null, 'approval'], ['Job Complete', null, 'approval'], ['Payment', null, 'approval']]],
   ['HR (SDM)', [['Employees'], ['Partner'], ['Check In & Report'], ['Loans']]],
-  ['DATA MASTER', [['Trailer'], ['Rute'], ['Customer'], ['Vendor'], ['Shipper'], ['PIB / PEB'], ['Unit']]]];
+  ['DATA MASTER', [['Trailer'], ['Rute'], ['Customer', null, 'customer'], ['Vendor', null, 'vendor'], ['Shipper', null, 'shipper'], ['PIB / PEB'], ['Unit', null, 'unit']]],
+  ['PENGATURAN', [['User Management', 'users', 'user'], ['Role Management', 'roles', 'role']]]];
+let me = null; // pengguna login: role + izin (GET /api/me)
+const can = code => !!me?.permissions?.includes(code);
+// item sidebar terlihat bila tidak dipetakan ke modul, atau user punya izin lihat modul itu
+const menuVisible = ([, , m]) => !m || can(m + '.view');
+// halaman -> modul izin; halaman tanpa izin lihat tidak dibuka
+const ROUTE_MOD = { home: 'home', plan: 'home', jo: 'jo', ho: 'ho', users: 'user', roles: 'role' };
 let token = localStorage.getItem('tk'), uname = localStorage.getItem('un'), look = { customers: [], shippers: [] };
 
 async function raw(url, method = 'GET', body) {
@@ -25,11 +32,11 @@ async function raw(url, method = 'GET', body) {
 }
 async function api(url, method, body) {
   const r = await raw(url, method, body), d = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(d.error || 'Error ' + r.status);
+  if (!r.ok) throw Object.assign(new Error(d.error || 'Error ' + r.status), { fields: d.fields, status: r.status, data: d });
   return d;
 }
 const run = f => async (...a) => { try { await f(...a); } catch (e) { alert(e.message); } };
-function logout() { localStorage.clear(); token = null; render(); }
+function logout() { localStorage.clear(); token = null; me = null; render(); }
 const fmtD = d => d ? new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-';
 const fmtDT = d => d ? new Date(d.replace(' ', 'T') + 'Z').toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '';
 const fmtN = n => n == null ? '-' : Number(n).toLocaleString('id-ID', { maximumFractionDigits: 2 });
@@ -125,12 +132,19 @@ function shell() {
   try { document.body.classList.toggle('collapsed', !!localStorage.getItem('collapsed')); } catch { /* abaikan */ }
   const chev = '<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
   $('#app').innerHTML = `<div class="shell"><aside aria-label="Menu utama"><div class="brand"><img src="logo.png" alt="Logo LST"><div><b class="wm">LESAT</b><small>By Lima Sarana</small></div></div>
-    <nav>${MENU.map(([g, items]) => `<details class="gw"${g === 'HOME' || g === 'OPERASIONAL' ? ' open' : ''}><summary title="${g}" onclick="railOpen()">${ico(GICON[g])}<span class="lb">${g}</span>${chev}</summary><div class="gi">${items.map(([n, k]) => k ? `<a href="#${k}" data-r="${k}">${n}</a>` : `<a class="off" aria-disabled="true">${n}</a>`).join('')}</div></details>`).join('')}</nav>
+    <nav></nav>
     <button class="aside-collapse" type="button" onclick="toggleCollapse()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 17l-5-5 5-5 M18 17l-5-5 5-5"/></svg><span class="lb">Collapse</span></button></aside>
     <div class="nav-bg" onclick="toggleNav(false)"></div>
     <main><div class="top"><button class="btn sec mbtn" aria-label="Menu" onclick="menuBtn()">☰</button><div class="tt"><h2 id="ttl"></h2><p id="sub"></p></div>
-      <div class="topr"><div id="topx"></div><div class="usr" title="${esc(uname)}"><span class="av" aria-hidden="true">${esc((uname || '?').trim().charAt(0).toUpperCase())}</span><button class="lo" type="button" aria-label="Logout" onclick="logout()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4H5v16h4 M16 8l4 4-4 4 M20 12H9"/></svg></button></div></div></div><div id="view"></div></main></div><div id="md"></div>`;
-  api('/lookups').then(d => { look = d; route(); }).catch(() => { /* sesi berakhir: api() sudah mengembalikan ke halaman login */ });
+      <div class="topr"><div id="topx"></div><div class="usr"><button class="av" type="button" title="${esc(uname)}" aria-label="Akun saya: ${esc(uname)}" onclick="accountModal()">${esc((uname || '?').trim().charAt(0).toUpperCase())}</button><button class="lo" type="button" aria-label="Logout" onclick="logout()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4H5v16h4 M16 8l4 4-4 4 M20 12H9"/></svg></button></div></div></div><div id="view"></div></main></div><div id="md"></div>`;
+  Promise.all([api('/lookups'), api('/me')]).then(([d, m]) => { look = d; me = m; shell2(); }).catch(() => { /* sesi berakhir: api() sudah mengembalikan ke halaman login */ });
+}
+// menu dibangun ulang setelah izin diketahui, lalu halaman dibuka
+function shell2() {
+  const nav = document.querySelector('aside nav');
+  const chev = '<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
+  nav.innerHTML = MENU.map(([g, items]) => [g, items.filter(menuVisible)]).filter(([, items]) => items.length).map(([g, items]) => `<details class="gw"${g === 'HOME' || g === 'OPERASIONAL' ? ' open' : ''}><summary title="${g}" onclick="railOpen()">${ico(GICON[g])}<span class="lb">${g}</span>${chev}</summary><div class="gi">${items.map(([n, k]) => k ? `<a href="#${k}" data-r="${k}">${n}</a>` : `<a class="off" aria-disabled="true">${n}</a>`).join('')}</div></details>`).join('');
+  route();
 }
 const toggleNav = on => document.body.classList.toggle('nav', on);
 // Collapse sidebar (desktop): disimpan per browser; di ponsel menu tetap berupa laci geser
@@ -144,12 +158,24 @@ function route() {
   toggleNav(false);
   const [r, ...rest] = (location.hash.slice(1) || 'home').split('/');
   document.querySelectorAll('aside a[data-r]').forEach(a => a.classList.toggle('on', a.dataset.r === (r === 'plan' ? 'home' : r)));
-  $('#md').innerHTML = ''; $('#topx').innerHTML = ''; $('#sub').textContent = '';
+  $('#md').innerHTML = ''; $('#topx').innerHTML = ''; $('#sub').textContent = ''; $('#view').innerHTML = '';
   const on = document.querySelector('aside a.on'); if (on) on.closest('details').open = true; // grup berisi halaman aktif selalu terbuka
+  if (me?.must_change_password) { $('#ttl').textContent = ''; return accountModal(true); }
+  const mod = ROUTE_MOD[r] || 'jo';
+  if (!can(mod + '.view')) return noAccess(location.hash.slice(1) ? '' : firstAllowed());
+  if (r === 'users') return usersRoute();
+  if (r === 'roles') return rolesRoute();
   if (r === 'home') return homeRoute(rest);
   if (r === 'plan') return planRoute();
   if (r === 'ho') return hoRoute(rest);
   joRoute(rest);
+}
+// halaman pertama yang boleh dibuka user (bila beranda tidak diizinkan)
+const firstAllowed = () => ['home', 'jo', 'ho', 'users', 'roles'].find(r => can(ROUTE_MOD[r] + '.view'));
+function noAccess(goto) {
+  if (goto) { location.hash = '#' + goto; return; }
+  $('#ttl').textContent = 'Tidak punya akses';
+  $('#view').innerHTML = '<div class="card noacc" role="alert"><h3>Tidak punya akses</h3><p>Role Anda belum diberi izin untuk membuka halaman ini. Hubungi administrator bila Anda memerlukannya.</p><a class="btn sec" href="#">Kembali</a></div>';
 }
 window.onhashchange = route;
 
@@ -163,4 +189,17 @@ function labelTables() {
     t.querySelectorAll('tr:not(.th-row):not([data-d])').forEach(r => { r.dataset.d = 1; [...r.children].forEach((c, i) => { if (c.tagName === 'TD' && !c.colSpan || c.colSpan === 1) c.dataset.label = names[i] || ''; }); });
   });
 }
-new MutationObserver(() => requestAnimationFrame(labelTables)).observe(document.body, { childList: true, subtree: true });
+// tombol aksi yang tidak diizinkan disembunyikan (server tetap menolak walau tombolnya dipaksa muncul)
+const PERM_BTN = [[/^joNew\(|^joForm\(null|^joDup\(/, 'jo.create'], [/^joForm\(/, 'jo.update'], [/^joSetStatus\(/, 'jo.update'], [/^joDelete\(|^joMatDelete\(|^joDocDelete\(/, 'jo.delete'],
+  [/^joExport\(|^joTemplate\(/, 'jo.export'], [/^joImport\(/, 'jo.create'], [/^joMatForm\(\)/, 'jo.create'], [/^joMatForm\(/, 'jo.update'],
+  [/^hoExport\(|^hoDl\(/, 'ho.export'], [/^hoTicketForm\(\)/, 'ho.create'], [/^hoTicketForm\(/, 'ho.update'], [/^hoDelTicket\(|^hoDelMat\(|^hoDelSj\(/, 'ho.delete'],
+  [/^hoSjForm\(\)/, 'ho.create'], [/^hoSjForm\(/, 'ho.update'], [/^hoSjFinish\(/, 'ho.update'], [/^hoMatForm\(/, 'ho.update']];
+function applyPerms() {
+  if (!me) return;
+  document.querySelectorAll('#view [onclick], #md [onclick]').forEach(el => {
+    if (el.dataset.pm) return; el.dataset.pm = 1;
+    const oc = el.getAttribute('onclick'), hit = PERM_BTN.find(([re]) => re.test(oc));
+    if (hit && !can(hit[1])) el.hidden = true;
+  });
+}
+new MutationObserver(() => requestAnimationFrame(() => { labelTables(); applyPerms(); })).observe(document.body, { childList: true, subtree: true });
