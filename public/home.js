@@ -4,6 +4,8 @@ const HOME_COLS = [
   [{ id: 'upcoming', title: 'Upcoming Plan', more: '#plan' }, { id: 'ho', title: 'Handling Ops', more: '#ho' }],
   [{ id: 'settlement', title: 'Settlement', more: null }, { id: 'trailer', title: "Trailer's Schedule", more: null }],
 ];
+const HOME_REFRESH_MS = 5 * 60 * 1000;
+let homeTimer;
 const HOME_PENDING = ['settlement', 'trailer', 'faktur'];
 const HOME_FULL = { id: 'faktur', title: 'Faktur Pajak Reimburse', more: null };
 
@@ -51,7 +53,7 @@ async function homeLoad(id) {
     const n = $('#n-' + id); n.textContent = fmtN(d.total); n.hidden = false;
     body.innerHTML = d.rows.length ? L.render(d) : `<p class="hc-empty">${L.empty}</p>`;
   } catch (e) {
-    if ($('#b-' + id)) body.innerHTML = `<div class="hc-err" role="alert"><span>Gagal memuat data.</span><button class="btn sec sm" type="button" onclick="homeLoad('${id}')">Coba lagi</button></div>`;
+    if ($('#b-' + id) && !body.querySelector('table')) body.innerHTML = `<div class="hc-err" role="alert"><span>Gagal memuat data.</span><button class="btn sec sm" type="button" onclick="homeLoad('${id}')">Coba lagi</button></div>`;
   }
 }
 
@@ -61,6 +63,11 @@ function homeRoute() {
     <div class="hlinks"><button class="btn sec sm" type="button" disabled title="Menu belum aktif">Data &amp; Profil <span class="soon">segera</span></button><button class="btn sm" type="button" disabled title="Menu belum aktif">Check In <span class="soon">segera</span></button></div></div>
     <div class="home">${HOME_COLS.map(col => `<div class="hcol">${col.map(homeCard).join('')}</div>`).join('')}<div class="hfull">${homeCard(HOME_FULL)}</div></div>`;
   Object.keys(HOME_LOADERS).forEach(homeLoad);
+  clearInterval(homeTimer); // penyegaran 5 menit, hanya selama Dashboard terbuka dan tab terlihat
+  homeTimer = setInterval(() => {
+    if (!$('#c-upcoming')) return clearInterval(homeTimer);
+    if (!document.hidden) Object.keys(HOME_LOADERS).forEach(homeLoad);
+  }, HOME_REFRESH_MS);
   // menu sumbernya belum dikembangkan: tidak ada data, jangan dipaksakan. Ganti dengan loader saat menunya jadi.
   HOME_PENDING.forEach(id => { $('#b-' + id).innerHTML = '<p class="hc-empty">No Data Found</p>'; });
 }
