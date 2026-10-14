@@ -365,6 +365,7 @@ tr.dim td{opacity:.55}tr.dim td.uact{opacity:1}
 .checkin.done{background:var(--c-g-bg);color:var(--c-g-tx);box-shadow:none;border:1px solid color-mix(in srgb,var(--c-g-dot) 35%,transparent)}.checkin.done .ci-ic{background:color-mix(in srgb,var(--c-g-dot) 18%,transparent)}
 /* foto bukti */
 .ciphoto{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.cicam{position:relative;overflow:hidden;border-radius:18px;background:#06203b;aspect-ratio:4/3}.cicam video{display:block;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}   /* cermin hanya pada pratinjau; hasil jepretan tidak dicerminkan */
 .ciprev{display:flex;align-items:center;justify-content:center;gap:12px;text-align:left}
 .cithumb{width:112px;height:112px;object-fit:cover;border-radius:16px;border:1px solid var(--ctl-bd);cursor:zoom-in}
 .rkph{width:40px;height:40px;object-fit:cover;border-radius:10px;border:1px solid var(--ctl-bd);cursor:zoom-in;vertical-align:middle}.rkph:focus-visible,.cithumb:focus-visible{outline:2px solid var(--focus);outline-offset:2px}

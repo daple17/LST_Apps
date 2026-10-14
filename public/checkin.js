@@ -14,7 +14,7 @@ const ciTabs = tab => {
 const ciMaps = a => a.maps_url ? `<a href="${a.maps_url}" target="_blank" rel="noopener">Google maps</a>` : '<span class="muted2" style="margin:0">Lokasi tidak dibagikan</span>';
 
 function checkinRoute(rest) {
-  clearInterval(ciTimer);
+  clearInterval(ciTimer); ciCamStop();
   const tab = rest[0] || '';
   if (!can('checkin.view') && !tab) return location.replace('#checkin/rekap');                   // HR tanpa izin absen sendiri: langsung ke rekap
   if ((tab === 'rekap' && !can('checkin_rekap.view')) || (tab !== 'rekap' && !can('checkin.view'))) return noAccess('');
@@ -30,7 +30,7 @@ async function ciLoadToday() {
   return ciToday;
 }
 function ciTick() {
-  const el = $('#ci-clock'); if (!el) return clearInterval(ciTimer);
+  const el = $('#ci-clock'); if (!el) { ciCamStop(); return clearInterval(ciTimer); }
   const ms = Date.now() + ciOffset; el.textContent = ciWibClock(ms) + ' WIB';
   if (ciToday && IdFmt.jktDay(new Date(ms)) !== ciToday.date) { clearInterval(ciTimer); ciCheckin(); }       // tanggal berganti saat halaman terbuka
 }
@@ -45,7 +45,9 @@ async function ciCheckin() {
     ${a ? ciDone(a) : canC ? `<fieldset class="cistat"><legend>Status kerja hari ini</legend>
       <label class="cirad"><input type="radio" name="cist" value="WFO" onchange="ciPick()"><span><b>WFO</b><small>Work From Office</small></span></label>
       <label class="cirad"><input type="radio" name="cist" value="WFH" onchange="ciPick()"><span><b>WFH</b><small>Work From Home</small></span></label></fieldset>
-      <div class="ciphoto" id="ci-photo"><button type="button" class="btn sec cibtn" id="ci-shot" onclick="$('#ci-file').click()">Ambil Foto</button><input type="file" id="ci-file" accept="image/*" capture="user" hidden onchange="ciPhoto(this)"><div class="ciprev" id="ci-prev"><span class="muted2" style="margin:0">${t.photo_required ? 'Foto bukti wajib diambil.' : 'Foto bukti (opsional).'}</span></div></div>
+      <div class="ciphoto" id="ci-photo"><div class="cicam" id="ci-cam" hidden><video id="ci-video" autoplay playsinline muted></video></div>
+        <div class="ciprev" id="ci-prev"><span class="muted2" style="margin:0">${t.photo_required ? 'Foto bukti wajib diambil langsung dari kamera. Upload dari galeri tidak diterima.' : 'Foto bukti diambil langsung dari kamera (opsional).'}</span></div>
+        <button type="button" class="btn sec cibtn" id="ci-shot" onclick="ciCamOpen()">Buka Kamera</button></div>
       <div class="ciloc" id="ci-loc"><button type="button" class="btn sec cibtn" onclick="ciShare()">Share Location</button><span class="muted2" id="ci-locmsg">Lokasi opsional. Jika tidak dibagikan, check in tetap bisa.</span></div>
       <button type="button" class="btn cibtn cigo" id="ci-go" disabled onclick="ciGo()">Check In</button><div class="err" id="ci-err" role="alert"></div>` : '<p class="muted2">Anda tidak punya izin untuk check in.</p>'}
     <p class="muted2 cinote">Jam dan tanggal diambil dari server (WIB), bukan dari perangkat. Satu kali check in per hari. Jam masuk ${esc(t.work_start)} WIB.</p></section>`;
@@ -54,13 +56,34 @@ async function ciCheckin() {
 const ciDone = a => `<div class="cidone" role="status"><div class="cit">${a.time ? esc(a.time) : '—'}<small>WIB</small></div><div class="cich">${ciChip(a.status)}${a.late ? '<span class="schip wait"><i></i>Terlambat</span>' : ''}${a.source === 'HR' ? '<span class="schip off"><i></i>Diinput HR</span>' : ''}</div>
   ${a.photo_url ? `<div class="ciprev">${ciThumb(a.photo_url, 'cithumb')}</div>` : ''}<p class="ciloc2">${a.time ? ciMaps(a) : ''}${a.note ? `<span class="muted2" style="margin:0 0 0 12px">${esc(a.note)}</span>` : ''}</p><p class="muted2">Anda sudah check in hari ini. Check in tidak bisa dibatalkan atau diulang.</p></div>`;
 const ciPick = () => { $('#ci-go').disabled = !document.querySelector('input[name=cist]:checked') || (ciToday.photo_required && !ciShotData); };
-async function ciPhoto(inp) {
-  const f = inp.files[0]; if (!f) return;
+// Foto bukti HARUS dari kamera langsung (getUserMedia): tidak ada input berkas/upload. Hasil jepretan diberi cap nama + jam server (WIB) agar mudah diaudit.
+let ciStream = null;
+function ciCamStop() { if (ciStream) { ciStream.getTracks().forEach(t => t.stop()); ciStream = null; } const v = $('#ci-video'); if (v) v.srcObject = null; }
+async function ciCamOpen() {
+  const msg = t => { $('#ci-prev').innerHTML = `<span class="err" role="alert">${esc(t)}</span>`; };
+  if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) return msg('Kamera hanya bisa dipakai lewat koneksi aman (HTTPS) dan browser yang mendukung kamera.');
+  ciShotData = null; ciPick(); ciCamStop();
   try {
-    ciShotData = await resizeImg(f, 1024);
-    $('#ci-prev').innerHTML = `<img class="cithumb" src="${ciShotData.url}" alt="Foto bukti yang diambil"><span class="muted2" style="margin:0">Foto siap dikirim.</span>`; $('#ci-shot').textContent = 'Ulangi foto';
-  } catch (e) { ciShotData = null; $('#ci-prev').innerHTML = `<span class="err" role="alert">${esc(e.message)}</span>`; }
-  inp.value = ''; ciPick();
+    ciStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false });
+  } catch (e) {
+    return msg(e.name === 'NotAllowedError' || e.name === 'SecurityError' ? 'Izin kamera ditolak. Aktifkan izin kamera untuk situs ini di pengaturan browser, lalu coba lagi.' : e.name === 'NotFoundError' || e.name === 'OverconstrainedError' ? 'Kamera tidak ditemukan di perangkat ini.' : 'Kamera tidak bisa dibuka: ' + e.message);
+  }
+  const v = $('#ci-video'); v.srcObject = ciStream; $('#ci-cam').hidden = false; await v.play().catch(() => {});
+  $('#ci-prev').innerHTML = '<span class="muted2" style="margin:0">Arahkan wajah ke kamera, lalu tekan Ambil Foto.</span>';
+  const btn = $('#ci-shot'); btn.textContent = 'Ambil Foto'; btn.onclick = ciCamSnap;
+}
+function ciCamSnap() {
+  const v = $('#ci-video'); if (!v || !v.videoWidth) return;
+  const k = Math.min(1, 1024 / Math.max(v.videoWidth, v.videoHeight)), c = document.createElement('canvas');
+  c.width = Math.round(v.videoWidth * k); c.height = Math.round(v.videoHeight * k);
+  const g = c.getContext('2d'); g.drawImage(v, 0, 0, c.width, c.height);
+  const now = new Date(Date.now() + ciOffset), stamp = `${ciToday.user.name} · ${IdFmt.shortDate(IdFmt.jktDay(now))} ${ciWibClock(now.getTime())} WIB`, h = Math.max(26, Math.round(c.height * 0.06));
+  g.fillStyle = 'rgba(6,32,59,.72)'; g.fillRect(0, c.height - h, c.width, h);
+  g.fillStyle = '#fff'; g.font = `600 ${Math.round(h * 0.52)}px system-ui, sans-serif`; g.textBaseline = 'middle'; g.fillText(stamp, Math.round(h * 0.4), c.height - h / 2);
+  const url = c.toDataURL('image/jpeg', 0.8); ciShotData = { url, data: url.split(',')[1], filename: 'absen.jpg' };
+  ciCamStop(); $('#ci-cam').hidden = true;
+  $('#ci-prev').innerHTML = `<img class="cithumb" src="${url}" alt="Foto bukti yang diambil"><span class="muted2" style="margin:0">Foto siap dikirim.</span>`;
+  const btn = $('#ci-shot'); btn.textContent = 'Ulangi foto'; btn.onclick = ciCamOpen; ciPick();
 }
 function ciShare() {
   const m = $('#ci-locmsg'), btn = document.querySelector('#ci-loc .btn');

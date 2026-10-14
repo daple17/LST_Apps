@@ -10,7 +10,7 @@ Sumber: sheet HOME (halaman Check in dan Daily Report) di `Aplikasi_Web_Base.xls
 5. **Alfa otomatis (virtual, tidak disimpan):** hari kerja (Senin–Jumat) yang sudah lewat (sebelum hari ini WIB), pegawai aktif, sejak tanggal bergabung, tanpa baris absensi. Baris yang diinput HR menggantikannya. Hari ini belum dihitung alfa. Kalender libur nasional **belum ada**.
 6. **Terlambat ("Past"):** check in dengan jam:menit > `08:00` WIB (konstanta `WORK_START` di `lib/checkin.js`). 08:00:59 belum terlambat; 08:01 terlambat. Dihitung saat dibaca, tidak disimpan. Hanya untuk status hadir (WFO/WFH) yang punya jam.
 7. **Lokasi:** tombol "Share Location" (Geolocation browser) menyimpan `lat`, `lng`, `accuracy_m`. Bila ditolak/tidak ada, check in tetap berhasil dan tampil "Lokasi tidak dibagikan". Tautan `https://www.google.com/maps?q=<lat>,<lng>`. Tidak ada geofence.
-8. **Foto bukti absensi:** saat check in pegawai mengambil foto (kamera depan di ponsel, atau memilih gambar di desktop). **Wajib** (konstanta `PHOTO_REQUIRED` di `lib/checkin.js`; ubah ke `false` bila ingin opsional). Foto diperkecil di browser (sisi terpanjang 1.024 px, JPEG) dan divalidasi di server: harus gambar sungguhan (JPG/PNG/WEBP, dicek dari byte awal, bukan ekstensi), maks 8 MB. Satu foto per absensi; tidak bisa diganti. Baris input HR tidak punya foto.
+8. **Foto bukti absensi: hanya dari kamera langsung, tidak boleh upload** (ketetapan pemilik produk agar tidak ada kecurangan). Layar check in membuka kamera depan lewat `getUserMedia`; tidak ada input berkas atau galeri. Hasil jepretan diberi cap nama + jam server (WIB) di bagian bawah gambar, diperkecil (sisi terpanjang 1.024 px, JPEG), lalu dikirim. Wajib (konstanta `PHOTO_REQUIRED` di `lib/checkin.js`). Bila kamera tidak ada atau izin ditolak, pegawai tidak bisa check in sendiri dan pesan menjelaskan caranya; HR bisa menginput status lewat Rekap (tanpa foto). Kamera hanya jalan lewat HTTPS (atau localhost). Server memvalidasi gambar sungguhan (JPG/PNG/WEBP dari byte awal), maks 8 MB. Satu foto per absensi, tidak bisa diganti. Input HR tidak punya foto.
 9. **Daily Report:** baris `Start`, `Finish` (boleh kosong = masih berjalan, tampil "-"), `Activity` (wajib, maks 255). Finish harus setelah Start. Tidak ada hapus baris. Maks 50 baris per pegawai per hari.
 10. Pegawai menambah/mengubah baris miliknya **hanya untuk hari ini** (server membaca tanggal). Hari sebelumnya hanya baca (Riwayat). HR dengan `checkin_rekap.update` boleh mengoreksi baris pegawai mana pun, hari mana pun.
 11. Pegawai = baris `users`. ID = `users.employee_no` (kosong tampil "-"). Pegawai nonaktif ikut rekap hanya bila punya baris absensi pada rentang itu.
@@ -34,7 +34,7 @@ Galat validasi `{ error, fields }`. Koreksi HR masuk `audit_log` (entity `attend
 ## Layar
 - **Dashboard:** tombol "Check In" aktif; setelah check in tampil "Check In 07:47" dengan status. Disembunyikan tanpa `checkin.view`.
 - **Sidebar:** HR (SDM) › Check In & Report (`#checkin`).
-- `#checkin` tab **Check In** (absensi pegawai: tanggal panjang, jam WIB hidup, WFO/WFH, Ambil Foto, Share Location, Check In), `#checkin/report` tab **Daily Report** (tabel, ADD ACTIVITY ++, edit, Riwayat dengan pemilih tanggal), `#checkin/rekap` tab **Rekap** (hanya `checkin_rekap.view`: Harian/Periode, cari, filter status, total status, detail per pegawai, Koreksi status, Download Excel). Foto tampil sebagai gambar kecil di Rekap harian, detail pegawai, Riwayat, dan kartu hasil check in; klik untuk memperbesar.
+- `#checkin` tab **Check In** (absensi pegawai: tanggal panjang, jam WIB hidup, WFO/WFH, Buka Kamera → Ambil Foto, Share Location, Check In), `#checkin/report` tab **Daily Report** (tabel, ADD ACTIVITY ++, edit, Riwayat dengan pemilih tanggal), `#checkin/rekap` tab **Rekap** (hanya `checkin_rekap.view`: Harian/Periode, cari, filter status, total status, detail per pegawai, Koreksi status, Download Excel). Foto tampil sebagai gambar kecil di Rekap harian, detail pegawai, Riwayat, dan kartu hasil check in; klik untuk memperbesar.
 
 ## Keputusan di luar prompt
 - Menambah `users.created_at` agar pegawai baru tidak langsung dianggap alfa untuk hari sebelum mereka ada.
@@ -45,6 +45,7 @@ Galat validasi `{ error, fields }`. Koreksi HR masuk `audit_log` (entity `attend
 - HR yang tidak punya `checkin.view` tetap bisa membuka `#checkin/rekap` (menu tampil bila punya salah satu izin).
 - Override HR pada baris yang sudah ada mempertahankan jam check in dan lokasi aslinya; hanya status dan keterangan yang diganti.
 - Excel hanya menandai kolom Foto "Ada" atau "-" (gambar tidak disematkan agar berkas kecil).
+- **Batas pengamanan (jujur):** pembatasan "hanya kamera" ditegakkan di layar aplikasi. Server tidak bisa membuktikan asal sebuah gambar: orang yang memanggil API langsung dengan password-nya masih bisa mengirim gambar apa pun. Cap nama + jam server di gambar hanya membantu audit visual (bisa dipalsukan juga). Untuk jaminan lebih kuat dibutuhkan pembuktian di sisi server (mis. verifikasi wajah, atau aplikasi mobile terkelola), di luar lingkup saat ini.
 - Foto bersifat pribadi: hanya pemilik dan HR berizin yang bisa melihat; tidak ada hapus/ganti foto.
 - Status di Rekap harian: "Past" ditandai di kolom Check In; kolom File/lampiran tidak ada.
 - Role "Rekap lihat saja" tidak otomatis boleh check in (izin terpisah).
@@ -52,7 +53,7 @@ Galat validasi `{ error, fields }`. Koreksi HR masuk `audit_log` (entity `attend
 ## Keterbatasan
 - Tidak ada kalender libur nasional/cuti: libur di hari kerja dihitung alfa otomatis sampai HR menginput status lain. Alfa otomatis tidak menjangkau tanggal sebelum tanggal bergabung (user lama: tanggal migrasi), jadi rekap sebelum fitur ini dipakai kosong.
 - Jam masuk satu untuk semua pegawai (08:00), tanpa shift.
-- Lokasi hanya dicatat, tidak divalidasi (tanpa geofence). Foto tidak diverifikasi (tanpa pengenalan wajah); di desktop pegawai bisa memilih gambar mana pun dari berkas, sedangkan ponsel membuka kamera depan.
+- Lokasi hanya dicatat, tidak divalidasi (tanpa geofence). Foto tidak diverifikasi (tanpa pengenalan wajah atau deteksi foto layar); lihat "Batas pengamanan" di atas. Pegawai di komputer tanpa webcam tidak bisa check in sendiri.
 - Foto disimpan di folder upload: di Railway pastikan `UPLOAD_DIR` menunjuk Volume agar tidak hilang saat deploy ulang.
 - Akurasi jam bergantung pada jam server; zona waktu tetap WIB.
 
