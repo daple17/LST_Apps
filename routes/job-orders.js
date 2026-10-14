@@ -2,6 +2,7 @@
 const express = require('express');
 const rules = require('../lib/rules'), calc = require('../lib/calc'), fmt = require('../lib/format');
 const numbering = require('../lib/numbering'), audit = require('../lib/audit'), files = require('../lib/files');
+const excel = require('../lib/excel'), exportsLib = require('../lib/exports');
 const { wrap, bad, httpError, tx } = require('../lib/http');
 
 const TYPES = rules.JO_TYPES.map(t => t.code);
@@ -122,14 +123,12 @@ module.exports = pool => {
     res.json(Object.fromEntries(Object.entries(s).map(([k, v]) => [k, +v || 0])));
   }));
 
+  // Excel: semua baris hasil filter (bukan hanya halaman yang tampil) + semua nomor referensi
   r.get('/export', wrap(async (req, res) => {
     const [cond, p] = where(req.query);
     const [rows] = await pool.query(`${BASE}${cond} ORDER BY ${order(req.query)}`, p);
     const refs = await loadRefs(pool, rows.map(x => x.id));
-    const cell = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const head = ['No. JO', 'Type', 'Type BC', 'Customer', 'Shipper', 'Aju Ceisa', 'No. Invoice', 'No. BL', 'No. SI/DO', 'No. SI/PO', 'Jenis Muatan', 'Vessel', 'Party', 'Weight (ton)', 'ETA/ETD', 'Rencana Delivery', 'Status', 'Remarks'];
-    const lines = rows.map(x => { const s = shape(x), rs = refSummary(refs.get(x.id)); return [x.no_jo, x.type, x.type_bc, x.customer_name, x.shipper_name, rs.AJU.join(', '), rs.INVOICE.join(', '), rs.BL.join(', '), rs.SI_DO.join(', '), rs.SI_PO.join(', '), x.jenis_muatan, x.vessel, s.party, s.weight, x.eta_etd, x.delivery_plan, x.status, x.remarks].map(cell).join(','); });
-    res.type('text/csv').send('﻿' + [head.map(cell).join(','), ...lines].join('\r\n'));
+    await excel.send(res, `job-order-${new Date().toISOString().slice(0, 10)}.xlsx`, exportsLib.joSheets(rows.map(shape), refs));
   }));
 
   r.get('/:id', wrap(async (req, res) => {

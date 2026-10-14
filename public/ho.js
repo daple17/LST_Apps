@@ -1,8 +1,4 @@
 /* Handling Ops: Overview (tickets), Report Material, Trucking Delivery (Surat Jalan) */
-const monthRange = () => {
-  const d = new Date(), y = d.getFullYear(), m = d.getMonth(), iso = x => new Date(Date.UTC(y, m, x)).toISOString().slice(0, 10);
-  return { from: iso(1), to: iso(new Date(y, m + 1, 0).getDate()) };
-};
 let hoSt = { q: '', progress: '', page: 1, ...monthRange() }, hoMq = { q: '', status: '', page: 1 }, hoSq = { q: '', page: 1 }, hoT = null;
 const pct = v => `${Number(v).toFixed(2).replace('.', ',')}%`;
 const pcls = v => (v >= 100 ? 'p-ok' : v >= 50 ? 'p-warn' : 'p-bad');
