@@ -114,19 +114,25 @@ function login() {
 }
 
 function shell() {
+  try { document.body.classList.toggle('collapsed', !!localStorage.getItem('collapsed')); } catch { /* abaikan */ }
   $('#app').innerHTML = `<div class="shell"><aside><div class="brand"><img src="logo.png" alt="LST"><div><b class="wm">LESAT</b><small>By Lima Sarana</small></div></div>
-    <div class="grp">HOME</div><a class="off">Jadwal Truck &amp; Tiket</a>
+    <div class="grp">HOME</div><a href="#home" data-r="home">Home</a>
     ${MENU.map(([g, items]) => `<div class="grp">${g}</div>${items.map(([n, k]) => k ? `<a href="#${k}" data-r="${k}">${n}</a>` : `<a class="off">${n}</a>`).join('')}`).join('')}
-    </aside><div class="nav-bg" onclick="toggleNav(false)"></div><main><div class="top"><button class="btn sec mbtn" aria-label="Menu" onclick="toggleNav()">☰</button><h2 id="ttl"></h2><div class="usr"><span class="av" aria-hidden="true">${esc((uname || '?').trim().charAt(0).toUpperCase())}</span><span>${esc(uname)}</span><button class="btn sec sm" onclick="logout()">Logout</button></div></div><div id="view"></div></main></div><div id="md"></div>`;
+    <button class="aside-collapse" type="button" onclick="toggleCollapse()" aria-label="Sembunyikan sidebar">« Collapse</button></aside><div class="nav-bg" onclick="toggleNav(false)"></div><main><div class="top"><button class="btn sec mbtn" aria-label="Menu" onclick="menuBtn()">☰</button><h2 id="ttl"></h2><div class="usr"><span class="av" aria-hidden="true">${esc((uname || '?').trim().charAt(0).toUpperCase())}</span><span>${esc(uname)}</span><button class="btn sec sm" onclick="logout()">Logout</button></div></div><div id="view"></div></main></div><div id="md"></div>`;
   api('/lookups').then(d => { look = d; route(); }).catch(() => { /* sesi berakhir: api() sudah mengembalikan ke halaman login */ });
 }
 const toggleNav = on => document.body.classList.toggle('nav', on);
+// Collapse sidebar (desktop): disimpan per browser; di ponsel menu tetap berupa laci geser
+const setCollapsed = on => { document.body.classList.toggle('collapsed', on); try { localStorage.setItem('collapsed', on ? '1' : ''); } catch { /* penyimpanan tidak tersedia */ } };
+const toggleCollapse = () => setCollapsed(!document.body.classList.contains('collapsed'));
+const menuBtn = () => (innerWidth <= 800 ? toggleNav() : toggleCollapse());
 function route() {
   if (!token) return;
   toggleNav(false);
-  const [r, ...rest] = (location.hash.slice(1) || 'jo').split('/');
+  const [r, ...rest] = (location.hash.slice(1) || 'home').split('/');
   document.querySelectorAll('aside a[data-r]').forEach(a => a.classList.toggle('on', a.dataset.r === r));
   $('#md').innerHTML = '';
+  if (r === 'home') return homeRoute(rest);
   if (r === 'ho') return hoRoute(rest);
   joRoute(rest);
 }

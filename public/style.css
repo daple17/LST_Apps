@@ -235,6 +235,29 @@ main .tw>table{min-width:1060px}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:80;max-width:min(92vw,520px);padding:10px 16px;border-radius:var(--r-ctl);background:var(--hd);color:var(--page);box-shadow:var(--shadow);font-weight:600}
 .toast.warn{background:var(--or-d);color:#fff}
 
+/* ---------- Home ---------- */
+.hhead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:-4px 0 14px}
+.hdate{margin:0;color:var(--mut);font-size:14px;font-weight:600}
+.hlinks{display:flex;gap:8px;flex-wrap:wrap}.soon{margin-left:6px;padding:1px 8px;border-radius:var(--r-pill);background:var(--soft);font-size:10px;font-weight:700;color:var(--mut)}
+.home{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+.hcol{display:flex;flex-direction:column;gap:16px;min-width:0}.hfull{grid-column:1/-1;min-width:0}
+.hcard{padding:18px 20px;min-width:0}
+.hc-h{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:12px}
+.hcard h3{margin:0;font:italic 800 17px/1.2 var(--f-hd);color:var(--hd);text-transform:uppercase;letter-spacing:.02em}
+.hc-n{display:inline-block;margin-left:6px;padding:0 9px;border-radius:var(--r-pill);background:var(--c-ok-bg);color:var(--c-ok-tx);font:800 13px/22px var(--f-hd);font-style:italic;vertical-align:1px}
+.hc-more{flex:none;font-size:12.5px;font-weight:600;white-space:nowrap}.hc-more.off{color:var(--mut);cursor:not-allowed}
+.hc-b{min-height:96px}
+.skel{height:14px;margin:12px 0;border-radius:7px;background:linear-gradient(90deg,var(--soft),color-mix(in srgb,var(--blue) 14%,transparent),var(--soft));background-size:200% 100%;animation:shimmer 1.4s ease-in-out infinite}.skel.s2{width:86%}.skel.s3{width:64%}
+@keyframes shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.skel{animation:none}}
+@media (max-width:960px){.home{grid-template-columns:1fr}}
+
+/* ---------- Collapse sidebar (desktop) ---------- */
+.aside-collapse{position:sticky;bottom:0;display:block;width:calc(100% - 24px);margin:12px 12px 0;padding:9px 12px;border:1px solid var(--ctl-bd);border-radius:var(--r-ctl);background:var(--glass-solid);color:var(--mut);font:600 12.5px var(--f-ui);cursor:pointer;text-align:left}
+.aside-collapse:hover{color:var(--ink);border-color:var(--blue)}
+body.collapsed .shell{grid-template-columns:minmax(0,1fr)}body.collapsed aside{display:none}body.collapsed main{padding-left:24px}body.collapsed .mbtn{display:inline-flex}
+@media (max-width:800px){.aside-collapse{display:none}body.collapsed .shell{grid-template-columns:1fr}body.collapsed aside{display:block}}
+
 /* ---------- Lencana +n & menu aksi ---------- */
 .more{display:inline-block;margin-left:6px;padding:0 7px;border-radius:var(--r-pill);background:var(--c-ok-bg);color:var(--c-ok-tx);font-size:11px;font-weight:700;line-height:18px;cursor:help;vertical-align:1px}
 .menu{position:relative;display:inline-block}

@@ -8,7 +8,7 @@ const { wrap, bad } = require('./lib/http');
 function createApp(pool) {
   const app = express();
   app.use(express.json({ limit: '25mb' }));
-  app.get('/shared/code128.js', (req, res) => res.sendFile(path.join(__dirname, 'lib', 'code128.js'))); // satu berkas untuk server & browser
+  for (const f of ['code128', 'idfmt']) app.get(`/shared/${f}.js`, (req, res) => res.sendFile(path.join(__dirname, 'lib', `${f}.js`))); // satu berkas untuk server & browser
   app.use(express.static(path.join(__dirname, 'public')));
 
   app.post('/api/login', wrap(async (req, res) => {
