@@ -8,7 +8,7 @@ const permissions = require('./lib/permissions');
 const audit = require('./lib/audit');
 
 // createApp(pool): aplikasi Express tanpa listen — dipakai server dan test integrasi
-function createApp(pool) {
+function createApp(pool, opts = {}) {   // opts.now: jam server yang bisa diganti di tes (selalu jam server, bukan klien)
   const app = express();
   app.set('trust proxy', 1); // di belakang proxy Railway: req.ip = IP klien (untuk pembatasan login)
   app.use(express.json({ limit: '25mb' }));
@@ -102,6 +102,7 @@ function createApp(pool) {
   app.use('/api/ho', guard('ho', HO_EXPORT));
   app.use('/api/home', requirePerm('home.view'));
   app.use('/api/users', guard('user', [['POST', /^\/\d+\/(de)?activate$/, 'update']]), require('./routes/users')(pool));
+  app.use('/api/checkin', guard('checkin'), require('./routes/checkin').router(pool, opts));
   app.use('/api/coa', guard('coa', [['GET', /^\/export$/, 'export']]), require('./routes/coa')(pool));
   app.use('/api/roles', guard('role'), require('./routes/roles')(pool));
   app.use('/api/job-orders', require('./routes/jo-materials')(pool, { refreshTickets: handling.refreshForJo }));

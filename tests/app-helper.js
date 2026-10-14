@@ -6,10 +6,10 @@ const { migrate } = require('../lib/migrate');
 const { createApp, seedMaster } = require('../server');
 const { freshDb } = require('./helpers');
 
-async function startApp(dbName) {
+async function startApp(dbName, opts = {}) {
   const pool = await freshDb(dbName);
   await migrate(pool); await seedMaster(pool);
-  const server = http.createServer(createApp(pool));
+  const server = http.createServer(createApp(pool, opts));
   await new Promise(r => server.listen(0, r));
   const base = `http://127.0.0.1:${server.address().port}/api`;
   const [[u]] = await pool.query("SELECT id,name FROM users WHERE username='admin'");
