@@ -5,11 +5,11 @@ const { freshDb, dbAvailable } = require('./helpers');
 
 test('daftar izin: kode valid, modul tersedia & "segera"', () => {
   assert.ok(P.isValid('jo.update')); assert.ok(P.isValid('approval.approve'));
-  assert.ok(!P.isValid('jo.approve')); assert.ok(!P.isValid('nope.view')); assert.ok(!P.isValid('jo'));
+  assert.ok(!P.isValid('jo.approve')); assert.ok(P.isValid('coa.export')); assert.ok(!P.isValid('coa.delete')); assert.ok(!P.isValid('nope.view')); assert.ok(!P.isValid('jo'));
   assert.equal(new Set(P.ALL_PERMISSIONS).size, P.ALL_PERMISSIONS.length);
   const by = Object.fromEntries(P.MODULES.map(m => [m.key, m]));
-  for (const k of ['home', 'jo', 'ho', 'customer', 'vendor', 'shipper', 'user', 'role']) assert.equal(by[k].available, true, k);
-  for (const k of ['trucking', 'submission', 'settlement', 'job_complete', 'coa', 'unit', 'approval']) assert.equal(by[k].available, false, k);
+  for (const k of ['home', 'jo', 'ho', 'coa', 'customer', 'vendor', 'shipper', 'user', 'role']) assert.equal(by[k].available, true, k);
+  for (const k of ['trucking', 'submission', 'settlement', 'job_complete', 'unit', 'approval']) assert.equal(by[k].available, false, k);
   for (const m of P.MODULES) assert.ok(P.GROUPS.includes(m.group), m.key);
 });
 
