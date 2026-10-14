@@ -2,6 +2,7 @@ const test = require('node:test'), assert = require('node:assert/strict');
 const { dbAvailable } = require('./helpers');
 const { startApp, joBody } = require('./app-helper');
 
+const PNG = { filename: 'f.png', data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==' };
 test('Handling Ops: aturan tiket, progres, penomoran, material', async t => {
   if (!(await dbAvailable())) return t.skip('MySQL tidak tersedia');
   const app = await startApp('lesat_test_ho');
@@ -53,7 +54,9 @@ test('Handling Ops: aturan tiket, progres, penomoran, material', async t => {
     const tk = (await app.post('/ho/tickets', { jo_ids: [jo3] })).data.id;
     await app.post(`/ho/tickets/${tk}/materials`, { rows: [mat(jo3, 'U-1')] });
     const mid = (await app.get(`/ho/tickets/${tk}/materials`)).data.rows[0].id;
-    await app.patch(`/ho/tickets/${tk}/materials/${mid}/report`, { check_status: 'DAMAGE', remarks: 'penyok' });
+    assert.equal((await app.patch(`/ho/tickets/${tk}/materials/${mid}/report`, { check_status: 'DAMAGE', remarks: 'penyok' })).data.error, 'Damage wajib minimal 1 foto');
+    assert.equal((await app.post(`/ho/tickets/${tk}/materials/${mid}/photos`, PNG)).status, 200);
+    assert.equal((await app.patch(`/ho/tickets/${tk}/materials/${mid}/report`, { check_status: 'DAMAGE', remarks: 'penyok' })).status, 200);
     const jo4 = await mkJo();
     const rm = await app.put(`/ho/tickets/${tk}/jos`, { jo_ids: [jo4] });
     assert.equal(rm.status, 400); assert.match(rm.data.error, /tidak bisa dilepas/);
@@ -65,7 +68,8 @@ test('Handling Ops: aturan tiket, progres, penomoran, material', async t => {
     const dup = await app.post(`/ho/tickets/${tk}/materials`, mat(jo5, 'v-1'));
     assert.equal(dup.status, 400); assert.match(dup.data.error, /sudah ada/);
     const mid = (await app.get(`/ho/tickets/${tk}/materials`)).data.rows[0].id;
-    assert.equal((await app.patch(`/ho/tickets/${tk}/materials/${mid}/report`, { check_status: 'DAMAGE' })).status, 400);
+    assert.equal((await app.patch(`/ho/tickets/${tk}/materials/${mid}/report`, { check_status: 'DAMAGE' })).status, 400);      // tanpa remarks
+    assert.equal((await app.post(`/ho/tickets/${tk}/materials/${mid}/photos`, { filename: 'x.exe', data: 'AAAA' })).status, 400);   // bukan gambar
     const a = await app.post(`/ho/tickets/${tk}/sj`, { nopol: 'B 1', driver: 'A', items: [{ material_id: mid, qty: 6, weight: 600 }] });
     assert.equal(a.status, 200);
     const over = await app.post(`/ho/tickets/${tk}/sj`, { nopol: 'B 2', driver: 'B', items: [{ material_id: mid, qty: 5, weight: 500 }] });

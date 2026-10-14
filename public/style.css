@@ -255,6 +255,15 @@ main .tw>table{min-width:1060px}
 .ib{display:inline-grid;place-items:center;width:34px;height:34px;padding:0;border:1px solid var(--ctl-bd);border-radius:10px;background:var(--ctl-bg);color:var(--blue-d);cursor:pointer;vertical-align:middle;transition:border-color var(--ease),background var(--ease)}
 .ib:hover{border-color:var(--blue);background:var(--c-ok-bg)}
 
+/* ---------- Pilihan status Report Material (segmented) ---------- */
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.seg label{position:relative;display:flex;align-items:center;justify-content:center;min-height:48px;margin:0;padding:6px 8px;border:1.5px solid var(--ctl-bd);border-radius:var(--r-ctl);background:var(--ctl-bg);color:var(--ink);font-size:13.5px;font-weight:600;text-align:center;cursor:pointer;transition:background var(--ease),border-color var(--ease)}
+.seg input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.seg label:has(input:focus-visible){outline:2px solid var(--focus);outline-offset:2px}
+.seg .s-n:has(:checked){background:var(--c-n-bg);border-color:var(--c-n-dot);color:var(--c-n-tx)}
+.seg .s-ok:has(:checked){background:var(--c-g-bg);border-color:var(--green);color:var(--c-g-tx)}
+.seg .s-dm:has(:checked){background:var(--c-r-bg);border-color:var(--red);color:var(--c-r-tx)}
+
 /* ---------- Login ---------- */
 .login{min-height:100vh;display:grid;grid-template-columns:1fr 400px}
 .login .about{padding:48px;background:var(--grad-kpi);color:#fff;display:flex;flex-direction:column;justify-content:center;gap:12px}
@@ -277,8 +286,8 @@ main .tw>table{min-width:1060px}
 /* ---------- Responsif (< 800px): menu geser, tabel jadi kartu ---------- */
 @media (max-width:800px){
   body{font-size:15px}
-  input,select,textarea{font-size:16px;min-height:42px}
-  .btn{min-height:42px}.btn.sm{min-height:36px;padding:6px 12px}
+  input,select,textarea{font-size:16px;min-height:44px}input[type=checkbox],input[type=radio]{min-height:0}
+  .btn{min-height:44px}.btn.sm{min-height:44px;padding:6px 14px}.ib{min-width:44px;min-height:44px}.pg .btn{min-width:44px;min-height:44px}.pbtn{min-height:48px}.seg label{min-height:52px}
   .login{grid-template-columns:1fr}.login .about{padding:28px 20px}.login form{margin:16px;padding:24px 20px}
   .shell{grid-template-columns:1fr}
   aside{position:fixed;left:0;top:0;bottom:0;height:auto;margin:10px;width:270px;z-index:30;transform:translateX(calc(-100% - 20px));transition:transform .2s ease;background:var(--glass-solid)}

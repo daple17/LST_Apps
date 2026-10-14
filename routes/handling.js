@@ -233,6 +233,10 @@ module.exports = pool => {
     if (check_status === 'DAMAGE' && !String(remarks || '').trim()) return bad(res, 'Remarks wajib diisi untuk Damage');
     const m = await materialDetail(tid, mid);
     if (!m) return res.sendStatus(404);
+    if (check_status === 'DAMAGE') { // damage report PDF butuh bukti: minimal 1 foto (unggah foto sebelum menyimpan status)
+      const [[n]] = await pool.query("SELECT COUNT(*) n FROM files f JOIN material_reports r ON r.id=f.owner_id AND f.owner_type='material_report' WHERE r.material_id=? AND r.ticket_id=?", [mid, tid]);
+      if (!n.n) return bad(res, 'Damage wajib minimal 1 foto');
+    }
     await tx(pool, async conn => {
       await ensureReport(conn, tid, mid);
       const checked = check_status !== 'NOT_CHECKED';

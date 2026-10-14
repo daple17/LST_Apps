@@ -27,7 +27,7 @@ const pager = (page, pages, total, fn) => `<div class="pg"><span>${total} data</
 const searchBind = (sel, st, fn) => { let t; $(sel).oninput = e => { clearTimeout(t); t = setTimeout(() => { st.q = e.target.value; st.page = 1; fn().then(() => { const q = $(sel); q.focus(); q.setSelectionRange(1e4, 1e4); }); }, 300); }; };
 
 /* ---- foto: kamera / galeri, di-resize di browser ---- */
-function resizeImg(file, max = 1280) {
+function resizeImg(file, max = R().LIMITS.PHOTO_MAX_PX) { // sisi terpanjang 1.600 px (rules.LIMITS) agar cepat di jaringan seluler
   return new Promise((ok, no) => {
     const img = new Image(), u = URL.createObjectURL(file);
     img.onload = () => {
@@ -47,8 +47,8 @@ function photoBox(sel, max, existing, delUrl) {
   const box = { staged: [], existing: [...existing] };
   const draw = () => {
     const n = box.existing.length + box.staged.length;
-    $(sel).innerHTML = `<div class="bar" style="margin:0"><label class="btn sec sm" style="margin:0">Camera<input type="file" accept="image/*" capture="environment" hidden></label>
-      <label class="btn sec sm" style="margin:0">Galery<input type="file" accept="image/*" multiple hidden></label><span style="color:var(--mut)">${n}/${max}</span></div>
+    $(sel).innerHTML = `<div class="bar" style="margin:0"><label class="btn sec" style="margin:0">Camera<input type="file" accept="image/*" capture="environment" hidden></label>
+      <label class="btn sec" style="margin:0">Galery<input type="file" accept="image/*" multiple hidden></label><span style="color:var(--mut)">${n}/${max}</span></div>
       <div class="ph">${box.existing.map(p => `<div><img src="${photoOf(p.path)}" onclick="window.open(this.src)"><button type="button" data-e="${p.id}">×</button></div>`).join('')}
       ${box.staged.map((p, i) => `<div><img src="${p.url}"><button type="button" data-s="${i}">×</button></div>`).join('')}
       ${n ? '' : '<div>Belum ada foto</div>'}</div>`;
@@ -187,7 +187,7 @@ const hoMatList = run(async () => {
   $('#hl').innerHTML = `<div class="bar fbar"><input id="mq" placeholder="Search by name, Destination, … / Scan Barcode" value="${esc(hoMq.q)}" style="max-width:320px">
     <select id="ms"><option value="">Semua status</option><option value="NOT_CHECKED">Not Checked</option><option value="OK">OK</option><option value="DAMAGE">Damage</option></select>
     <span class="tag" style="color:var(--ink)">Net ${fmtN(s.net)}</span><span class="tag" style="color:var(--ink)">Gross ${fmtN(s.gross)}</span><span class="tag" style="color:var(--ink)">Qty ${fmtN(s.qty)}</span><span style="flex:1"></span>
-    <button class="btn sec" onclick="hoDl(${t.id},'${esc(t.ticket_no)}')">Download Excel</button>
+    <button class="btn sec" onclick="hoScan()">Scan Barcode</button><button class="btn sec" onclick="hoDl(${t.id},'${esc(t.ticket_no)}')">Download Excel</button>
     <button class="btn sec" ${sel ? '' : 'disabled'} onclick="hoImport()">Import</button><button class="btn" ${sel ? '' : 'disabled'} onclick="hoMatForm()">+ Material</button></div>
     <div class="card tw"><table><tr><th>No.</th><th>Product/Container No.</th><th>Description</th><th>Spec</th><th class="num">Thickness</th><th class="num">Width</th><th class="num">Net Weight</th><th class="num">Gross Weight</th><th class="num">Qty</th><th>Satuan</th><th>Dari</th><th>Tujuan</th><th>Status</th></tr>
     ${d.rows.map((m, i) => `<tr class="row" style="cursor:pointer" onclick="hoMatReport(${m.id})"><td>${(hoMq.page - 1) * 20 + i + 1}</td><td><a href="#" onclick="return false"><b>${esc(m.product_no)}</b></a></td><td>${esc(m.description)}</td><td>${esc(m.spec)}</td><td class="num">${fmtN(m.thickness)}</td><td class="num">${fmtN(m.width)}</td><td class="num">${fmtN(m.net_weight)}</td><td class="num">${fmtN(m.gross_weight)}</td><td class="num">${m.qty}</td><td>${esc(m.unit)}</td><td>${esc(m.origin)}</td><td>${esc(m.destination)}</td>
@@ -202,6 +202,13 @@ const hoMatList = run(async () => {
   });
   $('#ms').onchange = e => { hoMq.status = e.target.value; hoMq.page = 1; hoMatList(); };
 });
+// Scan Barcode (kamera) -> buka material di tiket ini
+const hoScan = run(async () => {
+  const code = await scanBarcode('Scan nomor produk / container');
+  if (!code) return;
+  const r = await api(`/ho/tickets/${hoT.id}/materials?q=${encodeURIComponent(code)}`), m = r.rows.find(x => x.product_no.toLowerCase() === code.toLowerCase());
+  if (m) hoMatReport(m.id); else toast(`${code} tidak ditemukan di tiket ini`, true);
+});
 const hoMGoto = n => { hoMq.page = n; hoMatList(); };
 
 const hoMatReport = run(async id => {
@@ -210,22 +217,33 @@ const hoMatReport = run(async id => {
   $('#md').innerHTML = `<div class="modal"><form class="card" id="rf" style="max-width:720px"><h3 style="margin-top:0">Report Material</h3>
     <div class="kv">${kv('Product/Container No.', m.product_no)}<div><span>No. Job Order:</span> <b><a href="#jo/${m.jo_id}" onclick="closeMd()">${esc(m.jo_no)}</a></b></div>${kv('Description', m.description)}${kv('No. BL', m.bl_no)}${kv('Spec', m.spec)}${kv('No. Aju PIB/PEB', m.aju_no)}
     ${kv('Quantity', `${m.qty} ${m.unit}`)}${kv('Gross Weight', fmtN(m.gross_weight))}${kv('Satuan', m.unit)}${kv('Destination', m.destination)}${m.sj_nos ? kv('Surat Jalan', m.sj_nos) : ''}</div>
-    <div class="g" style="margin-top:14px"><div class="full"><label>Report</label><select name="check_status"><option value="NOT_CHECKED">Not Checked</option><option value="OK">Oke</option><option value="DAMAGE">Damage</option></select></div>
-    <div class="full"><label>Remarks (wajib jika Damage)</label><textarea name="remarks" rows="3">${esc(m.remarks)}</textarea></div>
-    <div class="full"><label>Add Photos (maks 8)</label><div id="pb"></div></div></div>
+    <div class="g" style="margin-top:14px"><div class="full"><label id="rl">Report</label><div class="seg" role="radiogroup" aria-labelledby="rl">
+      <label class="s-n"><input type="radio" name="check_status" value="NOT_CHECKED">Not Checked</label><label class="s-ok"><input type="radio" name="check_status" value="OK">Oke</label><label class="s-dm"><input type="radio" name="check_status" value="DAMAGE">Damage</label></div></div>
+    <div class="full"><label>Remarks <span id="rq" style="color:var(--bad)" hidden>(wajib untuk Damage)</span></label><textarea name="remarks" rows="3">${esc(m.remarks)}</textarea></div>
+    <div class="full"><label>Add Photos (maks ${R().LIMITS.MATERIAL_PHOTOS}) <span id="pq" style="color:var(--bad)" hidden>— Damage wajib minimal 1 foto</span></label><div id="pb"></div></div></div>
     ${m.checked_at ? `<p style="color:var(--mut);font-size:12px">Terakhir dicek ${fmtDT(m.checked_at)} oleh ${esc(m.checked_by)}</p>` : ''}
     <div class="err" id="fe"></div><div class="acts"><button type="button" class="btn sec" onclick="closeMd()">Cancel</button>
     ${m.sent_qty ? '' : `<button type="button" class="btn bad" onclick="hoDelMat(${m.id})">Hapus</button>`}<button type="button" class="btn sec" onclick="hoMatForm(${m.id})">Edit Data</button><button class="btn">Save</button></div></form></div>`;
-  $('#rf').check_status.value = m.check_status;
+  const f0 = $('#rf'), status = () => f0.elements.check_status.value;
+  f0.querySelector(`input[name=check_status][value=${m.check_status}]`).checked = true;
   const box = photoBox('#pb', R().LIMITS.MATERIAL_PHOTOS, m.photos, '/ho/files/');
-  $('#rf').onsubmit = async e => {
+  const syncDamage = () => { $('#rq').hidden = $('#pq').hidden = status() !== 'DAMAGE'; };
+  f0.querySelectorAll('input[name=check_status]').forEach(x => x.onchange = syncDamage); syncDamage();
+  f0.remarks.oninput = () => f0.remarks.removeAttribute('aria-invalid');
+  f0.onsubmit = async e => {
     e.preventDefault();
-    const f = e.target;
+    const f = e.target, err = $('#fe'); err.textContent = '';
+    if (status() === 'DAMAGE') { // sama dengan aturan server: remarks + minimal 1 foto
+      if (!f.remarks.value.trim()) { err.textContent = 'Remarks wajib diisi untuk Damage'; f.remarks.setAttribute('aria-invalid', 'true'); f.remarks.focus(); return; }
+      if (box.existing.length + box.staged.length < 1) { err.textContent = 'Damage wajib minimal 1 foto'; return; }
+    }
+    f.remarks.removeAttribute('aria-invalid');
+    const btn = f.querySelector('button:not([type])'); btn.disabled = true;
     try {
-      await api(`/ho/tickets/${hoT.id}/materials/${id}/report`, 'PATCH', { check_status: f.check_status.value, remarks: f.remarks.value });
-      await box.upload(`/ho/tickets/${hoT.id}/materials/${id}/photos`);
-      closeMd(); route();
-    } catch (x) { $('#fe').textContent = x.message; }
+      await box.upload(`/ho/tickets/${hoT.id}/materials/${id}/photos`);   // foto dulu: server memeriksa foto saat status Damage disimpan
+      await api(`/ho/tickets/${hoT.id}/materials/${id}/report`, 'PATCH', { check_status: status(), remarks: f.remarks.value });
+      closeMd(); route(); toast('Report tersimpan');
+    } catch (x) { err.textContent = x.message; btn.disabled = false; }
   };
 });
 const hoDelMat = run(async id => { if (confirm('Hapus material ini?')) { await api('/ho/materials/' + id, 'DELETE'); closeMd(); route(); } });
