@@ -98,10 +98,10 @@ function homeRoute() {
   $('#sub').innerHTML = `${ico(IC.cal)}<time datetime="${IdFmt.jktDay(new Date())}">${IdFmt.longDate(new Date())}</time>`;
   $('#topx').innerHTML = `<form class="srch" role="search" onsubmit="return homeSearch(event)">${ico(IC.search)}<label class="sr" for="q">Cari</label><input id="q" type="search" placeholder="Cari JO, vessel, referensi…" autocomplete="off"></form>
     <button class="pill" type="button" disabled title="Menu belum aktif">Data &amp; Profil <span class="soon">segera</span></button>
-    <button class="checkin" type="button" disabled title="Menu belum aktif (butuh menu HR)"><span class="ci-ic">${ico(IC.clock)}</span><span class="ci-t"><b>Check In</b><small>segera</small></span></button>`;
+    <button class="checkin" id="ci-home" type="button" onclick="goCheckin()" aria-label="Check In"><span class="ci-ic">${ico(IC.clock)}</span><span class="ci-t"><b>Check In</b><small>…</small></span></button>`;
   $('#view').innerHTML = `<div class="dash"><section class="kpis" aria-label="Ringkasan">${HOME_KPI.map(kpiCard).join('')}</section>
     <section class="bento" aria-label="Widget">${HOME_CARDS.map(homeCard).join('')}</section></div>`;
-  Object.keys(HOME_LOADERS).forEach(homeLoad);
+  Object.keys(HOME_LOADERS).forEach(homeLoad); ciHomeBtn();
   clearInterval(homeTimer); // penyegaran 5 menit, hanya selama Dashboard terbuka dan tab terlihat
   homeTimer = setInterval(() => {
     if (!$('#c-upcoming')) return clearInterval(homeTimer);
