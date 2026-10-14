@@ -2,7 +2,7 @@
 const express = require('express');
 const rules = require('../lib/rules'), calc = require('../lib/calc'), fmt = require('../lib/format');
 const numbering = require('../lib/numbering'), audit = require('../lib/audit'), files = require('../lib/files');
-const excel = require('../lib/excel'), exportsLib = require('../lib/exports');
+const excel = require('../lib/excel'), exportsLib = require('../lib/exports'), { validateJo } = require('../lib/jo-validate');
 const { wrap, bad, httpError, tx } = require('../lib/http');
 
 const TYPES = rules.JO_TYPES.map(t => t.code);
@@ -14,6 +14,10 @@ const PERIOD = '(COALESCE(j.eta_etd, DATE(j.created_at + INTERVAL 7 HOUR)))';
 const nul = v => (v === '' || v === undefined ? null : v);
 const numOrNull = (v, name) => { v = nul(v); if (v == null) return null; if (isNaN(v)) throw httpError(400, `${name} harus angka`); return Number(v); };
 
+function failIfInvalid(b) {
+  const errs = validateJo(b);
+  if (errs.length) throw Object.assign(new Error(errs.map(e => e.message).join('; ')), { status: 400, fields: errs.map(e => e.field) });
+}
 // baris JO dari DB -> bentuk API
 function shape(j) {
   const w = j.weight_kg == null ? null : Number(j.weight_kg);
@@ -48,7 +52,7 @@ function fields(b) {
 
 // sinkron baris referensi (cocokkan lewat id, bila tidak ada lewat kind+nomor agar file lama tetap menempel)
 async function syncRefs(conn, joId, list, user) {
-  const old = (await conn.query('SELECT * FROM jo_references WHERE jo_id=?', [joId]))[0], keep = new Set();
+  const old = (await conn.query('SELECT * FROM jo_references WHERE jo_id=?', [joId]))[0], keep = new Set(), ids = [];
   let sort = 0;
   for (const x of list) {
     const kind = x.kind, number = String(x.number ?? '').trim();
@@ -56,16 +60,28 @@ async function syncRefs(conn, joId, list, user) {
     if (!REF_KINDS.includes(kind)) throw httpError(400, `Jenis referensi tidak valid: ${kind}`);
     const hit = old.find(o => !keep.has(o.id) && (x.id ? o.id === +x.id : o.kind === kind && o.number === number));
     if (hit) {
-      keep.add(hit.id);
+      keep.add(hit.id); ids.push(hit.id);
       await conn.query('UPDATE jo_references SET kind=?, number=?, ref_date=?, sort=?, updated_by=? WHERE id=?', [kind, number.slice(0, 80), nul(x.ref_date), sort++, user.id, hit.id]);
     } else {
       const [r] = await conn.query('INSERT INTO jo_references (jo_id, kind, number, ref_date, sort, created_by) VALUES (?,?,?,?,?,?)', [joId, kind, number.slice(0, 80), nul(x.ref_date), sort++, user.id]);
-      keep.add(r.insertId);
+      keep.add(r.insertId); ids.push(r.insertId);
     }
   }
   const gone = old.filter(o => !keep.has(o.id));
-  if (gone.length) { await files.removeByOwner(conn, 'jo_reference', gone.map(g => g.id)); await conn.query('DELETE FROM jo_references WHERE id IN (?)', [gone.map(g => g.id)]); }
+  if (gone.length) {
+    for (const g of gone) await unlinkRefFile(conn, g);
+    await conn.query('DELETE FROM jo_references WHERE id IN (?)', [gone.map(g => g.id)]);
+  }
+  return ids; // id baris referensi, urut sesuai input (baris kosong dilewati) — dipakai form untuk mengunggah file
 }
+// lepas file referensi: hapus berkas dan baris Dokumen yang otomatis dibuat darinya
+async function unlinkRefFile(conn, ref) {
+  if (!ref.file_id) return;
+  await conn.query('DELETE FROM jo_documents WHERE file_id=?', [ref.file_id]);
+  await files.removeById(conn, ref.file_id);
+  await conn.query('UPDATE jo_references SET file_id=NULL WHERE id=?', [ref.id]);
+}
+const REF_DOC = { INVOICE: 'INVOICE', BL: 'BL', SI_DO: 'SI_DO', SI_PO: 'SI_PO' };
 
 // checklist: {item: {inv, fp}}; catat siapa & kapan setiap centang berubah
 async function syncChecklist(conn, joId, input, user) {
@@ -131,6 +147,37 @@ module.exports = pool => {
     await excel.send(res, `job-order-${new Date().toISOString().slice(0, 10)}.xlsx`, exportsLib.joSheets(rows.map(shape), refs));
   }));
 
+  // peringatan (bukan blokir): nomor BL / aju / invoice ... sudah dipakai JO lain?
+  r.get('/check-refs', wrap(async (req, res) => {
+    const { kind, number, exclude = 0 } = req.query;
+    if (!REF_KINDS.includes(kind) || !String(number || '').trim()) return res.json([]);
+    const [rows] = await pool.query(`SELECT DISTINCT j.id, j.no_jo FROM jo_references x JOIN job_orders j ON j.id=x.jo_id WHERE x.kind=? AND x.number=? AND j.id<>? LIMIT 5`, [kind, String(number).trim(), +exclude]);
+    res.json(rows);
+  }));
+
+  // file milik baris referensi (invoice/BL/SI) — otomatis muncul juga di tab Dokumen
+  r.post('/:id/references/:refId/file', wrap(async (req, res) => {
+    const id = +req.params.id, refId = +req.params.refId, { filename, data } = req.body;
+    if (!filename || !data) return bad(res, 'File wajib diisi');
+    await tx(pool, async conn => {
+      const [[ref]] = await conn.query('SELECT * FROM jo_references WHERE id=? AND jo_id=? FOR UPDATE', [refId, id]);
+      if (!ref) throw httpError(404, 'Referensi tidak ditemukan');
+      await unlinkRefFile(conn, ref); // ganti file lama
+      const fid = await files.create(conn, { ownerType: 'jo_reference', ownerId: refId, kind: ref.kind, filename, buffer: files.fromBase64(data), user: req.user });
+      await conn.query('UPDATE jo_references SET file_id=?, updated_by=? WHERE id=?', [fid, req.user.id, refId]);
+      if (REF_DOC[ref.kind]) await conn.query('INSERT INTO jo_documents (jo_id, doc_type, doc_no, file_id, created_by) VALUES (?,?,?,?,?)', [id, REF_DOC[ref.kind], ref.number, fid, req.user.id]);
+      await audit.log(conn, { entity: 'job_order', id, action: 'Upload dokumen', note: `${ref.kind} ${ref.number}: ${filename}`, user: req.user });
+    });
+    res.json({ ok: true });
+  }));
+  r.delete('/:id/references/:refId/file', wrap(async (req, res) => {
+    await tx(pool, async conn => {
+      const [[ref]] = await conn.query('SELECT * FROM jo_references WHERE id=? AND jo_id=? FOR UPDATE', [req.params.refId, req.params.id]);
+      if (ref) await unlinkRefFile(conn, ref);
+    });
+    res.json({ ok: true });
+  }));
+
   r.get('/:id', wrap(async (req, res) => {
     const [[jo]] = await pool.query(`${BASE} WHERE j.id=?`, [req.params.id]);
     if (!jo) return res.sendStatus(404);
@@ -150,16 +197,17 @@ module.exports = pool => {
     const b = req.body;
     if (!b.customer_id) throw httpError(400, 'Customer wajib diisi');
     const f = fields(b);
+    failIfInvalid(b);
     const out = await tx(pool, async conn => {
       const [[c]] = await conn.query('SELECT code FROM customers WHERE id=?', [b.customer_id]);
       if (!c) throw httpError(400, 'Customer tidak ditemukan');
       const no_jo = await numbering.joNumber(conn, c.code);
       const cols = ['no_jo', 'customer_id', 'created_by', ...Object.keys(f)];
       const [ins] = await conn.query(`INSERT INTO job_orders (${cols.join(',')}) VALUES (${cols.map(() => '?').join(',')})`, [no_jo, b.customer_id, req.user.id, ...Object.values(f)]);
-      await syncRefs(conn, ins.insertId, b.references || [], req.user);
+      const reference_ids = await syncRefs(conn, ins.insertId, b.references || [], req.user);
       await syncChecklist(conn, ins.insertId, b.checklist, req.user);
       await audit.log(conn, { entity: 'job_order', id: ins.insertId, action: 'Dibuat', user: req.user });
-      return { id: ins.insertId, no_jo };
+      return { id: ins.insertId, no_jo, reference_ids };
     });
     res.json(out);
   }));
@@ -184,22 +232,25 @@ module.exports = pool => {
 
   r.put('/:id', wrap(async (req, res) => {
     const b = req.body, id = +req.params.id;
+    let reference_ids = [];
     await tx(pool, async conn => {
-      const [[cur]] = await conn.query('SELECT status, type FROM job_orders WHERE id=? FOR UPDATE', [id]);
+      const [[cur]] = await conn.query('SELECT status, type, customer_id FROM job_orders WHERE id=? FOR UPDATE', [id]);
       if (!cur) throw httpError(404, 'JO tidak ditemukan');
       if (cur.status === 'COMPLETE') throw httpError(409, 'JO sudah Complete, tidak bisa diubah');
       const f = fields({ ...b, type: b.type || cur.type });
+      const refsForCheck = b.references || (await conn.query('SELECT kind, number FROM jo_references WHERE jo_id=?', [id]))[0];
+      failIfInvalid({ ...b, references: refsForCheck, type: f.type, customer_id: cur.customer_id });
       if (f.type !== cur.type) {
         const [[m]] = await conn.query('SELECT COUNT(*) n FROM jo_materials WHERE jo_id=?', [id]);
         if (m.n) throw httpError(409, 'Tipe tidak bisa diubah setelah JO punya material');
       }
       const cols = Object.keys(f);
       await conn.query(`UPDATE job_orders SET ${cols.map(c => c + '=?').join(',')}, updated_by=? WHERE id=?`, [...Object.values(f), req.user.id, id]);
-      if (b.references) await syncRefs(conn, id, b.references, req.user);
+      if (b.references) reference_ids = await syncRefs(conn, id, b.references, req.user);
       if (b.checklist) await syncChecklist(conn, id, b.checklist, req.user);
       await audit.log(conn, { entity: 'job_order', id, action: 'Diedit', user: req.user });
     });
-    res.json({ ok: true });
+    res.json({ ok: true, reference_ids });
   }));
 
   r.patch('/:id/status', wrap(async (req, res) => {
@@ -249,10 +300,11 @@ module.exports = pool => {
 module.exports.documentsRouter = pool => {
   const r = express.Router();
   r.delete('/:id', wrap(async (req, res) => {
-    const [[d]] = await pool.query('SELECT d.id, d.jo_id, f.filename FROM jo_documents d JOIN files f ON f.id=d.file_id WHERE d.id=?', [req.params.id]);
+    const [[d]] = await pool.query('SELECT d.id, d.jo_id, d.file_id, f.filename FROM jo_documents d JOIN files f ON f.id=d.file_id WHERE d.id=?', [req.params.id]);
     if (d) await tx(pool, async conn => {
-      await files.removeByOwner(conn, 'jo_document', d.id);
+      await conn.query('UPDATE jo_references SET file_id=NULL WHERE file_id=?', [d.file_id]); // file dari form referensi ikut terlepas
       await conn.query('DELETE FROM jo_documents WHERE id=?', [d.id]);
+      await files.removeById(conn, d.file_id);
       await audit.log(conn, { entity: 'job_order', id: d.jo_id, action: 'Hapus dokumen', note: d.filename, user: req.user });
     });
     res.json({ ok: true });
