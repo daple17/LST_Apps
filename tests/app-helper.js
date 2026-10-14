@@ -28,7 +28,7 @@ async function startApp(dbName, opts = {}) {
   const rawLogin = async (username, password) => { const r = await fetch(base + '/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) }); return { status: r.status, data: await r.json().catch(() => ({})) }; };
   async function raw(url) { const r = await fetch(base + url, { headers: { Authorization: 'Bearer ' + token } }); return { status: r.status, type: r.headers.get('content-type'), buf: Buffer.from(await r.arrayBuffer()) }; }
   return { pool, base, call, callAs, rawUrl, rawLogin, raw, get: u => call('GET', u), post: (u, b) => call('POST', u, b), put: (u, b) => call('PUT', u, b), patch: (u, b) => call('PATCH', u, b), del: u => call('DELETE', u),
-    close: async () => { await new Promise(r => server.close(r)); await pool.end(); } };
+    close: async () => { await new Promise(r => server.close(r)); const [fs_] = await pool.query('SELECT path FROM files'); fs_.forEach(f => require('../lib/files').rmDisk(f.path)); await pool.end(); } };   // berkas upload milik DB test ikut dihapus
 }
 // JO Trucking minimal yang valid
 const joBody = (extra = {}) => ({ type: 'TRUCKING', customer_id: 1, jenis_muatan: 'FCL', delivery_plan: '2026-12-01', ...extra });
