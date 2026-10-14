@@ -5,10 +5,10 @@ const { freshDb, dbAvailable } = require('./helpers');
 
 test('daftar izin: kode valid, modul tersedia & "segera"', () => {
   assert.ok(P.isValid('jo.update')); assert.ok(P.isValid('approval.approve'));
-  assert.ok(!P.isValid('jo.approve')); assert.ok(P.isValid('coa.export')); assert.ok(!P.isValid('coa.delete')); assert.ok(!P.isValid('nope.view')); assert.ok(!P.isValid('jo'));
+  assert.ok(!P.isValid('jo.approve')); assert.ok(P.isValid('coa.export')); assert.ok(P.isValid('checkin_rekap.export')); assert.ok(!P.isValid('checkin.export')); assert.ok(!P.isValid('checkin_rekap.create')); assert.ok(!P.isValid('coa.delete')); assert.ok(!P.isValid('nope.view')); assert.ok(!P.isValid('jo'));
   assert.equal(new Set(P.ALL_PERMISSIONS).size, P.ALL_PERMISSIONS.length);
   const by = Object.fromEntries(P.MODULES.map(m => [m.key, m]));
-  for (const k of ['home', 'jo', 'ho', 'coa', 'customer', 'vendor', 'shipper', 'user', 'role']) assert.equal(by[k].available, true, k);
+  for (const k of ['home', 'jo', 'ho', 'checkin', 'checkin_rekap', 'coa', 'customer', 'vendor', 'shipper', 'user', 'role']) assert.equal(by[k].available, true, k);
   for (const k of ['trucking', 'submission', 'settlement', 'job_complete', 'unit', 'approval']) assert.equal(by[k].available, false, k);
   for (const m of P.MODULES) assert.ok(P.GROUPS.includes(m.group), m.key);
 });
@@ -23,6 +23,7 @@ test('level akses: Tanpa/Lihat/Kelola/Penuh dan "kustom"', () => {
   assert.equal(P.levelOf('jo', new Set(P.levelPerms('jo', 'full'))), 'full');
   assert.equal(P.levelOf('jo', new Set(['jo.view', 'jo.delete'])), 'custom');
   assert.equal(P.levelOf('approval', new Set(['approval.view', 'approval.approve'])), 'full');
+  assert.equal(P.levelOf('checkin', new Set(P.levelPerms('checkin', 'manage'))), 'manage'); assert.deepEqual(P.levelPerms('checkin_rekap', 'manage'), ['checkin_rekap.view', 'checkin_rekap.update', 'checkin_rekap.export']);
 });
 
 test('migrasi 005: role, izin, user lama; aman diulang', async t => {
@@ -40,7 +41,7 @@ test('migrasi 005: role, izin, user lama; aman diulang', async t => {
   assert.equal(roles[0].is_system, 1); assert.equal(roles[1].is_system, 0); assert.equal(roles[0].data_scope, 'ALL');
   assert.equal((await q('SELECT COUNT(*) n FROM role_permissions WHERE role_id=?', [roles[0].id]))[0].n, P.ALL_PERMISSIONS.length);
   const pic = (await q('SELECT permission FROM role_permissions WHERE role_id=? ORDER BY permission', [roles[1].id])).map(r => r.permission);
-  assert.deepEqual(pic, ['ho.create', 'ho.export', 'ho.update', 'ho.view', 'home.view', 'jo.create', 'jo.export', 'jo.update', 'jo.view']);
+  assert.deepEqual(pic, ['checkin.create', 'checkin.update', 'checkin.view', 'ho.create', 'ho.export', 'ho.update', 'ho.view', 'home.view', 'jo.create', 'jo.export', 'jo.update', 'jo.view']);
 
   const u = Object.fromEntries((await q('SELECT username, role_id, email, is_active, must_change_password FROM users')).map(x => [x.username, x]));
   assert.equal(u.admin.role_id, roles[0].id); assert.equal(u.admin.email, 'admin@gmail.com');
