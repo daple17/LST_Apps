@@ -44,6 +44,22 @@ Seluruh router: `GET /upcoming`, `/plan`, `/tickets`.
 | PUT `/:id`, PUT `/headers/:id` | `coa.update` |
 | DELETE (apa pun) | tidak ada: `coa.delete` tidak didefinisikan, jadi selalu 403 (akun hanya dinonaktifkan) |
 
+## HR (SDM)
+**Check In & Daily Report (`checkin.*`)** — `/api/checkin/*`, selalu dibatasi ke user yang login
+| Metode + path | Izin |
+|---|---|
+| GET `/today`, `/history` | `checkin.view` |
+| POST `/` (check in), POST `/report` | `checkin.create` |
+| PUT `/report/:id` (hanya baris sendiri dan bertanggal hari ini; selain itu 403) | `checkin.update` |
+
+**Rekap Absensi (`checkin_rekap.*`)** — `/api/checkin-rekap/*`
+| Metode + path | Izin |
+|---|---|
+| GET `/`, GET `/user/:id` | `checkin_rekap.view` |
+| GET `/export` | `checkin_rekap.export` *(pengecualian)* |
+| PUT `/override`, PUT `/report/:id` | `checkin_rekap.update` |
+`checkin` dan `checkin_rekap` terpisah: rekap saja tidak boleh check in, dan check in saja tidak melihat rekap.
+
 ## Administrator
 | Route | Izin |
 |---|---|
