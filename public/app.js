@@ -114,7 +114,7 @@ function login() {
 }
 
 function shell() {
-  $('#app').innerHTML = `<div class="shell"><aside><div class="brand"><img src="logo.png" alt="LST"><div><b class="wm"><i>me</i>LESAT</b><small>By Lima Sarana</small></div></div>
+  $('#app').innerHTML = `<div class="shell"><aside><div class="brand"><img src="logo.png" alt="LST"><div><b class="wm">LESAT</b><small>By Lima Sarana</small></div></div>
     <div class="grp">HOME</div><a class="off">Jadwal Truck &amp; Tiket</a>
     ${MENU.map(([g, items]) => `<div class="grp">${g}</div>${items.map(([n, k]) => k ? `<a href="#${k}" data-r="${k}">${n}</a>` : `<a class="off">${n}</a>`).join('')}`).join('')}
     </aside><div class="nav-bg" onclick="toggleNav(false)"></div><main><div class="top"><button class="btn sec mbtn" aria-label="Menu" onclick="toggleNav()">☰</button><h2 id="ttl"></h2><div class="usr"><span class="av" aria-hidden="true">${esc((uname || '?').trim().charAt(0).toUpperCase())}</span><span>${esc(uname)}</span><button class="btn sec sm" onclick="logout()">Logout</button></div></div><div id="view"></div></main></div><div id="md"></div>`;

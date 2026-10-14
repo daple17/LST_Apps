@@ -1,7 +1,7 @@
 # Rencana: merampungkan Job Order & Doc dan Handling Ops (docs/spec-jo-handling.md)
 
 ## Context
-Aplikasi meLESAT sudah punya versi demo dua menu ini (JO + Handling Ops, ±1.700 baris, Express + MySQL + SPA vanilla).
+Aplikasi LESAT sudah punya versi demo dua menu ini (JO + Handling Ops, ±1.700 baris, Express + MySQL + SPA vanilla).
 Spesifikasi baru mengubah struktur data (referensi ganda, material di level JO, tiket multi-JO, checklist 9 item), penomoran, dan menambah fitur
 (tab per tipe, form per tipe, detail 4 tab, Excel/PDF/ZIP, scan kamera, unit test). Menu lain tidak disentuh.
 Jawaban pemilik atas dua konflik: **kirim parsial tetap boleh** (satu material bisa dibagi ke beberapa surat jalan) dan **checklist 9 item** (data lama digabung OR).

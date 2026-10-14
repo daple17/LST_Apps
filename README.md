@@ -1,4 +1,4 @@
-# meLESAT — Sistem Internal PT Lima Sarana Trans
+# LESAT — Sistem Internal PT Lima Sarana Trans
 
 Menu yang sudah jadi: **Job Order & Doc** dan **Handling Ops** (tiket, Report Material, Trucking Delivery / Surat Jalan).
 Menu lain di sidebar masih berlabel "segera". Spesifikasi: [docs/spec-jo-handling.md](docs/spec-jo-handling.md), audit awal: [docs/audit-jo-handling.md](docs/audit-jo-handling.md).
