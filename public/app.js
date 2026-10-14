@@ -4,10 +4,18 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 const R = () => look.rules;
 const typeLabel = c => R().JO_TYPES.find(t => t.code === c)?.label || c || '';
 const docLabel = c => R().DOC_TYPES.find(t => t.code === c)?.label || c || '';
-const MENU = [['OPERASIONAL', [['Job Order & Doc', 'jo'], ['Handling Ops', 'ho'], ['Trucking'], ['Submission'], ['Settlement'], ['Job Complete']]],
+const ico = d => `<svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
+const GICON = { HOME: 'M3 3h7v7H3z M14 3h7v7h-7z M14 14h7v7h-7z M3 14h7v7H3z', OPERASIONAL: 'M3 7h11v9H3z M14 10h4l3 3v3h-7z M5.5 17.5h3 M15.5 17.5h3',
+  FAT: 'M6 3h9l4 4v14H6z M14 3v5h5 M9 13h7 M9 17h7', APPROVAL: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z M9 12l2 2 4-4',
+  'HR (SDM)': 'M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6 M17 11a2.5 2.5 0 1 0 0-5 M21 19c0-2.5-1.5-4.5-4-5',
+  'DATA MASTER': 'M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6 M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6' };
+// grup sidebar sesuai Tab Menu; item tanpa kode rute tampil nonaktif "segera"
+const MENU = [['HOME', [['Dashboard', 'home']]],
+  ['OPERASIONAL', [['Job Order & Doc', 'jo'], ['Handling Ops', 'ho'], ['Trucking'], ['Submission'], ['Settlement'], ['Job Complete']]],
   ['FAT', [['Invoice & Tax'], ['Penerimaan'], ['Overhead'], ['Liability'], ['Equity'], ['Asset'], ['Financial Statement'], ['COA']]],
-  ['APPROVAL', [['Approval']]], ['HR (SDM)', [['Employees']]],
-  ['DATA MASTER', [['Customer'], ['Shipper'], ['Vendor'], ['Trailer'], ['Rute'], ['Unit'], ['PIB / PEB']]]];
+  ['APPROVAL', [['Submission'], ['Expenses'], ['Job Complete'], ['Payment']]],
+  ['HR (SDM)', [['Employees'], ['Partner'], ['Check In & Report'], ['Loans']]],
+  ['DATA MASTER', [['Trailer'], ['Rute'], ['Customer'], ['Vendor'], ['Shipper'], ['PIB / PEB'], ['Unit']]]];
 let token = localStorage.getItem('tk'), uname = localStorage.getItem('un'), look = { customers: [], shippers: [] };
 
 async function raw(url, method = 'GET', body) {
@@ -115,23 +123,29 @@ function login() {
 
 function shell() {
   try { document.body.classList.toggle('collapsed', !!localStorage.getItem('collapsed')); } catch { /* abaikan */ }
-  $('#app').innerHTML = `<div class="shell"><aside><div class="brand"><img src="logo.png" alt="LST"><div><b class="wm">LESAT</b><small>By Lima Sarana</small></div></div>
-    <div class="grp">HOME</div><a href="#home" data-r="home">Dashboard</a>
-    ${MENU.map(([g, items]) => `<div class="grp">${g}</div>${items.map(([n, k]) => k ? `<a href="#${k}" data-r="${k}">${n}</a>` : `<a class="off">${n}</a>`).join('')}`).join('')}
-    <button class="aside-collapse" type="button" onclick="toggleCollapse()" aria-label="Sembunyikan sidebar">« Collapse</button></aside><div class="nav-bg" onclick="toggleNav(false)"></div><main><div class="top"><button class="btn sec mbtn" aria-label="Menu" onclick="menuBtn()">☰</button><h2 id="ttl"></h2><div class="usr"><span class="av" aria-hidden="true">${esc((uname || '?').trim().charAt(0).toUpperCase())}</span><span>${esc(uname)}</span><button class="btn sec sm" onclick="logout()">Logout</button></div></div><div id="view"></div></main></div><div id="md"></div>`;
+  const chev = '<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
+  $('#app').innerHTML = `<div class="shell"><aside aria-label="Menu utama"><div class="brand"><img src="logo.png" alt="Logo LST"><div><b class="wm">LESAT</b><small>By Lima Sarana</small></div></div>
+    <nav>${MENU.map(([g, items]) => `<details class="gw"${g === 'HOME' || g === 'OPERASIONAL' ? ' open' : ''}><summary title="${g}" onclick="railOpen()">${ico(GICON[g])}<span class="lb">${g}</span>${chev}</summary><div class="gi">${items.map(([n, k]) => k ? `<a href="#${k}" data-r="${k}">${n}</a>` : `<a class="off" aria-disabled="true">${n}</a>`).join('')}</div></details>`).join('')}</nav>
+    <button class="aside-collapse" type="button" onclick="toggleCollapse()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 17l-5-5 5-5 M18 17l-5-5 5-5"/></svg><span class="lb">Collapse</span></button></aside>
+    <div class="nav-bg" onclick="toggleNav(false)"></div>
+    <main><div class="top"><button class="btn sec mbtn" aria-label="Menu" onclick="menuBtn()">☰</button><div class="tt"><h2 id="ttl"></h2><p id="sub"></p></div>
+      <div class="topr"><div id="topx"></div><div class="usr" title="${esc(uname)}"><span class="av" aria-hidden="true">${esc((uname || '?').trim().charAt(0).toUpperCase())}</span><button class="lo" type="button" aria-label="Logout" onclick="logout()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4H5v16h4 M16 8l4 4-4 4 M20 12H9"/></svg></button></div></div></div><div id="view"></div></main></div><div id="md"></div>`;
   api('/lookups').then(d => { look = d; route(); }).catch(() => { /* sesi berakhir: api() sudah mengembalikan ke halaman login */ });
 }
 const toggleNav = on => document.body.classList.toggle('nav', on);
 // Collapse sidebar (desktop): disimpan per browser; di ponsel menu tetap berupa laci geser
 const setCollapsed = on => { document.body.classList.toggle('collapsed', on); try { localStorage.setItem('collapsed', on ? '1' : ''); } catch { /* penyimpanan tidak tersedia */ } };
 const toggleCollapse = () => setCollapsed(!document.body.classList.contains('collapsed'));
+// ikon grup di sidebar yang diciutkan: klik membuka sidebar lagi
+const railOpen = () => { if (document.body.classList.contains('collapsed') && innerWidth > 800) setCollapsed(false); };
 const menuBtn = () => (innerWidth <= 800 ? toggleNav() : toggleCollapse());
 function route() {
   if (!token) return;
   toggleNav(false);
   const [r, ...rest] = (location.hash.slice(1) || 'home').split('/');
   document.querySelectorAll('aside a[data-r]').forEach(a => a.classList.toggle('on', a.dataset.r === (r === 'plan' ? 'home' : r)));
-  $('#md').innerHTML = '';
+  $('#md').innerHTML = ''; $('#topx').innerHTML = ''; $('#sub').textContent = '';
+  const on = document.querySelector('aside a.on'); if (on) on.closest('details').open = true; // grup berisi halaman aktif selalu terbuka
   if (r === 'home') return homeRoute(rest);
   if (r === 'plan') return planRoute();
   if (r === 'ho') return hoRoute(rest);
@@ -141,7 +155,7 @@ window.onhashchange = route;
 
 // tabel -> kartu di layar kecil: beri label kolom pada tiap sel (CSS yang menyembunyikan header)
 function labelTables() {
-  document.querySelectorAll('.tw table, .hc-t table').forEach(t => {
+  document.querySelectorAll('.tw table').forEach(t => {
     const h = t.querySelector('tr th')?.parentElement;
     if (!h) return;
     const names = [...h.children].map(c => c.textContent.trim());

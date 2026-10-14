@@ -1,7 +1,7 @@
 /* Handling Ops: Overview (tickets), Report Material, Trucking Delivery (Surat Jalan) */
 let hoSt = { q: '', progress: '', page: 1, ...monthRange() }, hoMq = { q: '', status: '', page: 1 }, hoSq = { q: '', page: 1 }, hoT = null;
 const pct = v => `${Number(v).toFixed(2).replace('.', ',')}%`;
-const pcls = v => (v >= 100 ? 'p-ok' : v >= 50 ? 'p-warn' : 'p-bad');
+const pcls = v => (v >= 80 ? 'p-ok' : v >= 40 ? 'p-warn' : 'p-bad'); // <40% merah, 40-79% oranye, >=80% hijau
 const dwell = m => `${Math.floor(m / 1440)} D : ${String(Math.floor(m / 60) % 24).padStart(2, '0')} H : ${String(m % 60).padStart(2, '0')} M`;
 const fmtT = d => d ? new Date(d.replace(' ', 'T') + 'Z').toLocaleTimeString('id-ID', { hour12: false }).replace(/\./g, ':') + ' WIB' : '-';
 const loadT = m => m == null ? '-' : `${Math.floor(m / 60)} H ${m % 60} M`;
