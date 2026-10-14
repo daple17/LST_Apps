@@ -12,7 +12,7 @@ const GICON = { HOME: 'M3 3h7v7H3z M14 3h7v7h-7z M14 14h7v7h-7z M3 14h7v7H3z', O
 // grup sidebar sesuai Tab Menu; item tanpa kode rute tampil nonaktif "segera"
 const MENU = [['HOME', [['Dashboard', 'home', 'home']]],
   ['OPERASIONAL', [['Job Order & Doc', 'jo', 'jo'], ['Handling Ops', 'ho', 'ho'], ['Trucking', null, 'trucking'], ['Submission', null, 'submission'], ['Settlement', null, 'settlement'], ['Job Complete', null, 'job_complete']]],
-  ['FAT', [['Invoice & Tax'], ['Penerimaan'], ['Overhead'], ['Liability'], ['Equity'], ['Asset'], ['Financial Statement'], ['COA', null, 'coa']]],
+  ['FAT', [['Invoice & Tax'], ['Penerimaan'], ['Overhead'], ['Liability'], ['Equity'], ['Asset'], ['Financial Statement'], ['COA', 'coa', 'coa']]],
   ['APPROVAL', [['Submission', null, 'approval'], ['Expenses', null, 'approval'], ['Job Complete', null, 'approval'], ['Payment', null, 'approval']]],
   ['HR (SDM)', [['Employees'], ['Partner'], ['Check In & Report'], ['Loans']]],
   ['DATA MASTER', [['Trailer'], ['Rute'], ['Customer', null, 'customer'], ['Vendor', null, 'vendor'], ['Shipper', null, 'shipper'], ['PIB / PEB'], ['Unit', null, 'unit']]],
@@ -22,7 +22,7 @@ const can = code => !!me?.permissions?.includes(code);
 // item sidebar terlihat bila tidak dipetakan ke modul, atau user punya izin lihat modul itu
 const menuVisible = ([, , m]) => !m || can(m + '.view');
 // halaman -> modul izin; halaman tanpa izin lihat tidak dibuka
-const ROUTE_MOD = { home: 'home', plan: 'home', jo: 'jo', ho: 'ho', users: 'user', roles: 'role' };
+const ROUTE_MOD = { home: 'home', plan: 'home', jo: 'jo', ho: 'ho', users: 'user', roles: 'role', coa: 'coa' };
 let token = localStorage.getItem('tk'), uname = localStorage.getItem('un'), look = { customers: [], shippers: [] };
 
 async function raw(url, method = 'GET', body) {
@@ -163,6 +163,7 @@ function route() {
   if (me?.must_change_password) { $('#ttl').textContent = ''; return accountModal(true); }
   const mod = ROUTE_MOD[r] || 'jo';
   if (!can(mod + '.view')) return noAccess(location.hash.slice(1) ? '' : firstAllowed());
+  if (r === 'coa') return coaRoute(rest);
   if (r === 'users') return usersRoute();
   if (r === 'roles') return rolesRoute();
   if (r === 'home') return homeRoute(rest);
@@ -171,7 +172,7 @@ function route() {
   joRoute(rest);
 }
 // halaman pertama yang boleh dibuka user (bila beranda tidak diizinkan)
-const firstAllowed = () => ['home', 'jo', 'ho', 'users', 'roles'].find(r => can(ROUTE_MOD[r] + '.view'));
+const firstAllowed = () => ['home', 'jo', 'ho', 'coa', 'users', 'roles'].find(r => can(ROUTE_MOD[r] + '.view'));
 function noAccess(goto) {
   if (goto) { location.hash = '#' + goto; return; }
   $('#ttl').textContent = 'Tidak punya akses';
@@ -193,6 +194,7 @@ function labelTables() {
 const PERM_BTN = [[/^joNew\(|^joForm\(null|^joDup\(/, 'jo.create'], [/^joForm\(/, 'jo.update'], [/^joSetStatus\(/, 'jo.update'], [/^joDelete\(|^joMatDelete\(|^joDocDelete\(/, 'jo.delete'],
   [/^joExport\(|^joTemplate\(/, 'jo.export'], [/^joImport\(/, 'jo.create'], [/^joMatForm\(\)/, 'jo.create'], [/^joMatForm\(/, 'jo.update'],
   [/^hoExport\(|^hoDl\(/, 'ho.export'], [/^hoTicketForm\(\)/, 'ho.create'], [/^hoTicketForm\(/, 'ho.update'], [/^hoDelTicket\(|^hoDelMat\(|^hoDelSj\(/, 'ho.delete'],
+  [/^coaForm\(\)|^coaGroupForm\(\)/, 'coa.create'], [/^coaForm\(|^coaGroupForm\(/, 'coa.update'], [/^coaExport\(/, 'coa.export'],
   [/^hoSjForm\(\)/, 'ho.create'], [/^hoSjForm\(/, 'ho.update'], [/^hoSjFinish\(/, 'ho.update'], [/^hoMatForm\(/, 'ho.update']];
 function applyPerms() {
   if (!me) return;
