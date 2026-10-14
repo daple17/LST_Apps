@@ -66,6 +66,7 @@ function createApp(pool) {
   app.use('/api/job-orders', jo(pool));
   app.use('/api/documents', jo.documentsRouter(pool));
   app.use('/api/ho', handling);
+  app.use('/api/home', require('./routes/home')(pool, { ticketSummaries: handling.summariesByIds }));
   return app;
 }
 

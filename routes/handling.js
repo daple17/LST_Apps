@@ -517,6 +517,13 @@ module.exports = pool => {
     await zip.finalize();
   }));
 
+  // ringkasan beberapa tiket sekaligus (satu query agregat) — dipakai kartu Home; urutan mengikuti ids
+  r.summariesByIds = async ids => {
+    ids = ids.map(Number);
+    if (!ids.length) return [];
+    const [rows] = await pool.query(`${TK} WHERE t.id IN (?)`, [ids]), js = await jos(ids), now = Date.now();
+    return ids.map(id => rows.find(x => x.id === id)).filter(Boolean).map(t => withProgress(t, js.get(t.id), now));
+  };
   r.refresh = refresh;
   // dipanggil saat material JO berubah dari halaman JO: hitung ulang progres semua tiket yang memuat JO itu
   r.refreshForJo = async joId => { for (const t of (await pool.query('SELECT DISTINCT ticket_id FROM ticket_job_orders WHERE jo_id=?', [joId]))[0]) await refresh(t.ticket_id); };

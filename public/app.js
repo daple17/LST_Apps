@@ -130,9 +130,10 @@ function route() {
   if (!token) return;
   toggleNav(false);
   const [r, ...rest] = (location.hash.slice(1) || 'home').split('/');
-  document.querySelectorAll('aside a[data-r]').forEach(a => a.classList.toggle('on', a.dataset.r === r));
+  document.querySelectorAll('aside a[data-r]').forEach(a => a.classList.toggle('on', a.dataset.r === (r === 'plan' ? 'home' : r)));
   $('#md').innerHTML = '';
   if (r === 'home') return homeRoute(rest);
+  if (r === 'plan') return planRoute();
   if (r === 'ho') return hoRoute(rest);
   joRoute(rest);
 }
@@ -140,7 +141,7 @@ window.onhashchange = route;
 
 // tabel -> kartu di layar kecil: beri label kolom pada tiap sel (CSS yang menyembunyikan header)
 function labelTables() {
-  document.querySelectorAll('.tw table').forEach(t => {
+  document.querySelectorAll('.tw table, .hc-t table').forEach(t => {
     const h = t.querySelector('tr th')?.parentElement;
     if (!h) return;
     const names = [...h.children].map(c => c.textContent.trim());

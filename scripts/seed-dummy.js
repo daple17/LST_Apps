@@ -48,9 +48,9 @@ async function seedDummy(pool) {
   const now = Date.now(), tiers = ['done', 'done', 'done', 'done', 'done', 'mid', 'mid', 'mid', 'mid', 'low', 'low', 'low', 'done', 'mid', 'low', 'done', 'mid', 'low'];
   const stats = { tickets: 0, jos: 0, materials: 0, sj: 0 };
 
-  async function createJo({ type, customer, created, vessel, prod, count, complete, refsOverride, remarks = 'DUMMY - data contoh Handling Ops' }) {
+  async function createJo({ type, customer, created, vessel, prod, count, complete, refsOverride, eta: etaFixed, remarks = 'DUMMY - data contoh Handling Ops' }) {
     const no_jo = await numbering.joNumber(pool, customer.code), bl = `ASANKWJK${between(100, 999)}`;
-    const eta = new Date(created.getTime() - 86400000), plan = new Date(created.getTime() + 3 * 86400000);
+    const eta = etaFixed || new Date(created.getTime() - 86400000), plan = new Date((etaFixed || created).getTime() + 3 * 86400000);
     const [jr] = await pool.query(`INSERT INTO job_orders (no_jo, type, type_bc, customer_id, shipper_id, jenis_muatan, cargo_desc, vessel, eta_etd, delivery_plan, container_count, container_type, weight_kg, qty, unit, status, remarks, created_by, created_at)
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, [no_jo, type, ['IMPORT', 'EXPORT'].includes(type) ? pick(['BC 2.0', 'BC 2.0', 'BC 1.6']) : null, customer.id, pick(shippers).id, pick(['FCL', 'FCL', 'LCL_BB']), prod[0], vessel,
       isoDay(eta), isoDay(plan), type === 'TRUCKING' ? null : between(2, 12), type === 'TRUCKING' ? null : pick(['20FT', '40FT']), 0, count, 'COIL', complete ? 'COMPLETE' : 'NOT_COMP', remarks, admin.id, created]);
@@ -116,6 +116,14 @@ async function seedDummy(pool) {
     remarks: 'DUMMY - contoh banyak referensi (5 aju, 3 supplier)' });
   await createMaterials(multi, PRODUCTS[0], 6, 'CIBITUNG');
 
+  // rencana kapal ke depan (kartu Upcoming Plan): JO Not Complete dengan ETA/ETD hari ini atau setelahnya, tanpa tiket Handling.
+  // Dua JO dengan vessel + customer + tanggal yang sama sengaja dibuat agar terlihat digabung di Home.
+  const day = n => new Date(Date.now() + n * 86400000);
+  const future = [[0, 'EXPORT', 0, 'KMTC SURABAYA', 150], [1, 'IMPORT', 1, 'MSC BEIRA', 300], [1, 'IMPORT', 1, 'MSC BEIRA', 120], [2, 'IMPORT', 2, 'GRACE ZEPHYR', 210], [3, 'TRUCKING', 3, 'OOCL NINGBAO', 85], [5, 'EXPORT', 4, 'NYK DANIELLA', 90], [7, 'IMPORT', 0, 'OCEAN GOLD', 140], [9, 'IMPORT', 5, 'SHINLINE 12', 60]];
+  for (const [d, type, ci, vessel, qty] of future) {
+    const j = await createJo({ type, customer: customers[ci % customers.length], created: new Date(now), vessel, prod: PRODUCTS[0], count: 1, complete: false, eta: day(d), remarks: 'DUMMY - rencana kapal ke depan' });
+    await q('UPDATE job_orders SET qty=?, unit=?, weight_kg=? WHERE id=?', [qty, 'COIL', qty * 8000, j.id]);
+  }
   console.log('Selesai:', stats, '\nPIC demo: arjun / tejo / faad / teguh / fajar (password demo1234)');
 }
 module.exports = seedDummy;
