@@ -40,6 +40,7 @@ async function seedDummy(pool) {
   }
 
   for (const [name, user, code, emp] of PICS) await q('INSERT IGNORE INTO users (username,password,name,pic_code,employee_no) VALUES (?,?,?,?,?)', [user, bcrypt.hashSync('demo1234', 10), name, code, emp]);
+  await require('../lib/roles-seed').syncSystemRoles(pool); // user dummy baru -> role PIC Operasional
   for (const [code, name] of CUSTOMERS) await q('INSERT IGNORE INTO customers (code,name) VALUES (?,?)', [code, name]);
   const users = await q("SELECT id,name,pic_code FROM users WHERE pic_code IS NOT NULL AND pic_code<>'AD'"), customers = await q('SELECT id,code,name FROM customers'), shippers = await q('SELECT id FROM shippers');
   const vendors = Object.fromEntries((await q('SELECT id,code FROM vendors')).map(v => [v.code, v.id]));

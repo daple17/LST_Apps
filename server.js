@@ -75,7 +75,7 @@ async function seedMaster(pool) {
   const [[{ n }]] = await pool.query('SELECT COUNT(*) n FROM users');
   if (!n) {
     if (!cfg.adminPassword) throw new Error('ADMIN_PASSWORD wajib diisi untuk membuat user admin pertama');
-    await pool.query('INSERT INTO users (username,password,name,pic_code,employee_no) VALUES (?,?,?,?,?)', ['admin', bcrypt.hashSync(cfg.adminPassword, 10), 'Administrator', 'AD', '2022010001']);
+    await pool.query('INSERT INTO users (username,password,name,pic_code,employee_no,email) VALUES (?,?,?,?,?,?)', ['admin', bcrypt.hashSync(cfg.adminPassword, 10), 'Administrator', 'AD', '2022010001', 'admin@gmail.com']);
   }
   const [[{ nc }]] = await pool.query('SELECT COUNT(*) nc FROM customers');
   if (!nc) {
@@ -85,6 +85,7 @@ async function seedMaster(pool) {
   const [[{ nv }]] = await pool.query('SELECT COUNT(*) nv FROM vendors');
   if (!nv) await pool.query('INSERT INTO vendors (code,name) VALUES ?', [[['LST', 'PT LIMA SARANA TRANS'], ['MJL', 'MJL TRANS'], ['DMS', 'DMS LOGISTIK'], ['HAJ W', 'HAJ WIJAYA'], ['HAJ S', 'HAJ SENTOSA']]]);
   await pool.query("UPDATE users SET pic_code='AD', employee_no='2022010001' WHERE username='admin' AND pic_code IS NULL");
+  await require('./lib/roles-seed').syncSystemRoles(pool); // admin -> Super Admin; Super Admin selalu memegang semua izin
 }
 
 async function init() {
