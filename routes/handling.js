@@ -3,7 +3,7 @@ const express = require('express');
 const rules = require('../lib/rules'), calc = require('../lib/calc'), fmt = require('../lib/format');
 const numbering = require('../lib/numbering'), audit = require('../lib/audit'), files = require('../lib/files');
 const { wrap, bad, httpError, tx } = require('../lib/http');
-const { helpers } = require('./job-orders');
+const { sjPdf } = require('../lib/pdf'), { ticketReportText } = require('../lib/report-text');
 
 const nul = v => (v === '' || v === undefined ? null : v);
 const num = v => (v === '' || v == null || isNaN(v) ? 0 : +v);
@@ -348,12 +348,21 @@ module.exports = pool => {
     return [String(b.nopol).trim().toUpperCase(), String(b.driver).trim(), nul(b.phone), nul(b.vendor_id), nul(b.entry_at), nul(b.exit_at)];
   };
 
+  // koreksi waktu loading dari form edit: start_loading / finish_loading (ISO). finish kosong = belum selesai
+  function loadingTimes(b) {
+    if (b.start_loading === undefined && b.finish_loading === undefined) return null;
+    const one = v => (v == null || v === '' ? null : isNaN(Date.parse(v)) ? (() => { throw httpError(400, 'Format waktu loading tidak valid'); })() : new Date(v));
+    const start = one(b.start_loading), finish = one(b.finish_loading);
+    if (start && finish && finish < start) throw httpError(400, 'Finish Loading tidak boleh lebih awal dari Start Loading');
+    return { start, finish };
+  }
+
   r.post('/tickets/:id/sj', wrap(async (req, res) => {
     const tid = +req.params.id, b = req.body;
     const out = await tx(pool, async conn => {
       const head = dnHead(b), no_sj = await numbering.sjNumber(conn);
       const start = b.start_at && !isNaN(Date.parse(b.start_at)) ? new Date(b.start_at) : new Date();
-      const [ins] = await conn.query('INSERT INTO delivery_notes (no_sj, ticket_id, nopol, driver, phone, vendor_id, entry_at, exit_at, start_loading, finish_loading, created_by_name, created_by) VALUES (?,?,?,?,?,?,?,?,?,NOW(),?,?)',
+      const [ins] = await conn.query('INSERT INTO delivery_notes (no_sj, ticket_id, nopol, driver, phone, vendor_id, entry_at, exit_at, start_loading, finish_loading, created_by_name, created_by) VALUES (?,?,?,?,?,?,?,?,?,NULL,?,?)',
         [no_sj, tid, ...head, start, req.user.name, req.user.id]);
       await dnItems(conn, ins.insertId, tid, b.items);
       await audit.log(conn, { entity: 'ticket', id: tid, action: 'Surat jalan dibuat', note: no_sj, user: req.user });
@@ -366,17 +375,19 @@ module.exports = pool => {
   r.put('/sj/:id', wrap(async (req, res) => {
     const [[s]] = await pool.query('SELECT ticket_id FROM delivery_notes WHERE id=?', [req.params.id]);
     if (!s) return res.sendStatus(404);
+    const times = loadingTimes(req.body);
     await tx(pool, async conn => {
       await conn.query('UPDATE delivery_notes SET nopol=?, driver=?, phone=?, vendor_id=?, entry_at=?, exit_at=?, updated_by=? WHERE id=?', [...dnHead(req.body), req.user.id, req.params.id]);
+      if (times) await conn.query('UPDATE delivery_notes SET start_loading=COALESCE(?, start_loading), finish_loading=? WHERE id=?', [times.start, times.finish, req.params.id]);
       if (req.body.items) await dnItems(conn, +req.params.id, s.ticket_id, req.body.items);
     });
     await refresh(s.ticket_id);
     res.json({ ok: true });
   }));
 
-  r.get('/sj/:id', wrap(async (req, res) => {
-    const [[s0]] = await pool.query(`${DNSEL} WHERE d.id=? GROUP BY d.id`, [req.params.id]);
-    if (!s0) return res.sendStatus(404);
+  async function sjFull(id) {
+    const [[s0]] = await pool.query(`${DNSEL} WHERE d.id=? GROUP BY d.id`, [id]);
+    if (!s0) return null;
     const s = dnOut(s0);
     s.items = (await pool.query(`SELECT i.id, i.material_id, i.qty, i.weight, i.mark, m.product_no, m.description, m.spec, m.bl_no, m.unit, m.qty mat_qty, m.destination, m.origin, m.jo_id, j.no_jo jo_no,
       COALESCE(r.status,'NOT_CHECKED') check_status FROM delivery_note_items i JOIN jo_materials m ON m.id=i.material_id JOIN job_orders j ON j.id=m.jo_id
@@ -384,9 +395,37 @@ module.exports = pool => {
     s.photos = (await pool.query("SELECT id, path, filename FROM files WHERE owner_type='delivery_note' AND owner_id=? ORDER BY id", [s.id]))[0];
     Object.assign(s, (await pool.query('SELECT t.ticket_no, u.name pic_name, u.employee_no FROM handling_tickets t JOIN users u ON u.id=t.pic_id WHERE t.id=?', [s.ticket_id]))[0][0]);
     const jids = uniq(s.items.map(i => i.jo_id));
-    s.jos = jids.length ? (await pool.query(`SELECT j.no_jo jo_no, ${refStr('INVOICE')} invoice_no, ${refStr('BL')} bl_no, j.vessel, j.qty, j.unit, j.party_text, j.weight_kg, ${refStr('AJU')} aju_no, c.name customer_name
+    s.jos = jids.length ? (await pool.query(`SELECT j.id, j.no_jo jo_no, ${refStr('INVOICE')} invoice_no, ${refStr('BL')} bl_no, j.vessel, j.qty, j.unit, j.party_text, j.weight_kg, ${refStr('AJU')} aju_no, c.name customer_name
       FROM job_orders j JOIN customers c ON c.id=j.customer_id WHERE j.id IN (?)`, [jids]))[0].map(x => ({ ...x, party: fmt.partyLabel(x.qty, x.unit, x.party_text), weight: calc.kgToTon(x.weight_kg) })) : [];
-    res.json(s);
+    // Nopen + tanggal (jenis referensi NOPEN) dari JO yang ada di surat jalan ini
+    const nop = jids.length ? (await pool.query("SELECT number, ref_date FROM jo_references WHERE kind='NOPEN' AND jo_id IN (?) ORDER BY sort, id", [jids]))[0] : [];
+    s.nopen = nop.map(n => n.ref_date ? `${n.number} (${fmtDate(n.ref_date)})` : n.number).join(', ');
+    return s;
+  }
+  const fmtDate = d => String(d).slice(0, 10).split('-').reverse().join('-');
+  r.get('/sj/:id', wrap(async (req, res) => { const s = await sjFull(req.params.id); return s ? res.json(s) : res.sendStatus(404); }));
+
+  // Finish Loading: catat waktu selesai (bisa dikoreksi lewat Edit)
+  r.post('/sj/:id/finish', wrap(async (req, res) => {
+    const [[s]] = await pool.query('SELECT id, ticket_id, no_sj, finish_loading FROM delivery_notes WHERE id=?', [req.params.id]);
+    if (!s) return res.sendStatus(404);
+    if (!s.finish_loading) {
+      await pool.query('UPDATE delivery_notes SET finish_loading=NOW(), updated_by=? WHERE id=?', [req.user.id, s.id]);
+      await audit.log(pool, { entity: 'ticket', id: s.ticket_id, action: 'Finish loading', note: s.no_sj, user: req.user });
+    }
+    res.json({ ok: true });
+  }));
+
+  // PDF Surat Jalan (A4) dibuat di server
+  r.get('/sj/:id/pdf', wrap(async (req, res) => {
+    const s = await sjFull(req.params.id);
+    if (!s) return res.sendStatus(404);
+    const uniqJoin = f => uniq(s.jos.map(j => j[f])).join(', ');
+    const buf = await sjPdf({ no_sj: s.sj_no, nopol: s.nopol, driver: s.driver, phone: s.phone, vendor_name: s.vendor_name, start_loading: s.start_at, finish_loading: s.finish_at, entry_at: s.entry_at, exit_at: s.exit_at, pic_name: s.pic_name,
+      customer: uniqJoin('customer_name'), origin: s.origin, destination: s.destination, jo_numbers: uniqJoin('jo_no'), invoices: uniqJoin('invoice_no'), bl: uniqJoin('bl_no'), vessel: uniqJoin('vessel'), party: uniqJoin('party'),
+      weight_ton: calc.kgToTon(s.items.reduce((a, i) => a + +i.weight, 0)), nopen: s.nopen, aju: uniqJoin('aju_no'),
+      items: s.items.map(i => ({ product_no: i.product_no, description: i.description, spec: i.spec, qty: i.qty, weight: +i.weight, mark: i.mark })), unit: s.unit, total_qty: s.qty, total_weight_kg: s.items.reduce((a, i) => a + +i.weight, 0) });
+    res.type('application/pdf').set('Content-Disposition', `inline; filename="surat-jalan-${s.sj_no}.pdf"`).send(buf);
   }));
 
   r.delete('/sj/:id', wrap(async (req, res) => {
@@ -421,10 +460,7 @@ module.exports = pool => {
     const [[m]] = await pool.query(`SELECT SUM(COALESCE(r.status,'NOT_CHECKED')='OK') ok, SUM(r.status='DAMAGE') dm, SUM(COALESCE(r.status,'NOT_CHECKED')='NOT_CHECKED') nc
       FROM jo_materials m JOIN ticket_job_orders tj ON tj.jo_id=m.jo_id LEFT JOIN material_reports r ON r.material_id=m.id AND r.ticket_id=tj.ticket_id WHERE tj.ticket_id=?`, [t.id]);
     const [sj] = await pool.query(`${DNSEL} WHERE d.ticket_id=? GROUP BY d.id ORDER BY d.id`, [t.id]);
-    const n = v => fmt.fmtNum(v, 0);
-    res.json({ text: [`HANDLING OPS - ${t.ticket_no}`, `PIC: ${t.pic_name}`, `Customer: ${t.customer}`, `Vessel: ${t.vessel || '-'}`, `Party: ${t.party || '-'} | Weight: ${fmt.fmtNum(t.weight)} ton`,
-      `Report Material: ${t.mat_pct}% (OK ${m.ok || 0}, Damage ${m.dm || 0}, Belum dicek ${m.nc || 0})`, `Trucking Delivery: ${t.del_pct}% (${sj.length} rit, ${n(t.qty_sent)}/${n(t.qty_total)} qty)`,
-      ...sj.map((s, i) => `${i + 1}. ${s.nopol} ${s.driver} (${s.vendor_code || '-'}) SJ ${s.sj_no} - ${s.qty} ${s.unit || ''} - ${n(s.net_weight)} kg -> ${s.destination || '-'}`)].join('\n') });
+    res.json({ text: ticketReportText({ ...t, ok: +m.ok, dm: +m.dm, nc: +m.nc, trips: sj.map(s => ({ ...s, qty: +s.qty })) }) });
   }));
 
   r.refresh = refresh;

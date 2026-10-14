@@ -55,7 +55,7 @@ async function seedDummy(pool) {
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, [no_jo, type, ['IMPORT', 'EXPORT'].includes(type) ? pick(['BC 2.0', 'BC 2.0', 'BC 1.6']) : null, customer.id, pick(shippers).id, pick(['FCL', 'FCL', 'LCL_BB']), prod[0], vessel,
       isoDay(eta), isoDay(plan), type === 'TRUCKING' ? null : between(2, 12), type === 'TRUCKING' ? null : pick(['20FT', '40FT']), 0, count, 'COIL', complete ? 'COMPLETE' : 'NOT_COMP', remarks, admin.id, created]);
     const id = jr.insertId;
-    const refs = refsOverride || [['AJU', `0003${between(10, 99)}`], ['INVOICE', `52556${between(10, 99)}`], ['BL', bl], [type === 'EXPORT' ? 'SI_PO' : 'SI_DO', `PO-${between(1000, 9999)}`]];
+    const refs = refsOverride || [['AJU', `0003${between(10, 99)}`], ['INVOICE', `52556${between(10, 99)}`], ['BL', bl], [type === 'EXPORT' ? 'SI_PO' : 'SI_DO', `PO-${between(1000, 9999)}`], ['NOPEN', `${between(100000, 999999)}`]];
     let sort = 0;
     for (const [kind, number] of refs) await q('INSERT INTO jo_references (jo_id, kind, number, ref_date, sort, created_by) VALUES (?,?,?,?,?,?)', [id, kind, number, isoDay(eta), sort++, admin.id]);
     for (const it of rules.CHECKLIST_ITEMS) await q('INSERT INTO jo_checklist (jo_id, item, inv, fp) VALUES (?,?,?,?)', [id, it.code, it.code === 'agency_do' || complete ? 1 : 0, complete ? 1 : 0]);

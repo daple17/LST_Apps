@@ -19,7 +19,8 @@ async function startApp(dbName) {
     const text = await r.text(); let data; try { data = JSON.parse(text); } catch { data = text; }
     return { status: r.status, data };
   }
-  return { pool, call, get: u => call('GET', u), post: (u, b) => call('POST', u, b), put: (u, b) => call('PUT', u, b), patch: (u, b) => call('PATCH', u, b), del: u => call('DELETE', u),
+  async function raw(url) { const r = await fetch(base + url, { headers: { Authorization: 'Bearer ' + token } }); return { status: r.status, type: r.headers.get('content-type'), buf: Buffer.from(await r.arrayBuffer()) }; }
+  return { pool, call, raw, get: u => call('GET', u), post: (u, b) => call('POST', u, b), put: (u, b) => call('PUT', u, b), patch: (u, b) => call('PATCH', u, b), del: u => call('DELETE', u),
     close: async () => { await new Promise(r => server.close(r)); await pool.end(); } };
 }
 // JO Trucking minimal yang valid

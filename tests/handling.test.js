@@ -62,6 +62,26 @@ test('Handling Ops: aturan tiket, progres, penomoran, material', async t => {
     assert.equal(rm.status, 400); assert.match(rm.data.error, /tidak bisa dilepas/);
   });
 
+  await t.test('surat jalan: Finish Loading lewat tombol, waktu bisa dikoreksi, PDF A4', async () => {
+    const jo = await mkJo(), tk = (await app.post('/ho/tickets', { jo_ids: [jo] })).data.id;
+    await app.post(`/ho/tickets/${tk}/materials`, { rows: [mat(jo, 'W-1'), mat(jo, 'W-2')] });
+    const rows = (await app.get(`/ho/tickets/${tk}/materials`)).data.rows;
+    const sj = await app.post(`/ho/tickets/${tk}/sj`, { nopol: 'b 7 pdf', driver: 'SITI', phone: '0811', items: rows.map(r => ({ material_id: r.id, qty: 1, weight: 1000 })) });
+    assert.equal(sj.status, 200);
+    const row = async () => (await app.get(`/ho/tickets/${tk}/sj`)).data.rows[0];
+    let r = await row(); assert.equal(r.finish_at, null); assert.equal(r.load_min, null);               // Finish Loading belum dicatat otomatis
+    assert.equal((await app.post(`/ho/sj/${sj.data.id}/finish`)).status, 200);
+    r = await row(); assert.ok(r.finish_at); assert.ok(r.load_min >= 0);
+    const bad = await app.put(`/ho/sj/${sj.data.id}`, { nopol: 'B 7 PDF', driver: 'SITI', start_loading: '2026-10-14T05:00:00Z', finish_loading: '2026-10-14T04:00:00Z' });
+    assert.equal(bad.status, 400); assert.match(bad.data.error, /tidak boleh lebih awal/);
+    const ok = await app.put(`/ho/sj/${sj.data.id}`, { nopol: 'B 7 PDF', driver: 'SITI', start_loading: '2026-10-14T01:00:00Z', finish_loading: '2026-10-14T02:20:00Z' });
+    assert.equal(ok.status, 200); r = await row(); assert.equal(r.load_min, 80);
+    await app.put(`/ho/sj/${sj.data.id}`, { nopol: 'B 7 PDF', driver: 'SITI', start_loading: '2026-10-14T01:00:00Z', finish_loading: '' });
+    assert.equal((await row()).load_min, null);                                                                // finish dikosongkan = belum selesai
+    const pdf = await app.raw(`/ho/sj/${sj.data.id}/pdf`);
+    assert.equal(pdf.status, 200); assert.equal(pdf.type, 'application/pdf'); assert.equal(pdf.buf.subarray(0, 5).toString(), '%PDF-');
+  });
+
   await t.test('Damage wajib remarks; nomor produk ganda dalam satu JO ditolak; kirim melebihi sisa ditolak', async () => {
     const jo5 = await mkJo(), tk = (await app.post('/ho/tickets', { jo_ids: [jo5] })).data.id;
     await app.post(`/ho/tickets/${tk}/materials`, { rows: [mat(jo5, 'V-1', { qty: 10 })] });

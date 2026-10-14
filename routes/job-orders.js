@@ -81,7 +81,7 @@ async function unlinkRefFile(conn, ref) {
   await files.removeById(conn, ref.file_id);
   await conn.query('UPDATE jo_references SET file_id=NULL WHERE id=?', [ref.id]);
 }
-const REF_DOC = { INVOICE: 'INVOICE', BL: 'BL', SI_DO: 'SI_DO', SI_PO: 'SI_PO' };
+const REF_DOC = { INVOICE: 'INVOICE', BL: 'BL', SI_DO: 'SI_DO', SI_PO: 'SI_PO' }; // NOPEN & AJU tidak punya file
 
 // checklist: {item: {inv, fp}}; catat siapa & kapan setiap centang berubah
 async function syncChecklist(conn, joId, input, user) {

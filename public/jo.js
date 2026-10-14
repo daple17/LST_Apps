@@ -57,8 +57,9 @@ const joNew = () => {
     <div class="acts"><button class="btn sec" onclick="closeMd()">Batal</button></div></div></div>`;
 };
 
-const REF_ORDER = ['AJU', 'INVOICE', 'BL', 'SI_DO', 'SI_PO'];
+const REF_ORDER = ['AJU', 'INVOICE', 'BL', 'SI_DO', 'SI_PO', 'NOPEN'];
 const REF_WITH_FILE = ['INVOICE', 'BL', 'SI_DO', 'SI_PO'];
+const REF_WITH_DATE = [...REF_WITH_FILE, 'NOPEN'];
 let jf = null; // state form: {id, type, rows:{kind:[{id,number,ref_date,file,newFile,delFile,warn}]}, custId, locked, initial}
 const jfReq = f => R().FIELD_RULES[f]?.[jf.type] === 'R';
 const jfStar = f => (jfReq(f) ? ' <b style="color:var(--bad)">*</b>' : '');
@@ -127,12 +128,12 @@ function joFormDraw() {
   f.querySelectorAll('[name]').forEach(el => el.addEventListener('input', () => el.removeAttribute('aria-invalid')));
 }
 function joRefDraw(k) {
-  const rows = jf.rows[k], withFile = REF_WITH_FILE.includes(k), host = $('#rg-' + k);
+  const rows = jf.rows[k], withFile = REF_WITH_FILE.includes(k), withDate = REF_WITH_DATE.includes(k), host = $('#rg-' + k);
   if (!host) return;
   host.innerHTML = `<div class="rgh"><b>${refLabel(k)}${jfStar(k)}</b><button type="button" class="btn sec sm" onclick="joRefAdd('${k}')">+ Tambah</button></div>` +
-    rows.map((r, i) => `<div class="rrow ${withFile ? '' : 'nofile'}"><div><input data-k="${k}" data-i="${i}" data-f="number" placeholder="Nomor ${esc(refLabel(k).toLowerCase())}" value="${esc(r.number)}" aria-label="${esc(refLabel(k))} ${i + 1}" onchange="joRefChange(this)" oninput="joRefChange(this)"></div>
-      ${withFile ? `<div><input type="date" data-k="${k}" data-i="${i}" data-f="ref_date" value="${esc(r.ref_date || '')}" aria-label="Tanggal" onchange="joRefChange(this)"></div>
-      <div class="rfile">${r.newFile || (r.file && !r.delFile) ? `<span class="fchip" title="${esc(r.newFile?.name || r.file?.filename || '')}">${esc(r.newFile?.name || r.file?.filename || 'berkas')}</span><button type="button" class="ib" aria-label="Hapus file" onclick="joRefFile('${k}',${i},null)">×</button>`
+    rows.map((r, i) => `<div class="rrow ${withFile ? '' : withDate ? 'dt' : 'nofile'}"><div><input data-k="${k}" data-i="${i}" data-f="number" placeholder="Nomor ${esc(refLabel(k).toLowerCase())}" value="${esc(r.number)}" aria-label="${esc(refLabel(k))} ${i + 1}" onchange="joRefChange(this)" oninput="joRefChange(this)"></div>
+      ${withDate ? `<div><input type="date" data-k="${k}" data-i="${i}" data-f="ref_date" value="${esc(r.ref_date || '')}" aria-label="Tanggal" onchange="joRefChange(this)"></div>` : ''}
+      ${withFile ? `<div class="rfile">${r.newFile || (r.file && !r.delFile) ? `<span class="fchip" title="${esc(r.newFile?.name || r.file?.filename || '')}">${esc(r.newFile?.name || r.file?.filename || 'berkas')}</span><button type="button" class="ib" aria-label="Hapus file" onclick="joRefFile('${k}',${i},null)">×</button>`
         : `<label class="btn sec sm" style="margin:0">Pilih file<input type="file" hidden accept=".pdf,.jpg,.jpeg,.png" onchange="joRefFile('${k}',${i},this.files[0])"></label>`}</div>` : ''}
       <button type="button" class="ib" aria-label="Hapus baris" onclick="joRefDel('${k}',${i})">×</button>
       <div class="warn-note" id="w-${k}-${i}">${esc(r.warn)}</div></div>`).join('') || '<div class="warn-note" style="color:var(--mut)">Belum ada nomor.</div>';

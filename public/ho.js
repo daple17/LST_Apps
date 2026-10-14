@@ -14,6 +14,10 @@ const ICON = {
 };
 // tombol progress: ikon + persen + bar, seluruhnya link ke halaman terkait
 const pbtn = (href, icon, v, title) => `<a class="pbtn" href="${href}" title="${title}" aria-label="${title} ${pct(v)}"><span class="pi">${ICON[icon]}</span><span class="pv"><b class="${pcls(v)}">${pct(v)}</b><i class="pb ${pcls(v)}"><u style="width:${Math.min(100, +v)}%"></u></i></span><span class="chev">›</span></a>`;
+// timestamp MySQL (UTC) <-> isian datetime-local (waktu setempat)
+const tsLocal = v => { if (!v) return ''; const d = new Date(v.replace(' ', 'T') + 'Z'), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; };
+const tsIso = v => (v ? new Date(v).toISOString() : '');
+const hoSjFinish = run(async id => { await api(`/ho/sj/${id}/finish`, 'POST'); toast('Finish Loading dicatat'); hoSjList(); });
 const dtLocal = d => d ? d.replace(' ', 'T').slice(0, 16) : '';
 
 async function download(path, name) {
@@ -297,8 +301,8 @@ const hoSjList = run(async () => {
     <span class="tag" style="color:var(--ink)">Net ${fmtN(s.net)}</span><span class="tag" style="color:var(--ink)">Gross ${fmtN(s.gross)}</span><span class="tag" style="color:var(--ink)">Qty ${fmtN(s.qty)}</span><span class="tag" style="color:var(--ink)">${s.trips} RIT</span><span style="flex:1"></span>
     <button class="btn sec" onclick="hoCopy(${t.id})">Copy Report</button><button class="btn" ${t.mat_total ? '' : 'disabled'} onclick="hoSjForm()">Buat Surat Jalan</button></div>
     <div class="card tw"><table><tr><th>No.</th><th>Nomor Polisi</th><th>Driver</th><th>Vendor</th><th>No. Surat Jalan</th><th>Start Loading</th><th>Load Time</th><th class="num">Net Weight</th><th class="num">Gross Weight</th><th class="num">Qty</th><th>Satuan</th><th>Dari</th><th>Tujuan</th><th>Detail</th></tr>
-    ${d.rows.map((r, i) => `<tr class="row"><td>${(hoSq.page - 1) * 20 + i + 1}</td><td><b>${esc(r.nopol)}</b></td><td>${esc(r.driver)}</td><td>${esc(r.vendor_code)}</td><td>${esc(r.sj_no)}</td><td>${fmtT(r.start_at)}</td><td>${loadT(r.load_min)}</td><td class="num">${fmtN(r.net_weight)}</td><td class="num">${fmtN(r.gross_weight)}</td><td class="num">${r.qty}</td><td>${esc(r.unit)}</td><td>${esc(r.origin)}</td><td>${esc(r.destination)}</td>
-      <td><button class="btn sm" onclick="hoSjView(${r.id})">&gt;&gt;</button></td></tr>`).join('') || `<tr><td colspan="14" style="text-align:center;color:var(--mut)">${t.mat_total ? 'Belum ada Surat Jalan' : 'Tambahkan material di Report Material terlebih dahulu'}</td></tr>`}</table>
+    ${d.rows.map((r, i) => `<tr class="row"><td>${(hoSq.page - 1) * 20 + i + 1}</td><td><b>${esc(r.nopol)}</b></td><td>${esc(r.driver)}</td><td>${esc(r.vendor_code)}</td><td>${esc(r.sj_no)}</td><td>${fmtT(r.start_at)}</td><td>${r.finish_at ? loadT(r.load_min) : '<span class="tag NOT_COMP">Loading</span>'}</td><td class="num">${fmtN(r.net_weight)}</td><td class="num">${fmtN(r.gross_weight)}</td><td class="num">${r.qty}</td><td>${esc(r.unit)}</td><td>${esc(r.origin)}</td><td>${esc(r.destination)}</td>
+      <td style="white-space:nowrap">${r.finish_at ? '' : `<button class="btn sec sm" onclick="hoSjFinish(${r.id})">Finish Loading</button> `}<button class="btn sm" aria-label="Detail ${esc(r.sj_no)}" onclick="hoSjView(${r.id})">&gt;&gt;</button></td></tr>`).join('') || `<tr><td colspan="14" style="text-align:center;color:var(--mut)">${t.mat_total ? 'Belum ada Surat Jalan' : 'Tambahkan material di Report Material terlebih dahulu'}</td></tr>`}</table>
     ${pagerNum(hoSq.page, d.pages, d.total, 'hoSGoto')}</div>`;
   searchBind('#sq', hoSq, hoSjList);
 });
@@ -315,7 +319,9 @@ const hoSjForm = run(async id => {
     <div class="g" style="margin-top:14px"><div><label>Nopol *</label><input name="nopol" placeholder="Input Nomor Polisi" value="${esc(s.nopol)}" required></div><div><label>No Hp</label><input name="phone" placeholder="Input Nomor Handphone" value="${esc(s.phone)}"></div>
     <div><label>Driver *</label><input name="driver" placeholder="Input Nama Driver" value="${esc(s.driver)}" required></div>
     <div><label>Vendor <a href="#" onclick="hoVendorAdd();return false">+ baru</a></label><select name="vendor_id" id="sv"><option value="">Pilih Vendor</option>${look.vendors.map(v => `<option value="${v.id}" ${v.id == s.vendor_id ? 'selected' : ''}>${esc(v.code)} · ${esc(v.name)}</option>`).join('')}</select></div>
-    <div><label>Masuk pabrik (opsional)</label><input name="entry_at" type="datetime-local" value="${dtLocal(s.entry_at)}"></div><div><label>Keluar pabrik (opsional)</label><input name="exit_at" type="datetime-local" value="${dtLocal(s.exit_at)}"></div></div>
+    <div><label>Masuk pabrik (opsional)</label><input name="entry_at" type="datetime-local" value="${dtLocal(s.entry_at)}"></div><div><label>Keluar pabrik (opsional)</label><input name="exit_at" type="datetime-local" value="${dtLocal(s.exit_at)}"></div>
+    ${id ? `<div><label>Start Loading (koreksi)</label><input name="start_loading" type="datetime-local" value="${tsLocal(s.start_at)}"></div><div><label>Finish Loading (kosongkan jika belum selesai)</label><input name="finish_loading" type="datetime-local" value="${tsLocal(s.finish_at)}"></div>` : ''}</div>
+    ${id ? '' : '<p class="warn-note" style="color:var(--mut)">Start Loading dicatat saat surat jalan disimpan. Tekan <b>Finish Loading</b> di daftar surat jalan setelah pemuatan selesai.</p>'}
     <h4 style="margin:16px 0 6px">Material</h4><div class="bar" style="margin-bottom:0"><input id="mi" placeholder="Search Nomor Product/Container (Enter / scan barcode)" style="max-width:380px"><button type="button" class="btn" onclick="hoFindMat()">ADD</button><span style="flex:1"></span><b id="stot"></b></div>
     <div class="pick" id="mpick" hidden></div>
     <div class="card tw" style="margin-top:8px"><table><tr><th></th><th>No.</th><th>Product No.</th><th>Desc</th><th>Spec</th><th>No. BL</th><th>Qty</th><th>Weight</th><th>Tujuan</th><th>Marks</th></tr><tbody id="sit"></tbody></table></div>
@@ -327,6 +333,7 @@ const hoSjForm = run(async id => {
   $('#sf').onsubmit = async e => {
     e.preventDefault();
     const f = e.target, b = { nopol: f.nopol.value, phone: f.phone.value, driver: f.driver.value, vendor_id: f.vendor_id.value, entry_at: f.entry_at.value || null, exit_at: f.exit_at.value || null, start_at: hoSjStart,
+      ...(id ? { start_loading: tsIso(f.start_loading.value), finish_loading: tsIso(f.finish_loading.value) } : {}),
       items: hoItems.map(i => ({ material_id: i.material_id, qty: i.qty, weight: i.weight })) };
     try {
       let sid = id;
@@ -385,7 +392,7 @@ const hoSjView = run(async id => {
     <div style="text-align:center"><b>No. ${esc(s.sj_no)}</b></div><h2>SURAT JALAN</h2>
     <div class="kv" style="grid-template-columns:1fr"><div><span>Customer:</span> <b>${j('customer_name')}</b></div><div><span>Address Destination:</span> <b>${esc(s.destination || '-')}</b></div><div><span>From:</span> <b>${esc(s.origin || '-')}</b></div></div>
     <div class="kv" style="margin-top:8px"><div><span>Job Order:</span> <b>${j('jo_no')}</b></div><div><span>Party:</span> <b>${j('party')}</b></div><div><span>Invoice:</span> <b>${j('invoice_no')}</b></div><div><span>Weight:</span> <b>${fmtN(tw)}</b></div>
-    <div><span>B/L:</span> <b>${j('bl_no')}</b></div><div><span>Nopen:</span> <b>-</b></div><div><span>Vessel:</span> <b>${j('vessel')}</b></div><div><span>No. Aju:</span> <b>${j('aju_no')}</b></div></div>
+    <div><span>B/L:</span> <b>${j('bl_no')}</b></div><div><span>Nopen / Tgl:</span> <b>${esc(s.nopen || '-')}</b></div><div><span>Vessel:</span> <b>${j('vessel')}</b></div><div><span>No. Aju:</span> <b>${j('aju_no')}</b></div></div>
     <table style="margin-top:10px"><tr><th>No.</th><th>Product/Cont</th><th>Desc &amp; Spec</th><th class="num">Qty</th><th class="num">Weight</th><th>Marks</th></tr>
     ${s.items.map((i, k) => `<tr><td>${k + 1}</td><td>${esc(i.product_no)}</td><td>${esc(i.description)} ${esc(i.spec)}</td><td class="num">${i.qty}</td><td class="num">${fmtN(i.weight)}</td><td>${markOf(i.check_status)}</td></tr>`).join('')}</table>
     <p style="text-align:center"><b>Total: ${tq} ${esc(s.unit || '')} &nbsp; ${fmtN(tw / 1000)} MT</b></p>
@@ -394,7 +401,7 @@ const hoSjView = run(async id => {
     <div style="text-align:center;margin-top:12px">${barcode(s.sj_no)}<div style="font-size:12px">Barcode nomor Surat Jalan</div></div></div>
     <div class="noprint" style="margin-top:14px"><div class="kv"><div><span>Vendor:</span> <b>${esc(s.vendor_code ? s.vendor_code + ' · ' + s.vendor_name : '-')}</b></div><div><span>Start Loading:</span> <b>${fmtT(s.start_at)}</b></div><div><span>Finish Loading:</span> <b>${fmtT(s.finish_at)}</b></div><div><span>Load Time:</span> <b>${loadT(s.load_min)}</b></div></div>
     <b>Foto</b><div class="ph">${s.photos.map(p => `<div><img src="${photoOf(p.path)}" onclick="window.open(this.src)"></div>`).join('') || '<div>Belum ada foto</div>'}</div></div>
-    <div class="acts"><button class="btn sec" onclick="closeMd()">Tutup</button><button class="btn bad" onclick="hoDelSj(${id})">Hapus</button><button class="btn sec" onclick="hoSjForm(${id})">Edit</button><button class="btn" onclick="window.print()">Print</button></div></div></div>`;
+    <div class="acts"><button class="btn sec" onclick="closeMd()">Tutup</button><button class="btn bad" onclick="hoDelSj(${id})">Hapus</button><button class="btn sec" onclick="hoSjForm(${id})">Edit</button>${s.finish_at ? '' : `<button class="btn sec" onclick="hoSjFinish(${id});closeMd()">Finish Loading</button>`}<button class="btn sec" onclick="window.print()">Print</button><a class="btn" href="/api/ho/sj/${id}/pdf?t=${token}" target="_blank" rel="noopener">PDF</a></div></div></div>`;
 });
 const hoDelSj = run(async id => { if (confirm('Hapus Surat Jalan ini? Material akan kembali tersedia.')) { await api('/ho/sj/' + id, 'DELETE'); closeMd(); route(); } });
 

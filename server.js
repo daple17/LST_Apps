@@ -18,7 +18,9 @@ function createApp(pool) {
   }));
 
   app.use('/api', (req, res, next) => {
-    try { req.user = jwt.verify((req.headers.authorization || '').slice(7), cfg.secret); next(); }
+    // unduhan yang dibuka lewat tautan biasa (PDF/ZIP) boleh membawa token di ?t= (hanya GET)
+    const tok = (req.headers.authorization || '').slice(7) || (req.method === 'GET' && /\/(pdf|zip)$/.test(req.path) ? String(req.query.t || '') : '');
+    try { req.user = jwt.verify(tok, cfg.secret); next(); }
     catch { res.status(401).json({ error: 'Unauthorized' }); }
   });
   app.use('/uploads', (req, res, next) => { // berkas butuh token lewat ?t=

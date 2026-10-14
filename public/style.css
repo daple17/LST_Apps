@@ -207,7 +207,7 @@ main .tw>table{min-width:1060px}
 .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .rg{margin-bottom:10px}.rgh{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
 .rrow{display:grid;grid-template-columns:minmax(0,1.4fr) 150px minmax(0,1.2fr) 36px;gap:8px;align-items:center;margin-bottom:6px}
-.rrow.nofile{grid-template-columns:minmax(0,1fr) 36px}
+.rrow.nofile{grid-template-columns:minmax(0,1fr) 36px}.rrow.dt{grid-template-columns:minmax(0,1fr) 150px 36px}
 .rfile{display:flex;align-items:center;gap:6px;min-width:0}.fchip{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:6px 10px;border-radius:var(--r-ctl);background:var(--c-ok-bg);color:var(--c-ok-tx);font-size:12.5px}
 .warn-note{grid-column:1/-1;font-size:12px;color:var(--warn)}.warn-note:empty{display:none}
 [aria-invalid=true]{border-color:var(--bad)!important;box-shadow:0 0 0 3px rgba(192,57,43,.15)!important}

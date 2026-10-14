@@ -12,8 +12,8 @@ test('Excel daftar JO: semua kolom tabel + semua nomor referensi', async () => {
   const r = ws.getRow(2);
   assert.equal(r.getCell('A').value, '0027BTU'); assert.equal(r.getCell('B').value, 'Import');
   assert.equal(r.getCell('F').value, '000386, 000385');         // semua aju, bukan hanya yang pertama
-  assert.equal(r.getCell('N').value, 2760.86);                  // angka, bukan teks
-  assert.ok(r.getCell('O').value instanceof Date);              // tanggal sungguhan
-  assert.equal(r.getCell('Q').value, 'Not Complete');
+  assert.equal(r.getCell('O').value, 2760.86);                  // angka, bukan teks
+  assert.ok(r.getCell('P').value instanceof Date);              // tanggal sungguhan
+  assert.equal(r.getCell('R').value, 'Not Complete');
   const refSheet = wb.getWorksheet('Referensi'); assert.equal(refSheet.rowCount, 4);
 });
