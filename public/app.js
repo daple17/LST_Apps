@@ -61,26 +61,55 @@ document.addEventListener('click', e => { if (!e.target.closest('.menu')) menuCl
 let menuAt = 0; // scroll yang terjadi tepat setelah menu dibuka (mis. scroll-ke-tampilan oleh klik) diabaikan
 window.addEventListener('scroll', () => { if (Date.now() - menuAt > 500) menuClose(); }, true); window.addEventListener('resize', menuClose);
 
-function render() { token ? shell() : login(); }
+function render() { document.body.classList.toggle('is-login', !token); token ? shell() : login(); }
 const photoOf = p => `/uploads/${p}?t=${token}`;
 
 function login() {
-  $('#app').innerHTML = `<div class="lg"><div class="lg-bg" aria-hidden="true"></div>
-    <header class="lg-brand"><span class="lg-badge"><img src="logo.png" alt="LST"></span><div><b class="lg-wm">LESAT</b><small>By Lima Sarana</small></div></header>
-    <section class="lg-hero"><p>LOGISTIC AND TRANSPORTATION SOLUTION</p><blockquote>"We are your one-stop solutions for building big brands."</blockquote></section>
-    <form class="lg-card" id="lf"><h2>Login</h2><p class="sub">Masuk dengan akun internal untuk mengelola operasional harian.</p>
-      <div><label for="lu">Username</label><input id="lu" name="username" placeholder="Masukkan username" autocomplete="username" autofocus required></div>
-      <div><label for="lp">Password</label><div class="pw"><input id="lp" name="password" type="password" placeholder="Masukkan password" autocomplete="current-password" required>
-        <button type="button" id="lt" aria-label="Tampilkan password" aria-pressed="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path id="lx" d="M4 4l16 16" style="display:none"/></svg></button></div></div>
-      <div class="err" id="le" role="alert"></div><button class="btn">Login</button>
-      <div class="lg-foot"><a href="#" onclick="alert('Hubungi admin untuk reset kata sandi.');return false">Lupa Kata Sandi?</a><span>IT Support · it@limasarana.example</span></div></form></div>`;
-  $('#lt').onclick = () => { const i = $('#lp'), show = i.type === 'password'; i.type = show ? 'text' : 'password'; $('#lt').setAttribute('aria-pressed', show); $('#lt').setAttribute('aria-label', show ? 'Sembunyikan password' : 'Tampilkan password'); $('#lx').style.display = show ? '' : 'none'; };
+  $('#app').innerHTML = `<main class="login">
+    <div class="login__watermark" aria-hidden="true">LESAT</div>
+    <section class="login__hero">
+      <div class="login__photo" aria-hidden="true"><picture><source srcset="assets/login/ship-portrait.webp" type="image/webp"><img src="assets/login/ship-portrait.jpg" alt="" fetchpriority="high"></picture></div>
+      <div class="login__hero-content">
+        <div class="login__brand"><img class="login__brand-icon" src="assets/login/lst-icon.png" alt="Logo LST"><div><span class="login__brand-name">LESAT</span><span class="login__brand-by">By Lima Sarana</span></div></div>
+        <div class="login__hero-copy"><span class="login__eyebrow">LOGISTIC AND TRANSPORTATION SOLUTION</span><p class="login__quote">"We are your one-stop solutions for building big brands."</p></div>
+      </div>
+    </section>
+    <section class="login__panel">
+      <form class="login__card" id="lf" novalidate>
+        <div><div class="login__bar"></div><h1 class="login__title">Login</h1><p class="login__lead">Masuk dengan akun internal untuk mengelola operasional harian.</p></div>
+        <p class="login__alert" id="form-alert" role="alert" hidden></p>
+        <div class="login__field" id="field-username"><label for="username">Username</label>
+          <div class="login__control"><input id="username" name="username" type="text" autocomplete="username" placeholder="Masukkan username" required aria-describedby="err-username" autofocus></div>
+          <p class="login__field-error" id="err-username" hidden>Username wajib diisi.</p></div>
+        <div class="login__field" id="field-password"><label for="password">Password</label>
+          <div class="login__control login__control--password"><input id="password" name="password" type="password" autocomplete="current-password" placeholder="Masukkan password" required aria-describedby="err-password">
+            <button class="login__toggle" type="button" id="toggle-password" aria-label="Tampilkan password" aria-pressed="false">
+              <svg id="eye-on" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg id="eye-off" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><path d="M3 3l18 18"/><path d="M10.6 5.1A10.6 10.6 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.5 6.6A17 17 0 0 0 2 12s3.6 7 10 7c1.7 0 3.2-.4 4.5-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+            </button></div>
+          <p class="login__field-error" id="err-password" hidden>Password wajib diisi.</p></div>
+        <button class="login__btn" type="submit" id="submit-btn">Login</button>
+        <div class="login__foot"><a class="login__link" href="#" id="forgot">Lupa Kata Sandi?</a><span class="login__help">IT Support · it@limasarana.example</span></div>
+      </form></section></main>`;
+  const pw = $('#password'), tg = $('#toggle-password'), alertBox = $('#form-alert'), btn = $('#submit-btn');
+  tg.onclick = () => { const show = pw.type === 'password'; pw.type = show ? 'text' : 'password'; tg.setAttribute('aria-pressed', String(show)); tg.setAttribute('aria-label', show ? 'Sembunyikan password' : 'Tampilkan password'); $('#eye-on').hidden = show; $('#eye-off').hidden = !show; };
+  $('#forgot').onclick = e => { e.preventDefault(); alert('Hubungi admin untuk reset kata sandi.'); };
+  const fieldError = (name, on) => { $('#field-' + name).classList.toggle('login__field--error', on); $('#err-' + name).hidden = !on; $('#' + name).setAttribute('aria-invalid', String(on)); };
   $('#lf').onsubmit = async e => {
     e.preventDefault();
+    alertBox.hidden = true;
+    const u = $('#username').value.trim(), p = pw.value;
+    fieldError('username', !u); fieldError('password', !p);
+    if (!u || !p) { (!u ? $('#username') : pw).focus(); return; }
+    btn.setAttribute('aria-busy', 'true'); btn.disabled = true;
     try {
-      const d = await api('/login', 'POST', Object.fromEntries(new FormData(e.target)));
+      const d = await api('/login', 'POST', { username: u, password: p });   // alur autentikasi yang sama seperti sebelumnya; password tidak disimpan di mana pun
       token = d.token; uname = d.name; localStorage.setItem('tk', token); localStorage.setItem('un', uname); render();
-    } catch (x) { $('#le').textContent = x.message; }
+    } catch (x) {
+      btn.removeAttribute('aria-busy'); btn.disabled = false;
+      alertBox.textContent = /salah/i.test(x.message) ? 'Username atau password salah. Silakan coba lagi.' : x.message;
+      alertBox.hidden = false;
+    }
   };
 }
 
