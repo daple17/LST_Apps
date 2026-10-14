@@ -1,7 +1,7 @@
 # LESAT — Sistem Internal PT Lima Sarana Trans
 
-Menu yang sudah jadi: **Dashboard**, **Job Order & Doc**, **Handling Ops** (tiket, Report Material, Trucking Delivery / Surat Jalan), serta **User Management** dan **Role Management** (grup ADMINISTRATOR).
-Menu lain di sidebar masih berlabel "segera". Spesifikasi: [docs/spec-jo-handling.md](docs/spec-jo-handling.md), audit awal: [docs/audit-jo-handling.md](docs/audit-jo-handling.md).
+Menu yang sudah jadi: **Dashboard**, **Job Order & Doc**, **Handling Ops** (tiket, Report Material, Trucking Delivery / Surat Jalan), **COA** (FAT › COA: Account Code dan Master General Ledger), serta **User Management** dan **Role Management** (grup ADMINISTRATOR).
+Menu lain di sidebar masih berlabel "segera". Spesifikasi: [docs/spec-coa.md](docs/spec-coa.md), [docs/spec-jo-handling.md](docs/spec-jo-handling.md), audit awal: [docs/audit-jo-handling.md](docs/audit-jo-handling.md).
 
 ## Menjalankan
 ```bash
@@ -30,8 +30,9 @@ Login awal lokal: `admin` / `admin123` (role Super Admin, email `admin@gmail.com
 | `lib/code128.js` | Barcode Code 128 — dipakai server (PDF) dan browser (`/shared/code128.js`). |
 | `migrations/` | Migrasi berurutan (`schema_migrations`), idempoten; data lama dipindahkan, tidak dihapus. |
 | `lib/permissions.js`, `lib/authz.js`, `lib/roles-seed.js` | Daftar izin (modul × aksi), middleware izin & batas login, role bawaan. |
-| `routes/` | `job-orders.js`, `jo-materials.js`, `handling.js`, `home.js`, `users.js`, `roles.js`. |
-| `public/` | SPA: `app.js` (inti), `jo.js`, `jo-detail.js`, `ho.js`, `scan.js`, `home.js` (Dashboard), `users.js`, `roles.js`, `style.css` (design token glass). |
+| `lib/coa.js`, `migrations/data/coa-seed.json`, `scripts/coa-seed.js` | Aturan COA (murni), data awal 365 akun, skrip pembangkit seed dari Excel. |
+| `routes/` | `job-orders.js`, `jo-materials.js`, `handling.js`, `home.js`, `users.js`, `roles.js`, `coa.js`. |
+| `public/` | SPA: `app.js` (inti), `jo.js`, `jo-detail.js`, `ho.js`, `scan.js`, `home.js` (Dashboard), `users.js`, `roles.js`, `coa.js`, `style.css` (design token glass). |
 | `tests/` | `node --test` — formula, penomoran (termasuk simpan bersamaan), migrasi, validasi, PDF/Excel/ZIP, aturan tiket. |
 
 ## Konfigurasi (env)

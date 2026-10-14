@@ -35,6 +35,15 @@ Seluruh router: `GET /upcoming`, `/plan`, `/tickets`.
 | POST `/api/vendors` | `vendor.create` |
 | GET `/api/vendors` | cukup login |
 
+## COA (`coa.*`) — `/api/coa/*`
+| Metode + path | Izin |
+|---|---|
+| GET `/`, `/headers` | `coa.view` |
+| GET `/export` | `coa.export` *(pengecualian)* |
+| POST `/`, POST `/headers` | `coa.create` |
+| PUT `/:id`, PUT `/headers/:id` | `coa.update` |
+| DELETE (apa pun) | tidak ada: `coa.delete` tidak didefinisikan, jadi selalu 403 (akun hanya dinonaktifkan) |
+
 ## Administrator
 | Route | Izin |
 |---|---|
