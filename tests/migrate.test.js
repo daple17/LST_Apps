@@ -29,7 +29,7 @@ test('migrasi data demo lama ke struktur baru', async t => {
   await q("INSERT INTO sj_photos (sj_id,path) VALUES (1,'s1.jpg')");
 
   // 2. migrasi (dua kali: yang kedua tidak boleh melakukan apa pun)
-  assert.deepEqual((await migrate(pool)).sort(), ['000-legacy-baseline.js', '001-job-orders.js', '002-handling.js']); // baseline dipanggil manual di atas, jadi belum tercatat (idempotent)
+  assert.deepEqual((await migrate(pool)).sort(), ['000-legacy-baseline.js', '001-job-orders.js', '002-handling.js', '003-nopen.js']); // baseline dipanggil manual di atas, jadi belum tercatat (idempotent)
   assert.deepEqual(await migrate(pool), []);
 
   // 3. JO: nomor, tipe, berat, party, referensi
@@ -73,6 +73,8 @@ test('migrasi data demo lama ke struktur baru', async t => {
   assert.deepEqual(items.map(i => i.mark), ['GOOD', 'DAMAGE']);
   const dn = (await q('SELECT no_sj, created_by_name FROM delivery_notes'))[0];
   assert.deepEqual([dn.no_sj, dn.created_by_name], ['2026100007', 'Administrator']);
+
+  assert.match(await helpers(pool).columnType('jo_references', 'kind'), /NOPEN/);
 
   // 7. tabel lama sudah tidak ada; JO boleh masuk tiket lagi setelah tiket lama selesai (UNIQUE jo_id dilepas)
   const h = helpers(pool);
