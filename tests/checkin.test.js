@@ -117,3 +117,94 @@ test('API check in pegawai: waktu server, satu kali per hari, lokasi, report', a
   assert.equal((await vu('POST', '/checkin', { status: 'WFO' })).status, 403); assert.equal((await vu('POST', '/checkin/report', { start_time: '08:00', activity: 'x' })).status, 403);
   assert.equal((await app.get('/checkin/today')).status, 200);                                        // Super Admin
 });
+
+const ExcelJS = require('exceljs');
+test('API rekap HR: harian, periode, alfa virtual, override, koreksi report, ekspor, izin', async t => {
+  if (!(await dbAvailable())) return t.skip('MySQL tidak tersedia');
+  const clock = { t: new Date('2026-10-16T01:00:00Z') };                                           // Jumat 08:00 WIB
+  const app = await startApp('lesat_test_checkin_rekap', { now: () => clock.t }), q = async (s, p) => (await app.pool.query(s, p))[0];
+  t.after(() => app.close());
+  const mk = async (u, no, active = 1) => (await q('INSERT INTO users (username,password,name,employee_no,is_active,email) VALUES (?,?,?,?,?,?)', [u, 'x', u[0].toUpperCase() + u.slice(1), no, active, u + '@x.id'])).insertId;
+  const ade = await mk('ade', '14001'), budi = await mk('budi', '14002'), citra = await mk('citra', null), dodo = await mk('dodo', '14004', 0), eka = await mk('eka', '14005', 0);
+  await q("UPDATE users SET created_at='2026-10-01 00:00:00'");                                       // tanggal bergabung tetap agar hasil tidak bergantung tanggal asli
+  const att = (u, d, st, utc, extra = {}) => q('INSERT INTO attendance (user_id, work_date, status, check_in_at, note, source, lat, lng) VALUES (?,?,?,?,?,?,?,?)', [u, d, st, utc || null, extra.note || null, extra.source || 'SELF', extra.lat ?? null, extra.lng ?? null]);
+  await att(ade, '2026-10-14', 'WFO', '2026-10-14 00:50:00', { lat: -6.1, lng: 106.8 }); await att(ade, '2026-10-15', 'WFH', '2026-10-15 01:45:00'); await att(ade, '2026-10-16', 'WFO', '2026-10-16 00:30:00');
+  await att(budi, '2026-10-14', 'SCK', null, { note: 'Demam', source: 'HR' }); await att(budi, '2026-10-16', 'OTH', null, { note: 'Umroh', source: 'HR' });
+  await att(eka, '2026-10-15', 'WFO', '2026-10-15 00:20:00');
+  await q("INSERT INTO daily_report_items (user_id, work_date, start_time, end_time, activity) VALUES (?, '2026-10-16', '08:00:00', '11:32:00', 'Handling LCL KUI'), (?, '2026-10-16', '12:30:00', NULL, 'Pengerjaan Settlement')", [ade, ade]);
+  const rk = async (qs = '') => (await app.get('/checkin-rekap' + qs)).data, by = d => Object.fromEntries(d.rows.map(r => [r.name, r]));
+
+  // periode: alfa virtual hanya hari kerja yang sudah lewat untuk pegawai aktif; hari ini belum alfa
+  let d = await rk('?from=2026-10-14&to=2026-10-16'); assert.equal(d.mode, 'period'); assert.equal(d.days, 3);
+  assert.deepEqual(d.rows.map(r => r.name), ['Ade', 'Administrator', 'Budi', 'Citra', 'Eka']);       // Dodo (nonaktif tanpa baris) tidak ikut
+  let x = by(d);
+  assert.deepEqual([x.Ade.attendance, x.Ade.permit, x.Ade.alfa, x.Ade.late], [3, 0, 0, 1]); assert.deepEqual([x.Budi.attendance, x.Budi.permit, x.Budi.alfa], [0, 2, 1]);
+  assert.deepEqual([x.Citra.alfa, x.Administrator.alfa, x.Eka.attendance, x.Eka.alfa], [2, 2, 1, 0]); assert.equal(x.Citra.employee_no, ''); assert.equal(x.Ade.employee_no, '14001');
+  assert.deepEqual(d.totals, { WFO: 3, WFH: 1, ALF: 5, SCK: 1, OTH: 1 });
+  // harian
+  d = await rk('?date=2026-10-15'); x = by(d); assert.equal(d.mode, 'day');
+  assert.deepEqual(d.totals, { WFO: 1, WFH: 1, ALF: 3, SCK: 0, OTH: 0 });
+  assert.deepEqual([x.Ade.day.status, x.Ade.day.time, x.Ade.day.late, x.Ade.day.check_in_at], ['WFH', '08:45', true, '2026-10-15T08:45:00+07:00']);
+  assert.deepEqual([x.Budi.day.status, x.Budi.day.virtual, x.Budi.day.time], ['ALF', true, null]); assert.equal(x.Eka.day.status, 'WFO');
+  d = await rk('?date=2026-10-16'); x = by(d); assert.equal(d.today, '2026-10-16');
+  assert.equal(x.Citra.day, null); assert.equal(x.Administrator.day, null); assert.deepEqual(d.totals, { WFO: 1, WFH: 0, ALF: 0, SCK: 0, OTH: 1 }); assert.ok(!x.Eka);
+  assert.equal(x.Ade.report, '08:00–11:32 Handling LCL KUI; 12:30–- Pengerjaan Settlement'); assert.equal(x.Budi.day.note, 'Umroh');
+  assert.deepEqual([x.Ade.day.lat, x.Ade.day.maps_url], [null, null]);
+  d = await rk('?date=2026-10-14'); assert.deepEqual([by(d).Ade.day.lat, by(d).Ade.day.maps_url], [-6.1, 'https://www.google.com/maps?q=-6.1,106.8']);
+  assert.deepEqual((await rk()).rows.length, 4);                                                    // tanpa parameter = hari ini (Eka nonaktif tanpa baris hari ini)
+  // cari, filter status, validasi rentang
+  assert.deepEqual((await rk('?from=2026-10-14&to=2026-10-16&q=14002')).rows.map(r => r.name), ['Budi']); assert.deepEqual((await rk('?from=2026-10-14&to=2026-10-16&q=eka')).totals, { WFO: 1, WFH: 0, ALF: 0, SCK: 0, OTH: 0 });
+  assert.deepEqual((await rk('?from=2026-10-14&to=2026-10-16&status=SCK')).rows.map(r => r.name), ['Budi']);
+  for (const qs of ['?status=XX', '?date=2026-02-30', '?from=2026-10-16&to=2026-10-01', '?from=2026-01-01&to=2026-12-31', '?from=2026-10-01']) assert.equal((await app.get('/checkin-rekap' + qs)).status, 400, qs);
+
+  // detail per pegawai
+  const r_ = (await app.get(`/checkin-rekap/user/${budi}?from=2026-10-14&to=2026-10-16`)).data;
+  assert.equal(r_.user.name, 'Budi'); assert.deepEqual(r_.days.map(x => [x.date, x.status, x.virtual]), [['2026-10-16', 'OTH', false], ['2026-10-15', 'ALF', true], ['2026-10-14', 'SCK', false]]);
+  assert.deepEqual(r_.summary, { WFO: 0, WFH: 0, ALF: 1, SCK: 1, OTH: 1, late: 0 });
+  const da = (await app.get(`/checkin-rekap/user/${ade}?from=2026-10-14&to=2026-10-16`)).data; assert.equal(da.days[0].report.length, 2); assert.equal(da.days[2].attendance.maps_url, 'https://www.google.com/maps?q=-6.1,106.8'); assert.equal(da.summary.late, 1);
+  assert.equal((await app.get('/checkin-rekap/user/999999')).status, 404); assert.equal((await app.get(`/checkin-rekap/user/${ade}?from=2026-01-01&to=2026-12-31`)).status, 400);
+
+  // override HR
+  const ov = body => app.put('/checkin-rekap/override', body);
+  for (const [b, f] of [[{ user_id: budi, work_date: '2026-10-15', status: 'SCK' }, 'note'], [{ user_id: budi, work_date: '2026-10-15', status: 'OTH', note: ' ' }, 'note'], [{ user_id: budi, work_date: '2026-10-17', status: 'ALF' }, 'work_date'],
+    [{ user_id: budi, work_date: '2026-13-01', status: 'ALF' }, 'work_date'], [{ user_id: budi, work_date: '2026-10-15', status: 'ABC' }, 'status'], [{ user_id: 999999, work_date: '2026-10-15', status: 'WFO' }, 'user_id'],
+    [{ user_id: budi, work_date: '2026-10-15', status: 'SCK', note: 'x'.repeat(256) }, 'note']]) { const r = await ov(b); assert.equal(r.status, 400, JSON.stringify(b).slice(0, 70)); assert.ok(r.data.fields[f], f); }
+  assert.equal((await q('SELECT COUNT(*) n FROM attendance WHERE user_id=? AND work_date=?', [budi, '2026-10-15']))[0].n, 0);
+  let r = await ov({ user_id: budi, work_date: '2026-10-15', status: 'SCK', note: 'Demam tinggi' }); assert.equal(r.status, 200); assert.equal(r.data.attendance.source, 'HR'); assert.equal(r.data.attendance.check_in_at, null);
+  assert.deepEqual([by(await rk('?date=2026-10-15')).Budi.day.status, (await rk('?date=2026-10-15')).totals.ALF, (await rk('?date=2026-10-15')).totals.SCK], ['SCK', 2, 1]);   // baris HR menggantikan alfa virtual
+  r = await ov({ user_id: ade, work_date: '2026-10-16', status: 'WFH' }); assert.equal(r.status, 200);                                  // mengganti baris yang ada; jam check in tetap
+  const adeRow = (await q('SELECT * FROM attendance WHERE user_id=? AND work_date=?', [ade, '2026-10-16']))[0]; assert.deepEqual([adeRow.status, adeRow.source, adeRow.check_in_at, adeRow.updated_by], ['WFH', 'HR', '2026-10-16 00:30:00', 1]);
+  assert.equal((await ov({ user_id: citra, work_date: '2026-10-16', status: 'WFO' })).status, 200);                                       // hari ini boleh; WFO tanpa jam
+  assert.equal((await q('SELECT COUNT(*) n FROM attendance WHERE user_id=? AND work_date=?', [citra, '2026-10-16']))[0].n, 1);
+  const au = await q("SELECT action, note FROM audit_log WHERE entity_type='attendance' ORDER BY id"); assert.equal(au.length, 3);
+  assert.match(au[0].note, /Budi 2026-10-15: ALF \(otomatis\) → SCK \(Demam tinggi\)/); assert.match(au[1].note, /Ade 2026-10-16: WFO → WFH/); assert.equal(au[0].action, 'Diinput HR'); assert.equal(au[1].action, 'Dikoreksi HR');
+  // pegawai check in sendiri sesudah HR mengisi hari itu -> ditolak (diuji di tes API pegawai)
+
+  // koreksi report oleh HR
+  const it = (await q('SELECT id FROM daily_report_items ORDER BY id'))[0].id;
+  assert.equal((await app.put(`/checkin-rekap/report/${it}`, { start_time: '08:00', end_time: '07:00', activity: 'x' })).status, 400); assert.equal((await app.put('/checkin-rekap/report/999999', { start_time: '08:00', activity: 'x' })).status, 404);
+  assert.equal((await app.put(`/checkin-rekap/report/${it}`, { start_time: '08:15', end_time: '11:30', activity: 'Handling LCL KUI (koreksi)' })).status, 200);
+  assert.match((await q("SELECT note FROM audit_log WHERE entity_type='daily_report'"))[0].note, /Ade 2026-10-16: 08:00–11:32 Handling LCL KUI → 08:15–11:30 Handling LCL KUI \(koreksi\)/);
+  clock.t = new Date('2026-10-20T01:00:00Z');                                                         // hari berikutnya tetap bisa dikoreksi HR
+  assert.equal((await app.put(`/checkin-rekap/report/${it}`, { start_time: '08:15', end_time: '11:30', activity: 'koreksi lagi' })).status, 200); clock.t = new Date('2026-10-16T01:00:00Z');
+
+  // ekspor Excel
+  let ex = await app.raw('/checkin-rekap/export?date=2026-10-15'); assert.equal(ex.status, 200); assert.match(ex.type, /spreadsheetml/);
+  let wb = new ExcelJS.Workbook(); await wb.xlsx.load(ex.buf); let ws = wb.getWorksheet('Rekap Harian');
+  assert.deepEqual(ws.getRow(1).values.slice(1), ['No.', 'Nomor ID', 'Nama', 'Attendance', 'Permit', 'Alfa', 'Past', 'Location', 'Check In', 'Status', 'Report']);
+  assert.equal(ws.rowCount, 1 + 5); assert.equal(ws.getRow(2).getCell(3).value, 'Ade'); assert.equal(ws.getRow(2).getCell(9).value, '08:45'); assert.equal(ws.getRow(2).getCell(10).value, 'WFH'); assert.equal(ws.getRow(2).getCell(8).value, 'Lokasi tidak dibagikan');
+  assert.equal(ws.getRow(4).getCell(10).value, 'SCK'); assert.equal(wb.getWorksheet('Total').getRow(2).getCell(1).value, 'Total WFO');
+  ex = await app.raw('/checkin-rekap/export?from=2026-10-14&to=2026-10-16'); wb = new ExcelJS.Workbook(); await wb.xlsx.load(ex.buf); ws = wb.getWorksheet('Rekap Periode');
+  assert.deepEqual(ws.getRow(1).values.slice(1), ['No.', 'Nomor ID', 'Nama', 'Attendance', 'Permit', 'Alfa', 'Past']); assert.equal((await app.raw('/checkin-rekap/export?status=XX')).status, 400);
+
+  // izin
+  const mkRole = async (name, perms) => { const rl = (await q('INSERT INTO roles (name) VALUES (?)', [name])).insertId; await q('INSERT INTO role_permissions (role_id, permission) VALUES ?', [perms.map(p => [rl, p])]); return (await q('INSERT INTO users (username,password,name,role_id,email) VALUES (?,?,?,?,?)', [name.replace(/\W/g, ''), 'x', name, rl, name.replace(/\W/g, '') + '@x.id'])).insertId; };
+  const as = id => (m, u, b) => app.callAs(jwt.sign({ id }, cfg.secret), m, u, b);
+  const own = as(await mkRole('Hanya Absen', ['checkin.view', 'checkin.create', 'checkin.update'])), view = as(await mkRole('Rekap Lihat', ['checkin_rekap.view']));
+  const calls = [['GET', '/checkin-rekap'], ['GET', `/checkin-rekap/user/${ade}`], ['GET', '/checkin-rekap/export'], ['PUT', '/checkin-rekap/override'], ['PUT', `/checkin-rekap/report/${it}`]];
+  for (const [m, u] of calls) assert.equal((await own(m, u, {})).status, 403, 'hanya checkin: ' + m + u);                       // checkin tanpa checkin_rekap
+  assert.equal((await own('GET', '/checkin/today')).status, 200);
+  assert.equal((await view('GET', '/checkin-rekap')).status, 200); assert.equal((await view('GET', `/checkin-rekap/user/${ade}`)).status, 200);
+  for (const [m, u] of calls.slice(2)) assert.equal((await view(m, u, {})).status, 403, 'rekap view: ' + m + u);                  // override dan ekspor butuh izin sendiri
+  assert.equal((await view('GET', '/checkin/today')).status, 403);                                                                  // rekap tidak otomatis berarti boleh check in
+});

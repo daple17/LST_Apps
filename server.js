@@ -103,6 +103,7 @@ function createApp(pool, opts = {}) {   // opts.now: jam server yang bisa digant
   app.use('/api/home', requirePerm('home.view'));
   app.use('/api/users', guard('user', [['POST', /^\/\d+\/(de)?activate$/, 'update']]), require('./routes/users')(pool));
   app.use('/api/checkin', guard('checkin'), require('./routes/checkin').router(pool, opts));
+  app.use('/api/checkin-rekap', guard('checkin_rekap', [['GET', /^\/export$/, 'export']]), require('./routes/checkin-rekap')(pool, opts));
   app.use('/api/coa', guard('coa', [['GET', /^\/export$/, 'export']]), require('./routes/coa')(pool));
   app.use('/api/roles', guard('role'), require('./routes/roles')(pool));
   app.use('/api/job-orders', require('./routes/jo-materials')(pool, { refreshTickets: handling.refreshForJo }));
