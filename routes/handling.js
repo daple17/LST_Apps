@@ -42,7 +42,7 @@ module.exports = pool => {
     const customers = uniq(joList.map(j => j.customer_name)), vessels = uniq(joList.map(j => j.vessel));
     return { ...t, qty_total: +t.qty_total, qty_sent: +t.qty_sent, weight_kg: +t.weight_kg, weight: calc.kgToTon(t.weight_kg),
       mat_pct, del_pct, prog: calc.ticketProgress(mat_pct, del_pct, rules.PROGRESS_RULE), dwell_min: calc.dwellMinutes(t.created_at, t.done_at, now),
-      customers, vessels, customer: customers.join(', '), vessel: vessels.join(', '), party: joList.map(j => j.party).filter(Boolean).join(', '), jo_numbers: joList.map(j => j.no_jo) };
+      customers, vessels, customer: customers.join(', '), vessel: vessels.join(', '), party: joList.map(j => j.party).filter(Boolean).join(', '), parties: joList.map(j => j.party).filter(Boolean), jo_numbers: joList.map(j => j.no_jo) };
   };
   async function ticketRow(id) {
     id = Number(id);

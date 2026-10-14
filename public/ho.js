@@ -85,23 +85,23 @@ const hoOverview = run(async () => {
     <button class="btn sec out" onclick="hoExport()">Download Excel</button><button class="btn" onclick="hoTicketForm()">+ Tambah Data</button></div>
     <div class="tabs">${tab('', 'All', c.all)}${tab('done', '100%', c.done)}${tab('mid', '50% - 99%', c.mid)}${tab('low', '< 50%', c.low)}</div>
     <div class="card tw"><table><tr><th>No. Ticket</th><th>PIC</th><th>Customer</th><th>Vessel</th><th>Party</th><th class="num">Weight</th><th>Dwelling time</th><th>Report Material</th><th>Trucking Delivery</th><th>Report</th></tr>
-    ${d.rows.map(r => `<tr class="row"><td><a href="#ho/${r.id}/material"><b>${esc(r.ticket_no)}</b></a></td><td>${esc(r.pic_name)}</td><td class="wrap">${esc(r.customer)}</td><td>${esc(r.vessel)}</td><td>${esc(r.party)}</td><td class="num">${fmtN(r.weight)} ton</td><td>${dwell(r.dwell_min)}</td>
+    ${d.rows.map(r => `<tr class="row"><td><a href="#ho/${r.id}/material"><b>${esc(r.ticket_no)}</b></a></td><td>${esc(r.pic_name)}</td><td class="wrap">${multi(r.customers)}</td><td>${multi(r.vessels)}</td><td>${multi(r.parties)}</td><td class="num">${fmtN(r.weight)} ton</td><td>${dwell(r.dwell_min)}</td>
       <td>${pbtn(`#ho/${r.id}/material`, 'material', r.mat_pct, 'Buka Report Material')}</td>
       <td>${pbtn(`#ho/${r.id}/trucking`, 'truck', r.del_pct, 'Buka Trucking Delivery')}</td>
       <td style="white-space:nowrap"><button class="ib" title="Copy report" aria-label="Copy report" onclick="hoCopy(${r.id})">${ICON.copy}</button> <button class="ib" title="Download Excel" aria-label="Download Excel" onclick="hoDl(${r.id},'${esc(r.ticket_no)}')">${ICON.down}</button></td></tr>`).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--mut)">Belum ada ticket</td></tr>'}</table>
-    ${pager(hoSt.page, d.pages, d.total, 'hoGo')}</div>`;
+    ${pagerNum(hoSt.page, d.pages, d.total, 'hoGoto')}</div>`;
   searchBind('#hq', hoSt, hoOverview);
   [['hf', 'from'], ['ht', 'to']].forEach(([i, k]) => $('#' + i).onchange = e => { hoSt[k] = e.target.value; hoSt.page = 1; hoOverview(); });
 });
 const hoSetP = k => { hoSt.progress = k; hoSt.page = 1; hoOverview(); };
 const hoResetF = () => { hoSt = { q: '', progress: '', page: 1, ...monthRange() }; hoOverview(); };
-const hoGo = n => { hoSt.page += n; hoOverview(); };
+const hoGoto = n => { hoSt.page = n; hoOverview(); };
 const hoExport = run(() => download('/ho/tickets/export?' + hoQs(hoSt), `handling-ops-${today()}.csv`));
 const hoDl = run((id, no) => download(`/ho/tickets/${id}/export`, `report-${no}.csv`));
 const hoCopy = run(async id => {
   const { text } = await api(`/ho/tickets/${id}/report-text`);
   await navigator.clipboard.writeText(text);
-  alert('Report disalin ke clipboard');
+  toast('Report disalin ke clipboard');
 });
 
 /* ---- Ticket: pilih JO ---- */
@@ -122,7 +122,9 @@ function hoDrawSel() {
   $('#tk').innerHTML = hoSel.map((j, i) => `<tr><td>${i + 1}</td><td><b>${esc(j.no_jo)}</b></td><td>${esc(j.aju_no)}</td><td>${esc(j.customer_name)}</td><td>${esc(j.party)}</td><td class="num">${fmtN(j.weight)}</td><td>${esc(j.bl_no)}</td><td>${esc(j.vessel)}</td>
     <td><button class="btn bad sm" onclick="hoRmJo(${i})">×</button></td></tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--mut)">Belum ada JO. Input nomor JO atau gunakan Browse Data.</td></tr>';
   const w = hoSel.reduce((a, j) => a + (+j.weight || 0), 0), bl = new Set(hoSel.flatMap(j => String(j.bl_no || '').split(/[,;]\s*/).filter(Boolean))).size;
-  $('#tt').textContent = `${hoSel.length} JO · ${fmtN(w)} Ton · ${bl} BL`;
+  const byUnit = {}; hoSel.forEach(j => { if (j.qty != null && j.unit) byUnit[j.unit] = (byUnit[j.unit] || 0) + +j.qty; });
+  const qty = Object.entries(byUnit).map(([u, n]) => `${fmtN(n)} ${R().UNITS.find(x => x.code === u)?.name || u}`).join(' + ') || `${hoSel.length} JO`;
+  $('#tt').textContent = `${qty} · ${fmtN(w)} Ton · ${bl} BL`;
 }
 const hoRmJo = i => { hoSel.splice(i, 1); hoDrawSel(); };
 const hoAddJo = run(async () => {
@@ -159,7 +161,7 @@ function hoHead(t, tab) {
   const jos = t.jos, join = f => esc([...new Set(jos.map(j => j[f]).filter(Boolean))].join(', ') || '-');
   const stJo = jos.length && jos.every(j => j.status === 'COMPLETE') ? 'Complete' : 'Not Complete';
   return `<div class="tabs"><a class="btn sec sm" href="#ho">‹ Back</a><a class="btn ${tab === 'material' ? '' : 'sec'} sm" href="#ho/${t.id}/material">Report Material</a><a class="btn ${tab === 'trucking' ? '' : 'sec'} sm" href="#ho/${t.id}/trucking">Trucking Delivery</a>
-    <span style="flex:1"></span><button class="btn sec sm" onclick="hoTicketForm(${t.id})">Edit JO</button>${t.sj_count ? '' : `<button class="btn bad sm" onclick="hoDelTicket(${t.id})">Hapus Ticket</button>`}</div>
+    <span style="flex:1"></span><button class="btn sec sm out" onclick="hoCopy(${t.id})">Copy Report</button><button class="btn sec sm" onclick="hoTicketForm(${t.id})">Edit JO</button>${t.sj_count ? '' : `<button class="btn bad sm" onclick="hoDelTicket(${t.id})">Hapus Ticket</button>`}</div>
     <div class="card hd"><div class="kv"><div><span>Ticket:</span> <b>${esc(t.ticket_no)}</b></div><div><span>PIC:</span> <b>${esc(t.pic_name)}</b></div>
     <div><span>Job Order:</span> <b>${jos.map(x => `<a href="#jo/${x.id}" title="Buka Job Order">${esc(x.no_jo)}</a>`).join(', ') || '-'}</b></div><div><span>Party:</span> <b>${join('party')}</b></div>
     <div><span>Customer:</span> <b>${join('customer_name')}</b></div><div><span>Weight:</span> <b>${fmtN(t.weight)} Ton</b></div>
@@ -190,7 +192,7 @@ const hoMatList = run(async () => {
     <div class="card tw"><table><tr><th>No.</th><th>Product/Container No.</th><th>Description</th><th>Spec</th><th class="num">Thickness</th><th class="num">Width</th><th class="num">Net Weight</th><th class="num">Gross Weight</th><th class="num">Qty</th><th>Satuan</th><th>Dari</th><th>Tujuan</th><th>Status</th></tr>
     ${d.rows.map((m, i) => `<tr class="row" style="cursor:pointer" onclick="hoMatReport(${m.id})"><td>${(hoMq.page - 1) * 20 + i + 1}</td><td><a href="#" onclick="return false"><b>${esc(m.product_no)}</b></a></td><td>${esc(m.description)}</td><td>${esc(m.spec)}</td><td class="num">${fmtN(m.thickness)}</td><td class="num">${fmtN(m.width)}</td><td class="num">${fmtN(m.net_weight)}</td><td class="num">${fmtN(m.gross_weight)}</td><td class="num">${m.qty}</td><td>${esc(m.unit)}</td><td>${esc(m.origin)}</td><td>${esc(m.destination)}</td>
       <td><span class="tag ${m.check_status}">${{ NOT_CHECKED: '-', OK: 'OK', DAMAGE: 'DM' }[m.check_status]}</span></td></tr>`).join('') || `<tr><td colspan="13" style="text-align:center;color:var(--mut)">${sel ? 'Belum ada material. Gunakan + Material atau Import.' : 'Ticket belum memiliki JO'}</td></tr>`}</table>
-    ${pager(hoMq.page, d.pages, d.total, 'hoMGo')}</div>`;
+    ${pagerNum(hoMq.page, d.pages, d.total, 'hoMGoto')}</div>`;
   $('#ms').value = hoMq.status;
   searchBind('#mq', hoMq, hoMatList);
   $('#mq').onkeydown = run(async e => { // scan barcode = ketik lalu Enter
@@ -200,7 +202,7 @@ const hoMatList = run(async () => {
   });
   $('#ms').onchange = e => { hoMq.status = e.target.value; hoMq.page = 1; hoMatList(); };
 });
-const hoMGo = n => { hoMq.page += n; hoMatList(); };
+const hoMGoto = n => { hoMq.page = n; hoMatList(); };
 
 const hoMatReport = run(async id => {
   const m = await api(`/ho/tickets/${hoT.id}/materials/${id}`), t = hoT;
@@ -279,10 +281,10 @@ const hoSjList = run(async () => {
     <div class="card tw"><table><tr><th>No.</th><th>Nomor Polisi</th><th>Driver</th><th>Vendor</th><th>No. Surat Jalan</th><th>Start Loading</th><th>Load Time</th><th class="num">Net Weight</th><th class="num">Gross Weight</th><th class="num">Qty</th><th>Satuan</th><th>Dari</th><th>Tujuan</th><th>Detail</th></tr>
     ${d.rows.map((r, i) => `<tr class="row"><td>${(hoSq.page - 1) * 20 + i + 1}</td><td><b>${esc(r.nopol)}</b></td><td>${esc(r.driver)}</td><td>${esc(r.vendor_code)}</td><td>${esc(r.sj_no)}</td><td>${fmtT(r.start_at)}</td><td>${loadT(r.load_min)}</td><td class="num">${fmtN(r.net_weight)}</td><td class="num">${fmtN(r.gross_weight)}</td><td class="num">${r.qty}</td><td>${esc(r.unit)}</td><td>${esc(r.origin)}</td><td>${esc(r.destination)}</td>
       <td><button class="btn sm" onclick="hoSjView(${r.id})">&gt;&gt;</button></td></tr>`).join('') || `<tr><td colspan="14" style="text-align:center;color:var(--mut)">${t.mat_total ? 'Belum ada Surat Jalan' : 'Tambahkan material di Report Material terlebih dahulu'}</td></tr>`}</table>
-    ${pager(hoSq.page, d.pages, d.total, 'hoSGo')}</div>`;
+    ${pagerNum(hoSq.page, d.pages, d.total, 'hoSGoto')}</div>`;
   searchBind('#sq', hoSq, hoSjList);
 });
-const hoSGo = n => { hoSq.page += n; hoSjList(); };
+const hoSGoto = n => { hoSq.page = n; hoSjList(); };
 
 let hoItems = [], hoSjId = null, hoSjBox = null, hoSjStart = null;
 const hoSjForm = run(async id => {
