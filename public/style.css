@@ -167,7 +167,7 @@ th:first-child,td:first-child{padding-left:20px}th:last-child,td:last-child{padd
 @media (max-width:1440px){main .tw th,main .tw td{padding-left:10px;padding-right:10px}main .tw th:first-child,main .tw td:first-child{padding-left:18px}}
 main .tw>table{min-width:1060px}
 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:1px;--d:var(--blue);background:var(--d);box-shadow:0 0 0 3px color-mix(in srgb,var(--d) 22%,transparent)}
-.dot.t-LOKAL{--d:var(--or)}.dot.t-TRUCKING{--d:var(--cy)}
+.dot.t-TRUCKING{--d:var(--or)}.dot.t-EXPORT{--d:var(--cy)}.dot.t-PROJECT{--d:var(--green)}
 
 /* chip status */
 .tag{display:inline-flex;align-items:center;gap:6px;padding:3px 11px;border-radius:var(--r-pill);font-size:12px;font-weight:600;background:var(--c-n-bg);color:var(--ink);white-space:nowrap}

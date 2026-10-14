@@ -123,7 +123,7 @@ const hoTicketForm = run(async id => {
   hoDrawSel();
 });
 function hoDrawSel() {
-  $('#tk').innerHTML = hoSel.map((j, i) => `<tr><td>${i + 1}</td><td><b>${esc(j.jo_no)}</b></td><td>${esc(j.aju_no)}</td><td>${esc(j.customer_name)}</td><td>${esc(j.party)}</td><td class="num">${fmtN(j.weight)}</td><td>${esc(j.bl_no)}</td><td>${esc(j.vessel)}</td>
+  $('#tk').innerHTML = hoSel.map((j, i) => `<tr><td>${i + 1}</td><td><b>${esc(j.no_jo)}</b></td><td>${esc(j.aju_no)}</td><td>${esc(j.customer_name)}</td><td>${esc(j.party)}</td><td class="num">${fmtN(j.weight)}</td><td>${esc(j.bl_no)}</td><td>${esc(j.vessel)}</td>
     <td><button class="btn bad sm" onclick="hoRmJo(${i})">×</button></td></tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--mut)">Belum ada JO. Input nomor JO atau gunakan Browse Data.</td></tr>';
   const w = hoSel.reduce((a, j) => a + (+j.weight || 0), 0), bl = new Set(hoSel.flatMap(j => String(j.bl_no || '').split(/[,;]\s*/).filter(Boolean))).size;
   $('#tt').textContent = `${hoSel.length} JO · ${fmtN(w)} Ton · ${bl} BL`;
@@ -132,7 +132,7 @@ const hoRmJo = i => { hoSel.splice(i, 1); hoDrawSel(); };
 const hoAddJo = run(async () => {
   const v = $('#jn').value.trim();
   if (!v) return;
-  const rows = await api(`/ho/browse-jo?ticket=${hoEditId || 0}&q=${encodeURIComponent(v)}`), j = rows.find(r => r.jo_no.toLowerCase() === v.toLowerCase());
+  const rows = await api(`/ho/browse-jo?ticket=${hoEditId || 0}&q=${encodeURIComponent(v)}`), j = rows.find(r => r.no_jo.toLowerCase() === v.toLowerCase());
   if (!j) return alert('JO tidak ditemukan, sudah Complete, atau sudah dipakai ticket lain');
   if (hoSel.some(x => x.id === j.id)) return alert('JO sudah ada di daftar');
   hoSel.push(j); $('#jn').value = ''; hoDrawSel();
@@ -144,7 +144,7 @@ const hoBrowse = run(async () => {
   let list = [];
   const load = async () => {
     list = await api(`/ho/browse-jo?ticket=${hoEditId || 0}&q=${encodeURIComponent($('#bq').value)}`);
-    $('#bl').innerHTML = list.map((j, i) => `<tr><td><input type="checkbox" data-i="${i}" ${hoSel.some(x => x.id === j.id) ? 'checked disabled' : ''} style="width:auto"></td><td><b>${esc(j.jo_no)}</b></td><td>${esc(j.customer_name)}</td><td>${esc(j.party)}</td><td class="num">${fmtN(j.weight)}</td><td>${esc(j.bl_no)}</td><td>${esc(j.invoice_no)}</td><td>${esc(j.vessel)}</td></tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--mut)">Tidak ada JO tersedia</td></tr>';
+    $('#bl').innerHTML = list.map((j, i) => `<tr><td><input type="checkbox" data-i="${i}" ${hoSel.some(x => x.id === j.id) ? 'checked disabled' : ''} style="width:auto"></td><td><b>${esc(j.no_jo)}</b></td><td>${esc(j.customer_name)}</td><td>${esc(j.party)}</td><td class="num">${fmtN(j.weight)}</td><td>${esc(j.bl_no)}</td><td>${esc(j.invoice_no)}</td><td>${esc(j.vessel)}</td></tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--mut)">Tidak ada JO tersedia</td></tr>';
   };
   let t; $('#bq').oninput = () => { clearTimeout(t); t = setTimeout(load, 300); };
   window.hoPick = () => { document.querySelectorAll('#bl input:checked:not(:disabled)').forEach(c => hoSel.push(list[+c.dataset.i])); $('#qa').innerHTML = ''; hoDrawSel(); };
@@ -165,7 +165,7 @@ function hoHead(t, tab) {
   return `<div class="tabs"><a class="btn sec sm" href="#ho">‹ Back</a><a class="btn ${tab === 'material' ? '' : 'sec'} sm" href="#ho/${t.id}/material">Report Material</a><a class="btn ${tab === 'trucking' ? '' : 'sec'} sm" href="#ho/${t.id}/trucking">Trucking Delivery</a>
     <span style="flex:1"></span><button class="btn sec sm" onclick="hoTicketForm(${t.id})">Edit JO</button>${t.sj_count ? '' : `<button class="btn bad sm" onclick="hoDelTicket(${t.id})">Hapus Ticket</button>`}</div>
     <div class="card hd"><div class="kv"><div><span>Ticket:</span> <b>${esc(t.ticket_no)}</b></div><div><span>PIC:</span> <b>${esc(t.pic_name)}</b></div>
-    <div><span>Job Order:</span> <b>${jos.map(x => `<a href="#jo/${x.id}" title="Buka Job Order">${esc(x.jo_no)}</a>`).join(', ') || '-'}</b></div><div><span>Party:</span> <b>${join('party')}</b></div>
+    <div><span>Job Order:</span> <b>${jos.map(x => `<a href="#jo/${x.id}" title="Buka Job Order">${esc(x.no_jo)}</a>`).join(', ') || '-'}</b></div><div><span>Party:</span> <b>${join('party')}</b></div>
     <div><span>Customer:</span> <b>${join('customer_name')}</b></div><div><span>Weight:</span> <b>${fmtN(t.weight)} Ton</b></div>
     <div><span>Vessel:</span> <b>${join('vessel')}</b></div><div><span>No. Aju:</span> <b>${join('aju_no')}</b></div>
     <div><span>No. BL:</span> <b>${join('bl_no')}</b></div><div><span>Status JO:</span> <b>${stJo}</b></div></div></div>
@@ -207,7 +207,7 @@ const hoMatList = run(async () => {
 const hoMGo = n => { hoMq.page += n; hoMatList(); };
 
 const hoMatReport = run(async id => {
-  const m = await api('/materials/' + id), t = hoT;
+  const m = await api(`/ho/tickets/${hoT.id}/materials/${id}`), t = hoT;
   const kv = (k, v) => `<div><span>${k}:</span> <b>${esc(v ?? '-') || '-'}</b></div>`;
   $('#md').innerHTML = `<div class="modal"><form class="card" id="rf" style="max-width:720px"><h3 style="margin-top:0">Report Material</h3>
     <div class="kv">${kv('Product/Container No.', m.product_no)}<div><span>No. Job Order:</span> <b><a href="#jo/${m.jo_id}" onclick="closeMd()">${esc(m.jo_no)}</a></b></div>${kv('Description', m.description)}${kv('No. BL', m.bl_no)}${kv('Spec', m.spec)}${kv('No. Aju PIB/PEB', m.aju_no)}
@@ -219,31 +219,31 @@ const hoMatReport = run(async id => {
     <div class="err" id="fe"></div><div class="acts"><button type="button" class="btn sec" onclick="closeMd()">Cancel</button>
     ${m.sent_qty ? '' : `<button type="button" class="btn bad" onclick="hoDelMat(${m.id})">Hapus</button>`}<button type="button" class="btn sec" onclick="hoMatForm(${m.id})">Edit Data</button><button class="btn">Save</button></div></form></div>`;
   $('#rf').check_status.value = m.check_status;
-  const box = photoBox('#pb', 8, m.photos, '/material-photos/');
+  const box = photoBox('#pb', R().LIMITS.MATERIAL_PHOTOS, m.photos, '/ho/files/');
   $('#rf').onsubmit = async e => {
     e.preventDefault();
     const f = e.target;
     try {
-      await api(`/materials/${id}/report`, 'PATCH', { check_status: f.check_status.value, remarks: f.remarks.value });
-      await box.upload(`/materials/${id}/photos`);
+      await api(`/ho/tickets/${hoT.id}/materials/${id}/report`, 'PATCH', { check_status: f.check_status.value, remarks: f.remarks.value });
+      await box.upload(`/ho/tickets/${hoT.id}/materials/${id}/photos`);
       closeMd(); route();
     } catch (x) { $('#fe').textContent = x.message; }
   };
 });
-const hoDelMat = run(async id => { if (confirm('Hapus material ini?')) { await api('/materials/' + id, 'DELETE'); closeMd(); route(); } });
+const hoDelMat = run(async id => { if (confirm('Hapus material ini?')) { await api('/ho/materials/' + id, 'DELETE'); closeMd(); route(); } });
 
 const MAT_F = [['product_no', 'Product/Container No. *', 'text'], ['description', 'Description', 'text'], ['spec', 'Spec', 'text'], ['bl_no', 'No. BL', 'text'], ['thickness', 'Thickness', 'number'], ['width', 'Width', 'number'],
   ['net_weight', 'Net Weight (total baris)', 'number'], ['gross_weight', 'Gross Weight (total baris)', 'number'], ['qty', 'Qty *', 'number'], ['unit', 'Satuan', 'text'], ['origin', 'Dari', 'text'], ['destination', 'Tujuan', 'text']];
 const hoMatForm = run(async id => {
-  const m = id ? await api('/materials/' + id) : { unit: 'COIL', qty: 1, jo_id: hoT.jos[0]?.id, origin: 'PRIOK' };
+  const m = id ? await api(`/ho/tickets/${hoT.id}/materials/${id}`) : { unit: 'COIL', qty: 1, jo_id: hoT.jos[0]?.id, origin: 'PRIOK' };
   $('#md').innerHTML = `<div class="modal"><form class="card" id="mf"><h3 style="margin-top:0">${id ? 'Edit Material' : 'Tambah Material'}</h3><div class="g">
-    <div class="full"><label>Job Order *</label><select name="jo_id">${hoT.jos.map(j => `<option value="${j.id}" ${j.id === m.jo_id ? 'selected' : ''}>${esc(j.jo_no)} · ${esc(j.customer_name)}</option>`).join('')}</select></div>
+    <div class="full"><label>Job Order *</label><select name="jo_id">${hoT.jos.map(j => `<option value="${j.id}" ${j.id === m.jo_id ? 'selected' : ''}>${esc(j.no_jo)} · ${esc(j.customer_name)}</option>`).join('')}</select></div>
     ${MAT_F.map(([k, n, ty]) => `<div><label>${n}</label><input name="${k}" type="${ty}" ${k === 'qty' ? 'min="1" step="1"' : ty === 'number' ? 'step="0.01" min="0"' : ''} value="${esc(m[k] ?? '')}"></div>`).join('')}</div>
     <div class="err" id="fe"></div><div class="acts"><button type="button" class="btn sec" onclick="${id ? `hoMatReport(${id})` : 'closeMd()'}">Batal</button><button class="btn">Simpan</button></div></form></div>`;
   $('#mf').onsubmit = async e => {
     e.preventDefault();
     const b = Object.fromEntries(new FormData(e.target));
-    try { id ? await api('/materials/' + id, 'PUT', b) : await api(`/ho/tickets/${hoT.id}/materials`, 'POST', b); closeMd(); route(); }
+    try { id ? await api('/ho/materials/' + id, 'PUT', b) : await api(`/ho/tickets/${hoT.id}/materials`, 'POST', b); closeMd(); route(); }
     catch (x) { $('#fe').textContent = x.message; }
   };
 });
@@ -251,7 +251,7 @@ const hoMatForm = run(async id => {
 const IMP_COLS = ['product_no', 'description', 'spec', 'thickness', 'width', 'bl_no', 'net_weight', 'gross_weight', 'qty', 'unit', 'origin', 'destination'];
 const hoImport = () => {
   $('#md').innerHTML = `<div class="modal"><form class="card" id="imf"><h3 style="margin-top:0">Import Material</h3>
-    <div><label>Job Order untuk semua baris</label><select name="jo_id">${hoT.jos.map(j => `<option value="${j.id}">${esc(j.jo_no)} · ${esc(j.customer_name)}</option>`).join('')}</select></div>
+    <div><label>Job Order untuk semua baris</label><select name="jo_id">${hoT.jos.map(j => `<option value="${j.id}">${esc(j.no_jo)} · ${esc(j.customer_name)}</option>`).join('')}</select></div>
     <div style="margin-top:10px"><label>Tempel dari Excel (tab) atau CSV (koma), tanpa header. Urutan kolom: ${IMP_COLS.join(', ')}. Angka pakai titik desimal tanpa pemisah ribuan.</label>
     <textarea name="rows" rows="10" placeholder="CQH4162B&#9;GALVANIZED COIL&#9;JAC270C&#9;0.7&#9;1245&#9;ASANKWJK12&#9;8120&#9;8187&#9;1&#9;COIL&#9;PRIOK&#9;CIBITUNG" required></textarea></div>
     <div class="err" id="fe"></div><div class="acts"><button type="button" class="btn sec" onclick="closeMd()">Batal</button><button class="btn">Import</button></div></form></div>`;
@@ -291,7 +291,7 @@ const hoSGo = n => { hoSq.page += n; hoSjList(); };
 let hoItems = [], hoSjId = null, hoSjBox = null, hoSjStart = null;
 const hoSjForm = run(async id => {
   hoSjId = id || null; hoSjStart = new Date().toISOString();
-  const s = id ? await api('/sj/' + id) : { items: [], photos: [] };
+  const s = id ? await api('/ho/sj/' + id) : { items: [], photos: [] };
   hoItems = s.items.map(i => ({ material_id: i.material_id, product_no: i.product_no, description: i.description, spec: i.spec, bl_no: i.bl_no, unit: i.unit, mat_qty: +i.mat_qty, max: +i.mat_qty, unit_net: i.qty ? +i.weight / i.qty : 0, qty: +i.qty, weight: +i.weight, destination: i.destination, check_status: i.check_status }));
   const t = hoT;
   $('#md').innerHTML = `<div class="modal"><form class="card" id="sf" style="width:min(980px,100%)"><h3 style="margin-top:0">Surat Jalan ${id ? esc(s.sj_no) : 'Baru'}</h3>
@@ -305,7 +305,7 @@ const hoSjForm = run(async id => {
     <div class="card tw" style="margin-top:8px"><table><tr><th></th><th>No.</th><th>Product No.</th><th>Desc</th><th>Spec</th><th>No. BL</th><th>Qty</th><th>Weight</th><th>Tujuan</th><th>Marks</th></tr><tbody id="sit"></tbody></table></div>
     <div style="margin-top:12px"><label>Add Photos (maks 3)</label><div id="pb"></div></div>
     <div class="err" id="fe"></div><div class="acts"><button type="button" class="btn sec" onclick="${id ? `hoSjView(${id})` : 'closeMd()'}">Cancel</button><button class="btn">Save</button></div><div id="qa"></div></form></div>`;
-  hoSjBox = photoBox('#pb', 3, s.photos, '/sj-photos/');
+  hoSjBox = photoBox('#pb', R().LIMITS.SJ_PHOTOS, s.photos, '/ho/files/');
   $('#mi').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); hoFindMat(true); } };
   hoDrawItems();
   $('#sf').onsubmit = async e => {
@@ -314,8 +314,8 @@ const hoSjForm = run(async id => {
       items: hoItems.map(i => ({ material_id: i.material_id, qty: i.qty, weight: i.weight })) };
     try {
       let sid = id;
-      if (id) await api('/sj/' + id, 'PUT', b); else sid = (await api(`/ho/tickets/${t.id}/sj`, 'POST', b)).id;
-      await hoSjBox.upload(`/sj/${sid}/photos`);
+      if (id) await api('/ho/sj/' + id, 'PUT', b); else sid = (await api(`/ho/tickets/${t.id}/sj`, 'POST', b)).id;
+      await hoSjBox.upload(`/ho/sj/${sid}/photos`);
       closeMd(); route(); hoSjView(sid);
     } catch (x) { $('#fe').textContent = x.message; }
   };
@@ -362,7 +362,7 @@ const hoVendorSave = async () => {
 
 /* ---- detail + cetak Surat Jalan ---- */
 const hoSjView = run(async id => {
-  const s = await api('/sj/' + id), jos = s.jos, j = f => esc([...new Set(jos.map(x => x[f]).filter(Boolean))].join(', ') || '-');
+  const s = await api('/ho/sj/' + id), jos = s.jos, j = f => esc([...new Set(jos.map(x => x[f]).filter(Boolean))].join(', ') || '-');
   const tq = s.items.reduce((a, i) => a + i.qty, 0), tw = s.items.reduce((a, i) => a + +i.weight, 0);
   $('#md').innerHTML = `<div class="modal"><div class="card" style="width:min(640px,100%)"><div class="sjp">
     <div class="co"><div><b>PT LIMA SARANA TRANS</b><br>Jakarta Garden City Rukan Avenue<br>Block C8 No.53, Cakung Timur, Cakung<br>Jakarta Timur, DKI Jakarta</div></div>
@@ -380,7 +380,7 @@ const hoSjView = run(async id => {
     <b>Foto</b><div class="ph">${s.photos.map(p => `<div><img src="${photoOf(p.path)}" onclick="window.open(this.src)"></div>`).join('') || '<div>Belum ada foto</div>'}</div></div>
     <div class="acts"><button class="btn sec" onclick="closeMd()">Tutup</button><button class="btn bad" onclick="hoDelSj(${id})">Hapus</button><button class="btn sec" onclick="hoSjForm(${id})">Edit</button><button class="btn" onclick="window.print()">Print</button></div></div></div>`;
 });
-const hoDelSj = run(async id => { if (confirm('Hapus Surat Jalan ini? Material akan kembali tersedia.')) { await api('/sj/' + id, 'DELETE'); closeMd(); route(); } });
+const hoDelSj = run(async id => { if (confirm('Hapus Surat Jalan ini? Material akan kembali tersedia.')) { await api('/ho/sj/' + id, 'DELETE'); closeMd(); route(); } });
 
 /* ---- Code 128 (set B) ---- */
 const C128 = '212222 222122 222221 121223 121322 131222 122213 122312 132212 221213 221312 231212 112232 122132 122231 113222 123122 123221 223211 221132 221231 213212 223112 312131 311222 321122 321221 312212 322112 322211 212123 212321 232121 111323 131123 131321 112313 132113 132311 211313 231113 231311 112133 112331 132131 113123 113321 133121 313121 211331 231131 213113 213311 213131 311123 311321 331121 312113 312311 332111 314111 221411 431111 111224 111422 121124 121421 141122 141221 112214 112412 122114 122411 142112 142211 241211 221114 413111 241112 134111 111242 121142 121241 114212 124112 124211 411212 421112 421211 212141 214121 412121 111143 111341 131141 114113 114311 411113 411311 113141 114131 311141 411131'.split(' ');
