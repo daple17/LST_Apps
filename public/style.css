@@ -2,6 +2,7 @@
    meLESAT — tema LST (glass). Semua warna, radius, font, dan
    bayangan diatur lewat token di :root; komponen hanya memakai var().
    ============================================================ */
+@font-face{font-family:"Montserrat";font-style:normal;font-weight:100 900;font-display:swap;src:url(fonts/montserrat-latin.woff2) format("woff2")}
 @font-face{font-family:"Exo 2";font-style:italic;font-weight:100 900;font-display:swap;src:url(fonts/exo2-italic-latin.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2212}
 
 /* ---------- Tokens ---------- */
@@ -31,6 +32,7 @@
   --r-side:22px;--r-kpi:20px;--r-card:22px;--r-panel:18px;--r-ctl:12px;--r-pill:999px;
   /* font */
   --f-hd:"Exo 2",system-ui,sans-serif;
+  --login-bg:url(login-bg.svg); /* ganti ke url(login-bg.jpg) jika memakai foto sendiri (simpan di public/) */
   --f-ui:-apple-system,"Segoe UI",system-ui,sans-serif;
   /* bayangan & efek */
   --blur:blur(16px) saturate(1.3);
@@ -264,14 +266,7 @@ main .tw>table{min-width:1060px}
 .seg .s-ok:has(:checked){background:var(--c-g-bg);border-color:var(--green);color:var(--c-g-tx)}
 .seg .s-dm:has(:checked){background:var(--c-r-bg);border-color:var(--red);color:var(--c-r-tx)}
 
-/* ---------- Login ---------- */
-.login{min-height:100vh;display:grid;grid-template-columns:1fr 400px}
-.login .about{padding:48px;background:var(--grad-kpi);color:#fff;display:flex;flex-direction:column;justify-content:center;gap:12px}
-.login .logo{display:flex;align-items:center;gap:14px;margin-bottom:8px}
-.login .logo img{width:72px;height:72px;background:#fff;border-radius:20px;padding:8px;box-shadow:0 10px 24px -10px rgba(0,0,0,.4)}
-.login .about .wm{font-size:36px;color:#fff}.login .about .wm i{color:#ffb347}
-.login form{margin:24px;padding:36px 28px;display:flex;flex-direction:column;gap:14px;justify-content:center;border-radius:var(--r-card);background:var(--glass);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border:1px solid var(--glass-bd);box-shadow:var(--shadow)}
-.login form h2{margin:0;font:italic 800 28px/1.15 var(--f-hd);color:var(--hd)}
+
 
 /* ---------- Dokumen cetak (selalu hitam-putih) ---------- */
 .paper{background:#fff;color:#000;padding:24px;border:1px solid #000}.paper h3{margin:0 0 10px;font:700 15px/1.3 var(--f-ui);color:#000}
@@ -288,7 +283,6 @@ main .tw>table{min-width:1060px}
   body{font-size:15px}
   input,select,textarea{font-size:16px;min-height:44px}input[type=checkbox],input[type=radio]{min-height:0}
   .btn{min-height:44px}.btn.sm{min-height:44px;padding:6px 14px}.ib{min-width:44px;min-height:44px}.pg .btn{min-width:44px;min-height:44px}.pbtn{min-height:48px}.seg label{min-height:52px}
-  .login{grid-template-columns:1fr}.login .about{padding:28px 20px}.login form{margin:16px;padding:24px 20px}
   .shell{grid-template-columns:1fr}
   aside{position:fixed;left:0;top:0;bottom:0;height:auto;margin:10px;width:270px;z-index:30;transform:translateX(calc(-100% - 20px));transition:transform .2s ease;background:var(--glass-solid)}
   body.nav aside{transform:none}
@@ -330,3 +324,40 @@ main .tw>table{min-width:1060px}
   .modal{position:static;background:none;padding:0}.modal>.card{border:0;padding:0;box-shadow:none}
   .sjp{max-width:none}
 }
+
+/* ---------- Login (latar foto/ilustrasi kapal, kartu putih di kanan) ---------- */
+.lg{position:relative;min-height:100vh;display:grid;grid-template-columns:minmax(0,1fr) minmax(340px,480px);align-items:center;gap:32px;padding:56px clamp(24px,6vw,80px);overflow:hidden;color:#fff;isolation:isolate}
+.lg-bg{position:absolute;inset:0;z-index:-2;background:var(--login-bg) center/cover no-repeat,#17497a}
+.lg::before{content:"";position:absolute;inset:0;z-index:-1;background:
+  radial-gradient(520px 420px at 88% 18%,rgba(255,143,5,.85),transparent 70%),
+  linear-gradient(100deg,rgba(11,45,85,.15) 0,rgba(11,45,85,.1) 45%,rgba(180,120,30,.35) 100%),
+  linear-gradient(0deg,rgba(8,36,70,.92) 0,rgba(8,36,70,.55) 32%,rgba(8,36,70,0) 62%)}
+.lg-brand{position:absolute;top:44px;left:clamp(24px,6vw,80px);display:flex;align-items:center;gap:14px}
+.lg-badge{display:grid;place-items:center;width:76px;height:76px;border-radius:20px;background:#fff;box-shadow:0 10px 24px -10px rgba(0,0,0,.45)}.lg-badge img{width:54px;height:54px}
+.lg-wm{display:block;font:italic 800 34px/1 var(--f-hd);letter-spacing:.01em}.lg-brand small{display:block;margin-top:4px;font-size:14px;opacity:.9}
+.lg-hero{align-self:end;max-width:640px;padding-bottom:12px}
+.lg-hero p{margin:0 0 14px;font:700 14px/1.2 "Montserrat",var(--f-ui);letter-spacing:.2em;color:#ffa51f}
+.lg-hero blockquote{margin:0;font:800 clamp(30px,3.6vw,52px)/1.15 "Montserrat",var(--f-ui);text-shadow:0 2px 18px rgba(0,0,0,.35)}
+.lg-card{grid-column:2;grid-row:1;align-self:center;padding:56px;border-radius:32px;background:#fff;color:#1b2733;box-shadow:0 30px 60px -20px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:14px}
+.lg-card::before{content:"";width:66px;height:7px;border-radius:7px;background:var(--or);margin-bottom:2px}
+.lg-card h2{margin:0;font:italic 800 46px/1.05 var(--f-hd);color:#0a1f3d}
+.lg-card .sub{margin:0 0 8px;color:#475569;font-size:15px;line-height:1.6}
+.lg-card label{color:#0a1f3d;font-weight:600;font-size:14px;margin:6px 0 2px}
+.lg-card input{min-height:54px;border-radius:14px;background:#f1f5f9;border:1.5px solid #dbe4ee;color:#1b2733;font-size:16px;padding:0 20px}
+.lg-card input::placeholder{color:#64748b}
+.lg-card input:focus{background:#fff}
+.pw{position:relative}.pw input{padding-right:56px}
+.pw button{position:absolute;right:8px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:42px;height:42px;border:0;border-radius:10px;background:none;color:#334155;cursor:pointer}
+.pw button:hover{background:#e2e8f0}
+.lg-card .btn{min-height:58px;margin-top:10px;border-radius:14px;background:#0a2240;font-size:18px;box-shadow:0 14px 24px -10px rgba(10,34,64,.6)}
+.lg-card .btn:hover{background:#0f2f57}
+.lg-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:6px;font-size:14px;color:#64748b}
+.lg-foot a{color:#0f5a8c;font-weight:600}
+.lg-card .err{margin:0;min-height:20px}
+@media (max-width:900px){
+  .lg{grid-template-columns:1fr;padding:132px 16px 28px;align-items:start;gap:20px}
+  .lg-brand{top:24px;left:16px}.lg-badge{width:58px;height:58px;border-radius:16px}.lg-badge img{width:42px;height:42px}.lg-wm{font-size:26px}.lg-brand small{font-size:12px}
+  .lg-card{grid-column:1;grid-row:auto;padding:28px 22px;border-radius:24px}.lg-card h2{font-size:34px}
+  .lg-hero{order:3;padding:0}.lg-hero blockquote{font-size:24px}.lg-hero p{font-size:11px}
+}
+@media (prefers-reduced-motion:no-preference){.lg-card{animation:lgin .45s ease both}@keyframes lgin{from{opacity:0;transform:translateY(14px)}}}

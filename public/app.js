@@ -65,12 +65,16 @@ function render() { token ? shell() : login(); }
 const photoOf = p => `/uploads/${p}?t=${token}`;
 
 function login() {
-  $('#app').innerHTML = `<div class="login"><div class="about"><div class="logo"><img src="logo.png" alt="LST"><div><b class="wm"><i>me</i>LESAT</b><div>By Lima Sarana</div></div></div>
-    <p>Selamat datang di Sistem Internal berbasis web PT Lima Sarana Trans — logistik, trucking, handling &amp; custom clearance.</p>
-    <small>Kontak: IT Support · it@limasarana.example</small></div>
-    <form id="lf"><h2 style="margin:0">Login</h2><div><label>Username</label><input name="username" autofocus required></div>
-    <div><label>Password</label><input name="password" type="password" required></div>
-    <div class="err" id="le"></div><button class="btn">Login</button><a href="#" onclick="alert('Hubungi admin untuk reset kata sandi.');return false">Lupa Kata Sandi?</a></form></div>`;
+  $('#app').innerHTML = `<div class="lg"><div class="lg-bg" aria-hidden="true"></div>
+    <header class="lg-brand"><span class="lg-badge"><img src="logo.png" alt="LST"></span><div><b class="lg-wm">LESAT</b><small>By Lima Sarana</small></div></header>
+    <section class="lg-hero"><p>LOGISTIC AND TRANSPORTATION SOLUTION</p><blockquote>"We are your one-stop solutions for building big brands."</blockquote></section>
+    <form class="lg-card" id="lf"><h2>Login</h2><p class="sub">Masuk dengan akun internal untuk mengelola operasional harian.</p>
+      <div><label for="lu">Username</label><input id="lu" name="username" placeholder="Masukkan username" autocomplete="username" autofocus required></div>
+      <div><label for="lp">Password</label><div class="pw"><input id="lp" name="password" type="password" placeholder="Masukkan password" autocomplete="current-password" required>
+        <button type="button" id="lt" aria-label="Tampilkan password" aria-pressed="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path id="lx" d="M4 4l16 16" style="display:none"/></svg></button></div></div>
+      <div class="err" id="le" role="alert"></div><button class="btn">Login</button>
+      <div class="lg-foot"><a href="#" onclick="alert('Hubungi admin untuk reset kata sandi.');return false">Lupa Kata Sandi?</a><span>IT Support · it@limasarana.example</span></div></form></div>`;
+  $('#lt').onclick = () => { const i = $('#lp'), show = i.type === 'password'; i.type = show ? 'text' : 'password'; $('#lt').setAttribute('aria-pressed', show); $('#lt').setAttribute('aria-label', show ? 'Sembunyikan password' : 'Tampilkan password'); $('#lx').style.display = show ? '' : 'none'; };
   $('#lf').onsubmit = async e => {
     e.preventDefault();
     try {
