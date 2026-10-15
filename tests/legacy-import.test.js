@@ -78,7 +78,7 @@ test('impor bagian 1: dry-run tidak menulis; commit memetakan master, pengguna, 
   assert.deepEqual([b.type, b.type_bc, b.jenis_muatan, String(b.eta_etd).slice(0, 10), Number(b.weight_kg), Number(b.cbm), b.qty, b.unit, b.party_text, b.status, String(b.completed_at).slice(0, 10)],
     ['EXPORT', 'BC 3.0', 'LCL_BB', '2026-01-30', 2760, 1.5, 300, 'COIL', null, 'COMPLETE', '2026-02-02']);          // EXPORT: eta_etd = COALESCE(DateEtd, DateEta)
   assert.deepEqual([c.type, c.type_bc, c.unit, c.party_text, c.qty, c.status, c.legacy_status, c.shipper_id], ['TRUCKING', null, null, 'BE', 13, 'COMPLETE', 2, null]);   // satuan tak dikenal -> teks; 12.5 dibulatkan
-  assert.deepEqual([d.type, d.type_bc, d.jenis_muatan, d.weight_kg, d.qty, d.container_count, d.eta_etd], ['PROJECT', null, null, null, null, null, null]);
+  assert.deepEqual([d.type, d.type_bc, d.jenis_muatan, d.weight_kg, d.qty, d.unit, d.container_count, d.eta_etd], ['PROJECT', null, null, null, 2, 'CARTON', null, null]);
   assert.equal((await q("SELECT COUNT(*) n FROM job_orders WHERE origin='NEW'"))[0].n, 1);
   const refs = id => q('SELECT kind, number, ref_date FROM jo_references WHERE jo_id=? ORDER BY kind, sort', [id]);
   assert.deepEqual((await refs(a.id)).map(x => `${x.kind}:${x.number}:${x.ref_date ? String(x.ref_date).slice(0, 10) : ''}`), ['AJU:A1:', 'INVOICE:INV1:', 'INVOICE:INV2:', 'BL:BL1:2026-01-02', 'SI_DO:SD1:2026-01-04', 'SI_DO:SD2:2026-01-04', 'HBL:HB1:2026-01-03']);

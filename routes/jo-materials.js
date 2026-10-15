@@ -54,18 +54,21 @@ module.exports = (pool, { refreshTickets = async () => {} } = {}) => {
   }));
 
   r.put('/:id/materials/:mid', wrap(async (req, res) => {
-    const id = +req.params.id, mid = +req.params.mid, m = mv.normalize(req.body), v = mv.validate(m);
-    if (v.errors.length) throw httpError(400, v.errors.join('; '));
-    await tx(pool, async conn => {
+    const id = +req.params.id, mid = +req.params.mid, m = mv.normalize(req.body);
+    const out = await tx(pool, async conn => {
       await jo(conn, id, { editable: true });
-      const [[cur]] = await conn.query('SELECT id FROM jo_materials WHERE id=? AND jo_id=? FOR UPDATE', [mid, id]);
+      const [[cur]] = await conn.query('SELECT * FROM jo_materials WHERE id=? AND jo_id=? FOR UPDATE', [mid, id]);
       if (!cur) throw httpError(404, 'Material tidak ditemukan');
-      if ((await existingNos(conn, id, mid)).has(m.product_no.toLowerCase())) throw httpError(400, 'Nomor produk sudah ada di JO ini');
+      // data lama: hanya kolom yang BERUBAH yang divalidasi; data baru: validasi penuh seperti sebelumnya
+      const v = mv.validate(m, cur.data_origin === 'LEGACY' ? { only: mv.changedKeys(m, cur) } : {});
+      if (v.errors.length) throw httpError(400, v.errors.join('; '));
+      if (m.product_no && (await existingNos(conn, id, mid)).has(m.product_no.toLowerCase())) throw httpError(400, 'Nomor produk sudah ada di JO ini');
       await conn.query(`UPDATE jo_materials SET ${COLS.map(c => c + '=?').join(',')}, updated_by=? WHERE id=?`, [...COLS.map(c => m[c] ?? null), req.user.id, mid]);
       await audit.log(conn, { entity: 'job_order', id, action: 'Material diubah', note: m.product_no, user: req.user });
+      return { ok: true, warnings: v.warnings };
     });
     await refreshTickets(id);
-    res.json({ ok: true, warnings: v.warnings });
+    res.json(out);
   }));
 
   r.delete('/:id/materials/:mid', wrap(async (req, res) => {

@@ -40,8 +40,8 @@ module.exports = (pool, { ticketSummaries }) => {
 
   // Tiket yang sedang dikerjakan: progres belum 100% (done_at kosong), terbaru di atas
   r.get('/tickets', wrap(async (req, res) => {
-    const [[{ n }]] = await pool.query('SELECT COUNT(*) n FROM handling_tickets WHERE done_at IS NULL');
-    const [ids] = await pool.query('SELECT id FROM handling_tickets WHERE done_at IS NULL ORDER BY created_at DESC, id DESC LIMIT ?', [CARD_ROWS]);
+    const [[{ n }]] = await pool.query('SELECT COUNT(*) n FROM handling_tickets WHERE done_at IS NULL AND is_placeholder=0');
+    const [ids] = await pool.query('SELECT id FROM handling_tickets WHERE done_at IS NULL AND is_placeholder=0 ORDER BY created_at DESC, id DESC LIMIT ?', [CARD_ROWS]);
     const rows = await ticketSummaries(ids.map(x => x.id));
     res.json({ total: n, rows: rows.map(t => ({ id: t.id, ticket_no: t.ticket_no, pic: IdFmt.firstName(t.pic_name), customers: t.customers, vessels: t.vessels, parties: t.parties, weight: t.weight, mat_pct: t.mat_pct, del_pct: t.del_pct })) });
   }));

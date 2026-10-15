@@ -2,26 +2,36 @@
 const express = require('express');
 const rules = require('../lib/rules'), calc = require('../lib/calc'), fmt = require('../lib/format');
 const numbering = require('../lib/numbering'), audit = require('../lib/audit'), files = require('../lib/files');
-const excel = require('../lib/excel'), exportsLib = require('../lib/exports'), { validateJo } = require('../lib/jo-validate');
+const excel = require('../lib/excel'), exportsLib = require('../lib/exports'), { validateJo, changedFields } = require('../lib/jo-validate');
 const { wrap, bad, httpError, tx } = require('../lib/http');
 
 const TYPES = rules.JO_TYPES.map(t => t.code);
 const REF_KINDS = rules.REF_KINDS.map(k => k.code);
-const BASE = `SELECT j.*, c.name customer_name, c.code customer_code, s.name shipper_name
-  FROM job_orders j JOIN customers c ON c.id=j.customer_id LEFT JOIN shippers s ON s.id=j.shipper_id`;
+// "Belum lengkap" = ada isian wajib (rules.FIELD_RULES, tipe-nya) yang kosong. delivery_plan tidak dihitung: tidak ada di sistem lama dan diisi saat operasional.
+function incompleteSql() {
+  const types = f => Object.entries(rules.FIELD_RULES[f] || {}).filter(([, v]) => v === 'R').map(([t]) => `'${t}'`).join(',');
+  const part = (f, cond) => (types(f) ? `(j.type IN (${types(f)}) AND (${cond}))` : null);
+  const ref = k => part(k, `NOT EXISTS (SELECT 1 FROM jo_references x WHERE x.jo_id=j.id AND x.kind='${k}' AND x.number<>'')`);
+  return [part('jenis_muatan', 'j.jenis_muatan IS NULL'), part('type_bc', 'j.type_bc IS NULL'), part('vessel', "j.vessel IS NULL OR j.vessel=''"), part('eta_etd', 'j.eta_etd IS NULL'),
+    part('containers', 'j.container_count IS NULL OR j.container_count<=0 OR j.container_type IS NULL'), part('weight', 'j.weight_kg IS NULL'),
+    part('qty', 'NOT ((j.qty IS NOT NULL AND j.unit IS NOT NULL) OR j.party_text IS NOT NULL)'), ...rules.REF_KINDS.map(x => ref(x.code))].filter(Boolean).join(' OR ') || '0';
+}
+const INCOMPLETE = incompleteSql();
+const BASE = `SELECT j.*, c.name customer_name, c.code customer_code, s.name shipper_name, pl.name port_loading_name, pd.name port_dest_name, tp.name tps_name, (${INCOMPLETE}) incomplete
+  FROM job_orders j JOIN customers c ON c.id=j.customer_id LEFT JOIN shippers s ON s.id=j.shipper_id LEFT JOIN ports pl ON pl.id=j.port_loading_id LEFT JOIN ports pd ON pd.id=j.port_dest_id LEFT JOIN tps_warehouses tp ON tp.id=j.tps_id`;
 // tanggal acuan periode: ETA/ETD, dan bila kosong tanggal dibuat (WIB) — agar JO tanpa ETA tidak hilang dari daftar default
 const PERIOD = '(COALESCE(j.eta_etd, DATE(j.created_at + INTERVAL 7 HOUR)))';
 const nul = v => (v === '' || v === undefined ? null : v);
 const numOrNull = (v, name) => { v = nul(v); if (v == null) return null; if (isNaN(v)) throw httpError(400, `${name} harus angka`); return Number(v); };
 
-function failIfInvalid(b) {
-  const errs = validateJo(b);
+function failIfInvalid(b, opts) {
+  const errs = validateJo(b, opts);
   if (errs.length) throw Object.assign(new Error(errs.map(e => e.message).join('; ')), { status: 400, fields: errs.map(e => e.field) });
 }
 // baris JO dari DB -> bentuk API
 function shape(j) {
   const w = j.weight_kg == null ? null : Number(j.weight_kg);
-  return { ...j, weight_kg: w, weight: w == null ? null : calc.kgToTon(w), party: fmt.partyLabel(j.qty, j.unit, j.party_text) };
+  return { ...j, incomplete: !!j.incomplete, weight_kg: w, weight: w == null ? null : calc.kgToTon(w), party: fmt.partyLabel(j.qty, j.unit, j.party_text) };
 }
 async function loadRefs(pool, ids) {
   const map = new Map(ids.map(i => [i, []]));
@@ -31,7 +41,7 @@ async function loadRefs(pool, ids) {
 const refSummary = refs => Object.fromEntries(REF_KINDS.map(k => [k, refs.filter(r => r.kind === k).map(r => r.number)]));
 
 // kolom JO dari body (validasi dasar; aturan wajib per tipe di tahap 4)
-function fields(b) {
+function fields(b, legacyCur = null) {
   const f = {
     type: b.type, type_bc: nul(b.type_bc), shipper_id: nul(b.shipper_id), nickname: nul(b.nickname), jenis_muatan: nul(b.jenis_muatan), cargo_desc: nul(b.cargo_desc),
     vessel: nul(b.vessel), eta_etd: nul(b.eta_etd), delivery_plan: nul(b.delivery_plan), container_count: numOrNull(b.container_count, 'Jumlah kontainer'),
@@ -46,7 +56,7 @@ function fields(b) {
   // party: qty + satuan terstruktur; teks bebas ("300 CL", "12x40ft") di-parse
   if (nul(b.qty) != null || nul(b.unit) != null) { f.qty = numOrNull(b.qty, 'Quantity'); f.unit = nul(b.unit); f.party_text = null; }
   else { const p = fmt.parseParty(b.party); f.qty = p.qty; f.unit = p.unit; f.party_text = p.text; }
-  if (f.unit && !rules.UNITS.some(u => u.code === f.unit)) throw httpError(400, 'Satuan tidak valid');
+  if (f.unit && !rules.UNITS.some(u => u.code === f.unit) && !(legacyCur && legacyCur.unit === f.unit)) throw httpError(400, 'Satuan tidak valid');   // satuan data lama yang tidak diubah boleh tetap
   return f;
 }
 
@@ -104,7 +114,9 @@ module.exports = pool => {
   const r = express.Router();
 
   function where(qs, { withType = true } = {}) {
-    const { q = '', status = '', type = '', customer_id = '', from = '', to = '' } = qs, w = ['1=1'], p = [];
+    const { q = '', status = '', type = '', customer_id = '', from = '', to = '', origin = '', incomplete = '' } = qs, w = ['1=1'], p = [];
+    if (origin === 'LEGACY' || origin === 'NEW') { w.push('j.origin=?'); p.push(origin); }
+    if (incomplete === '1') w.push(`(${INCOMPLETE})`);
     if (q) {
       w.push(`(j.no_jo LIKE ? OR j.legacy_no LIKE ? OR j.nickname LIKE ? OR c.name LIKE ? OR j.vessel LIKE ? OR EXISTS (SELECT 1 FROM jo_references x WHERE x.jo_id=j.id AND x.number LIKE ?))`);
       p.push(...Array(6).fill(`%${q}%`));
@@ -263,12 +275,16 @@ module.exports = pool => {
     const b = req.body, id = +req.params.id;
     let reference_ids = [];
     await tx(pool, async conn => {
-      const [[cur]] = await conn.query('SELECT status, type, customer_id FROM job_orders WHERE id=? FOR UPDATE', [id]);
+      const [[cur]] = await conn.query('SELECT * FROM job_orders WHERE id=? FOR UPDATE', [id]);
       if (!cur) throw httpError(404, 'JO tidak ditemukan');
       if (cur.status === 'COMPLETE') throw httpError(409, 'JO sudah Complete, tidak bisa diubah');
-      const f = fields({ ...b, type: b.type || cur.type });
-      const refsForCheck = b.references || (await conn.query('SELECT kind, number FROM jo_references WHERE jo_id=?', [id]))[0];
-      failIfInvalid({ ...b, references: refsForCheck, type: f.type, customer_id: cur.customer_id });
+      const legacy = cur.origin === 'LEGACY', f = fields({ ...b, type: b.type || cur.type }, legacy ? cur : null);
+      const curRefs = (await conn.query('SELECT kind, number FROM jo_references WHERE jo_id=?', [id]))[0], refsForCheck = b.references || curRefs;
+      // data lama: kolom wajib yang tidak disentuh tidak divalidasi; kolom yang diubah divalidasi penuh. Data baru: tidak berubah
+      if (legacy && f.type === cur.type) {
+        if (f.weight_kg != null && cur.weight_kg != null && Math.abs(f.weight_kg - Number(cur.weight_kg)) <= 5) f.weight_kg = Number(cur.weight_kg);    // pembulatan ton di form tidak boleh mengubah berat lama
+        failIfInvalid({ ...b, references: refsForCheck, type: f.type, customer_id: cur.customer_id }, { only: changedFields(f, cur, b.references, curRefs) });
+      } else failIfInvalid({ ...b, references: refsForCheck, type: f.type, customer_id: cur.customer_id });
       if (f.type !== cur.type) {
         const [[m]] = await conn.query('SELECT COUNT(*) n FROM jo_materials WHERE jo_id=?', [id]);
         if (m.n) throw httpError(409, 'Tipe tidak bisa diubah setelah JO punya material');

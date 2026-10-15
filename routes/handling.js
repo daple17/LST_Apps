@@ -19,7 +19,7 @@ module.exports = pool => {
   const ticketMaterials = 'FROM jo_materials m JOIN ticket_job_orders tj ON tj.jo_id=m.jo_id';
 
   /* ---------- tiket: ringkasan + progres ---------- */
-  const TK = `SELECT t.id, t.ticket_no, t.created_at, t.done_at, t.pic_id, u.name pic_name,
+  const TK = `SELECT t.id, t.ticket_no, t.created_at, t.done_at, t.pic_id, u.name pic_name, t.is_placeholder, t.origin ticket_origin,
     (SELECT COUNT(*) ${ticketMaterials} WHERE tj.ticket_id=t.id) mat_total,
     (SELECT COUNT(*) FROM material_reports r WHERE r.ticket_id=t.id AND r.status<>'NOT_CHECKED') mat_checked,
     (SELECT COALESCE(SUM(m.qty),0) ${ticketMaterials} WHERE tj.ticket_id=t.id) qty_total,
@@ -42,7 +42,7 @@ module.exports = pool => {
     const mat_pct = calc.reportPct(t.mat_checked, t.mat_total), del_pct = calc.deliveryPct(+t.qty_sent, +t.qty_total);
     const customers = uniq(joList.map(j => j.customer_name)), vessels = uniq(joList.map(j => j.vessel));
     return { ...t, qty_total: +t.qty_total, qty_sent: +t.qty_sent, weight_kg: +t.weight_kg, weight: calc.kgToTon(t.weight_kg),
-      mat_pct, del_pct, prog: calc.ticketProgress(mat_pct, del_pct, rules.PROGRESS_RULE), dwell_min: calc.dwellMinutes(t.created_at, t.done_at, now),
+      mat_pct, del_pct, prog: t.is_placeholder ? 100 : calc.ticketProgress(mat_pct, del_pct, rules.PROGRESS_RULE), is_placeholder: !!t.is_placeholder, dwell_min: calc.dwellMinutes(t.created_at, t.done_at, now),
       customers, vessels, customer: customers.join(', '), vessel: vessels.join(', '), party: joList.map(j => j.party).filter(Boolean).join(', '), parties: joList.map(j => j.party).filter(Boolean), jo_numbers: joList.map(j => j.no_jo) };
   };
   async function ticketRow(id) {
@@ -56,7 +56,8 @@ module.exports = pool => {
   async function refresh(ticketId) {
     const t = await ticketRow(ticketId);
     if (!t) return;
-    await pool.query(t.prog >= 100 ? 'UPDATE handling_tickets SET done_at=COALESCE(done_at,NOW()) WHERE id=?' : 'UPDATE handling_tickets SET done_at=NULL WHERE id=?', [ticketId]);
+    // tiket data lama yang ditutup migrasi tidak dibuka kembali oleh perubahan material/surat jalan (statusnya keputusan migrasi, bukan persen LESAT); selesai tetap tercatat bila mencapai 100%
+    await pool.query(t.prog >= 100 ? 'UPDATE handling_tickets SET done_at=COALESCE(done_at,NOW()) WHERE id=?' : "UPDATE handling_tickets SET done_at=NULL WHERE id=? AND origin<>'LEGACY'", [ticketId]);
   }
 
   async function ticketList(qs) {
@@ -298,9 +299,10 @@ module.exports = pool => {
   const DNSEL = `SELECT d.id, d.ticket_id, d.no_sj sj_no, d.nopol, d.driver, d.phone, d.vendor_id, d.start_loading start_at, d.finish_loading finish_at, d.entry_at, d.exit_at, d.created_by_name, d.created_at,
     v.code vendor_code, v.name vendor_name, COALESCE(SUM(i.qty),0) qty, COALESCE(SUM(i.weight),0) net_weight,
     COALESCE(SUM(m.gross_weight*i.qty/NULLIF(m.qty,0)),0) gross_weight, MIN(m.unit) unit,
-    GROUP_CONCAT(DISTINCT m.origin SEPARATOR ', ') origin, GROUP_CONCAT(DISTINCT m.destination SEPARATOR ', ') destination
+    COALESCE(GROUP_CONCAT(DISTINCT m.origin SEPARATOR ', '), MAX(d.origin_address)) origin, COALESCE(GROUP_CONCAT(DISTINCT m.destination SEPARATOR ', '), MAX(d.destination)) destination,
+    d.origin data_origin, d.legacy_status
     FROM delivery_notes d LEFT JOIN vendors v ON v.id=d.vendor_id LEFT JOIN delivery_note_items i ON i.dn_id=d.id LEFT JOIN jo_materials m ON m.id=i.material_id`;
-  const dnOut = x => ({ ...x, qty: +x.qty, net_weight: +x.net_weight, gross_weight: +x.gross_weight, load_min: calc.loadMinutes(x.start_at, x.finish_at) });
+  const dnOut = x => ({ ...x, is_legacy: x.data_origin === 'LEGACY', qty: +x.qty, net_weight: +x.net_weight, gross_weight: +x.gross_weight, load_min: calc.loadMinutes(x.start_at, x.finish_at) });
 
   r.get('/tickets/:id/sj', wrap(async (req, res) => {
     const size = rules.LIMITS.PAGE_SIZE, page = Math.max(1, +req.query.page || 1), w = ['d.ticket_id=?'], p = [req.params.id];
@@ -413,6 +415,29 @@ module.exports = pool => {
       await audit.log(pool, { entity: 'ticket', id: s.ticket_id, action: 'Finish loading', note: s.no_sj, user: req.user });
     }
     res.json({ ok: true });
+  }));
+
+  // Tautkan surat jalan LEGACY ke tiket lain (mis. dari tiket penampung MIG-YYYYMM ke tiket aslinya). JO dari isi surat jalan ikut ditambahkan ke tiket tujuan.
+  r.put('/delivery-notes/:id/relink', wrap(async (req, res) => {
+    const id = +req.params.id, to = +req.body.ticket_id;
+    if (!to) throw httpError(400, 'Pilih tiket tujuan');
+    const out = await tx(pool, async conn => {
+      const [[dn]] = await conn.query('SELECT d.id, d.no_sj, d.ticket_id, d.origin, t.ticket_no FROM delivery_notes d JOIN handling_tickets t ON t.id=d.ticket_id WHERE d.id=? FOR UPDATE', [id]);
+      if (!dn) throw httpError(404, 'Surat jalan tidak ditemukan');
+      if (dn.origin !== 'LEGACY') throw httpError(400, 'Hanya surat jalan data lama yang bisa ditautkan ulang');
+      const [[tt]] = await conn.query('SELECT id, ticket_no, is_placeholder FROM handling_tickets WHERE id=?', [to]);
+      if (!tt) throw httpError(400, 'Tiket tujuan tidak ditemukan');
+      if (tt.id === dn.ticket_id) throw httpError(400, 'Surat jalan sudah ada di tiket itu');
+      if (tt.is_placeholder) throw httpError(400, 'Tiket tujuan tidak boleh tiket penampung');
+      const [jo] = await conn.query('SELECT DISTINCT m.jo_id FROM delivery_note_items i JOIN jo_materials m ON m.id=i.material_id WHERE i.dn_id=?', [id]);
+      await conn.query('UPDATE delivery_notes SET ticket_id=?, updated_by=? WHERE id=?', [to, req.user.id, id]);
+      if (jo.length) await conn.query('INSERT IGNORE INTO ticket_job_orders (ticket_id, jo_id) VALUES ?', [jo.map(j => [to, j.jo_id])]);
+      const note = `${dn.no_sj}: ${dn.ticket_no} → ${tt.ticket_no}`;
+      await audit.log(conn, { entity: 'ticket', id: to, action: 'Surat jalan ditautkan', note, user: req.user });
+      await audit.log(conn, { entity: 'ticket', id: dn.ticket_id, action: 'Surat jalan dipindahkan', note, user: req.user });
+      return { from: dn.ticket_id, to };
+    });
+    res.json({ ok: true, ticket_id: out.to });                       // status tiket (done_at) tidak dihitung ulang di sini: tiket lama yang sudah ditutup migrasi tidak ikut terbuka kembali
   }));
 
   // PDF Surat Jalan (A4) dibuat di server
