@@ -344,6 +344,12 @@ tr.dim td{opacity:.55}tr.dim td.uact{opacity:1}
 .danger b{margin-right:6px}
 .acc{display:flex;flex-direction:column;gap:2px}.acc span{font-size:12.5px;color:var(--mut)}
 
+/* data lama (migrasi) */
+.lgc{display:inline-block;margin-left:6px;padding:0 8px;border-radius:var(--r-pill);background:var(--c-n-bg);color:var(--c-n-tx);font-size:10.5px;font-weight:700;line-height:18px;vertical-align:1px;white-space:nowrap}
+.lgc.inc{background:var(--c-nc-bg);color:var(--c-nc-tx)}
+.rl-list{display:flex;flex-direction:column;gap:6px;max-height:280px;overflow:auto;margin-top:8px}
+.rl-item{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:9px 12px;border:1px solid var(--ctl-bd);border-radius:var(--r-ctl);background:var(--ctl-bg);color:var(--ink);text-align:left;cursor:pointer}
+.rl-item span{font-size:12.5px;color:var(--mut)}.rl-item.on{border-color:var(--blue);background:var(--c-ok-bg)}.rl-item:focus-visible{outline:2px solid var(--focus)}
 /* Check In & Daily Report */
 .cibox{max-width:560px;margin:0 auto;padding:28px 26px;text-align:center}
 .cieyebrow{margin:0 0 6px;font-size:11.5px;font-weight:800;letter-spacing:.14em;color:var(--mut)}

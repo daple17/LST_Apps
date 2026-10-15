@@ -1,5 +1,5 @@
 /* Job Order & Doc: daftar, form, detail */
-const joBlank = () => ({ q: '', status: '', type: '', customer_id: '', ...monthRange(), sort: 'created', dir: 'desc', page: 1 });
+const joBlank = () => ({ q: '', status: '', type: '', customer_id: '', origin: '', incomplete: '', ...monthRange(), sort: 'created', dir: 'desc', page: 1 });
 let joSt = joBlank();
 const joQs = (extra = {}) => new URLSearchParams({ ...joSt, ...extra });
 
@@ -22,11 +22,12 @@ async function joList() {
     <div class="bar fbar"><input id="q" placeholder="Cari JO, customer, vessel, BL, No. Aju, Invoice" value="${esc(joSt.q)}">
     <select id="fs"><option value="">Semua status</option><option value="NOT_COMP">Not Complete</option><option value="COMPLETE">Complete</option></select>
     <select id="fc"><option value="">Semua customer</option>${look.customers.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select>
+    <select id="fo" aria-label="Asal data"><option value="">Semua data</option><option value="LEGACY">Data lama</option><option value="INCOMPLETE">Belum lengkap</option></select>
     <label class="inl">ETA/ETD <input type="date" id="ff" value="${joSt.from}"> – <input type="date" id="fto" value="${joSt.to}"></label>
     <button class="btn sec" onclick="joReset()">Reset</button><span style="flex:1"></span>
     <button class="btn sec out" onclick="joExport()">Download Excel</button><button class="btn" onclick="joNew()">+ Job Order</button></div>
     <div class="card tw"><table><tr>${th('no_jo', 'No. JO')}<th>Type</th>${th('customer', 'Customer')}<th>Aju Ceisa</th><th>No. BL</th><th>No. Invoice</th><th>No. SI/PO</th><th>Vessel</th><th>Party</th><th>Weight</th>${th('eta', 'ETA/ETD')}${th('delivery_plan', 'Rencana Delivery')}<th>Status</th><th>Aksi</th></tr>
-    ${d.rows.map(r => `<tr class="row" style="cursor:pointer" onclick="joOpen(${r.id})"><td><b>${esc(r.no_jo)}</b></td><td><span><span class="dot t-${esc(r.type)}"></span>${esc(typeLabel(r.type))}</span></td><td class="wrap">${esc(r.customer_name)}</td>
+    ${d.rows.map(r => `<tr class="row" style="cursor:pointer" onclick="joOpen(${r.id})"><td><b>${esc(r.no_jo)}</b>${legacyBadges(r)}</td><td><span><span class="dot t-${esc(r.type)}"></span>${esc(typeLabel(r.type))}</span></td><td class="wrap">${esc(r.customer_name)}</td>
       <td>${multi(r.refs.AJU)}</td><td>${multi(r.refs.BL)}</td><td>${multi(r.refs.INVOICE)}</td><td>${multi([...r.refs.SI_PO, ...r.refs.SI_DO])}</td>
       <td>${esc(r.vessel)}</td><td>${esc(r.party)}</td><td class="num">${fmtN(r.weight)}</td><td>${fmtD(r.eta_etd)}</td><td ${late(r) ? 'style="color:var(--bad);font-weight:600" title="Lewat rencana delivery"' : ''}>${fmtD(r.delivery_plan)}</td>
       <td><span class="tag ${r.status}">${r.status === 'COMPLETE' ? 'Complete' : 'Not Comp'}</span></td>
@@ -34,7 +35,8 @@ async function joList() {
         <button role="menuitem" onclick="joOpen(${r.id})">Detail</button><button role="menuitem" onclick="joOpen(${r.id},'dokumen')">Dokumen</button><button role="menuitem" onclick="joOpen(${r.id},'preview')">Preview</button>
         <button role="menuitem" ${r.status === 'COMPLETE' ? 'disabled title="JO Complete tidak bisa diedit"' : ''} onclick="joForm(${r.id})">Edit</button></div></div></td></tr>`).join('') || '<tr><td colspan="14" style="text-align:center;color:var(--mut)">Belum ada data</td></tr>'}</table>
     ${pagerNum(joSt.page, d.pages, d.total, 'joGoto')}</div>`;
-  $('#fs').value = joSt.status; $('#fc').value = joSt.customer_id;
+  $('#fs').value = joSt.status; $('#fc').value = joSt.customer_id; $('#fo').value = joSt.incomplete === '1' ? 'INCOMPLETE' : joSt.origin;
+  $('#fo').onchange = e => { joSt.origin = e.target.value === 'LEGACY' ? 'LEGACY' : ''; joSt.incomplete = e.target.value === 'INCOMPLETE' ? '1' : ''; joSt.page = 1; joList(); };
   let t; $('#q').oninput = e => { clearTimeout(t); t = setTimeout(() => { joSt.q = e.target.value; joSt.page = 1; joList().then(() => { const q = $('#q'); q.focus(); q.setSelectionRange(1e4, 1e4); }); }, 300); };
   [['fs', 'status'], ['fc', 'customer_id'], ['ff', 'from'], ['fto', 'to']].forEach(([i, k]) => $('#' + i).onchange = e => joSetF(k, e.target.value));
 }
@@ -69,7 +71,7 @@ const emptyRow = () => ({ number: '', ref_date: '', file: null, newFile: null, d
 
 const joForm = run(async (id, newType) => {
   const j = id ? await api('/job-orders/' + id) : { type: newType || 'IMPORT', references: [], refs: {} };
-  jf = { id, type: j.type, custId: j.customer_id || '', locked: { type: (j.material_count || 0) > 0 }, no_jo: j.no_jo || null, vals: {}, rows: {} };
+  jf = { id, type: j.type, custId: j.customer_id || '', locked: { type: (j.material_count || 0) > 0 }, no_jo: j.no_jo || null, legacy: j.origin === 'LEGACY', vals: {}, rows: {} };
   for (const k of REF_ORDER) jf.rows[k] = (j.references || []).filter(r => r.kind === k).map(r => ({ id: r.id, number: r.number, ref_date: r.ref_date || '', file: r.file_id ? { id: r.file_id } : null, newFile: null, delFile: false, warn: '' }));
   Object.assign(jf.vals, { nickname: j.nickname, jenis_muatan: j.jenis_muatan, shipper_id: j.shipper_id, type_bc: j.type_bc, vessel: j.vessel, eta_etd: j.eta_etd, delivery_plan: j.delivery_plan,
     container_count: j.container_count, container_type: j.container_type, weight: j.weight, qty: j.qty, unit: j.unit, cbm: j.cbm, remarks: j.remarks, party: j.qty == null && j.party ? j.party : '' });
@@ -103,7 +105,7 @@ function joFormDraw() {
         <input name="customer_text" list="dl-cust" autocomplete="off" placeholder="Cari nama atau kode customer…" value="${esc(jf.custText ?? (cust ? custLabel(cust) : ''))}" oninput="joCust(this)" ${id ? 'disabled' : ''}>
         <datalist id="dl-cust">${look.customers.map(c => `<option value="${esc(custLabel(c))}"></option>`).join('')}</datalist></div>
       <div><label>Shipper / Ship To <a href="#" onclick="quickAdd('shipper');return false">+ baru</a></label><select name="shipper_id" id="ss"><option value="">-</option>${opt(look.shippers, v.shipper_id, x => x.id, x => x.name)}</select></div>
-      <div><label>Type BC${jfStar('type_bc')}</label><select name="type_bc"><option value="">-</option>${opt(R().TYPE_BC, v.type_bc, x => x, x => x)}</select></div>
+      <div><label>Type BC${jfStar('type_bc')}</label><select name="type_bc"><option value="">-</option>${opt(R().TYPE_BC, v.type_bc, x => x, x => x)}${legacyOpt(R().TYPE_BC, v.type_bc, x => x)}</select></div>
     </div>
     <div class="fsec">Kapal &amp; jadwal</div><div class="g3">
       <div><label>Vessel${jfStar('vessel')}</label><input name="vessel" value="${esc(v.vessel)}"></div>
@@ -114,10 +116,10 @@ function joFormDraw() {
     ${visibleKinds.map(k => `<div class="rg" id="rg-${k}"></div>`).join('')}
     <div class="fsec">Muatan</div><div class="g3">
       <div><label>Jumlah kontainer${jfStar('containers')}</label><input name="container_count" type="number" min="0" step="1" value="${esc(v.container_count ?? '')}"></div>
-      <div><label>Jenis kontainer${jfStar('containers')}</label><select name="container_type"><option value="">-</option>${opt(R().UNITS.filter(u => u.container), v.container_type, x => x.code, x => x.name)}</select></div>
+      <div><label>Jenis kontainer${jfStar('containers')}</label><select name="container_type"><option value="">-</option>${opt(R().UNITS.filter(u => u.container), v.container_type, x => x.code, x => x.name)}${legacyOpt(R().UNITS.filter(u => u.container), v.container_type)}</select></div>
       <div><label>Weight (ton)${jfStar('weight')}</label><input name="weight" type="number" step="0.01" min="0" value="${esc(v.weight ?? '')}"></div>
       <div><label>Quantity${jfStar('qty')}</label><input name="qty" type="number" min="0" step="1" value="${esc(v.qty ?? '')}"></div>
-      <div><label>Satuan${jfStar('qty')}</label><select name="unit"><option value="">-</option>${opt(R().UNITS, v.unit, x => x.code, x => x.name)}</select></div>
+      <div><label>Satuan${jfStar('qty')}</label><select name="unit"><option value="">-</option>${opt(R().UNITS, v.unit, x => x.code, x => x.name)}${legacyOpt(R().UNITS, v.unit)}</select></div>
       <div id="cbmw" ${v.jenis_muatan === 'LCL_BB' ? '' : 'hidden'}><label>CBM</label><input name="cbm" type="number" min="0" step="0.01" value="${esc(v.cbm ?? '')}"></div>
     </div>
     ${v.party ? `<input type="hidden" name="party" value="${esc(v.party)}">` : ''}
@@ -194,7 +196,7 @@ async function joSubmit(e) {
   e.preventDefault();
   const f = $('#jf'), { b, rowsFlat } = joBody(), err = $('#fe'); err.textContent = '';
   f.querySelectorAll('[aria-invalid]').forEach(x => x.removeAttribute('aria-invalid'));
-  const errs = joClientErrors(b);
+  const errs = jf.legacy ? [] : joClientErrors(b);       // data lama: server memvalidasi hanya kolom yang berubah
   if (errs.length) { err.textContent = errs.map(x => x.label).join('; '); errs.forEach(x => f.querySelector(x.sel)?.setAttribute('aria-invalid', 'true')); f.querySelector(errs[0].sel)?.focus(); return; }
   if (b.eta_etd && b.delivery_plan && b.delivery_plan < b.eta_etd && !confirm('Rencana delivery lebih awal dari ETA. Lanjut simpan?')) return;
   const btn = f.querySelector('button:not([type])'); btn.disabled = true;
@@ -233,3 +235,8 @@ function quickAdd(kind) {
     } catch (x) { $('#qe').textContent = x.message; }
   };
 }
+
+// lencana data lama di daftar dan detail
+const legacyBadges = r => r.origin === 'LEGACY' ? `<span class="lgc" title="Data dari sistem lama">Data lama</span>${r.incomplete ? '<span class="lgc inc" title="Ada isian wajib yang masih kosong">Belum lengkap</span>' : ''}` : '';
+// nilai data lama yang tidak ada di daftar pilihan form tetap tampil (dan tidak hilang saat disimpan)
+const legacyOpt = (list, cur, val = x => x.code) => (cur && !list.some(x => String(val(x)) === String(cur)) ? `<option value="${esc(cur)}" selected>${esc(cur)} (data lama)</option>` : '');

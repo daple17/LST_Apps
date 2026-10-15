@@ -11,17 +11,18 @@ const joDetail = run(async (id, tab = 'material') => {
   if (tab === 'preview') return joPreview(id);
   const miss = j.checklist.filter(c => !c.inv || !c.fp).length;
   $('#ttl').textContent = 'Job Order & Doc';
+  const lg = legacyBadges(j), extra = [['ETD', j.etd && fmtD(j.etd)], ['Pelabuhan muat', j.port_loading_name], ['Pelabuhan tujuan', j.port_dest_name], ['TPS', j.tps_name], ['Tanggal JO (sistem lama)', j.jo_date && fmtD(j.jo_date)], ['Selesai (sistem lama)', j.completed_at && fmtD(j.completed_at)]].filter(x => x[1]);
   $('#view').innerHTML = `<div class="tabs"><a class="btn sec sm" href="#jo">‹ Daftar JO</a><span style="flex:1"></span>
       ${done ? `<button class="btn sec sm" onclick="joSetStatus(${id},'NOT_COMP')">Buka Kembali</button>` : `<button class="btn sec sm" onclick="joForm(${id})">Edit</button><a class="btn sec sm" href="#jo/${id}/preview">Preview</a><button class="btn sec sm" onclick="joDup(${id})">Duplikat</button><button class="btn bad sm" onclick="joDelete(${id})">Hapus</button><button class="btn sm" onclick="joSetStatus(${id},'COMPLETE')">Tandai Complete</button>`}
       ${done ? `<a class="btn sec sm" href="#jo/${id}/preview">Preview</a>` : ''}</div>
     <div class="card hd"><div class="kv">
-      <div><span>Job Order:</span> <b>${esc(j.no_jo)}</b> <span class="tag" style="margin-left:6px"><span class="dot t-${esc(j.type)}" style="margin:0"></span>${esc(typeLabel(j.type))}${j.type_bc ? ' · ' + esc(j.type_bc) : ''}</span></div>
+      <div><span>Job Order:</span> <b>${esc(j.no_jo)}</b>${lg} <span class="tag" style="margin-left:6px"><span class="dot t-${esc(j.type)}" style="margin:0"></span>${esc(typeLabel(j.type))}${j.type_bc ? ' · ' + esc(j.type_bc) : ''}</span></div>
       <div><span>Status JO:</span> <span class="tag ${j.status}">${done ? 'Complete' : 'Not Comp'}</span></div>
       <div><span>Customer:</span> <b>${esc(j.customer_name)}</b></div><div><span>Vessel:</span> <b>${esc(j.vessel || '-')}</b></div>
       <div><span>No. BL:</span> <b>${esc(refs('BL'))}</b></div><div><span>No. Aju:</span> <b>${esc(refs('AJU'))}</b></div>
       <div><span>Party:</span> <b>${esc(j.party || '-')}</b></div>
       <div><span>Weight:</span> <b>${j.weight == null ? '-' : fmtN(j.weight) + ' ton'}</b>${j.weight_mismatch ? ` <span class="more" style="cursor:help" title="Total net weight material ${fmtN(j.material_net_kg / 1000)} ton berbeda dari berat deklarasi">⚠ material ${fmtN(j.material_net_kg / 1000)} ton</span>` : ''}</div>
-      ${j.nickname ? `<div><span>Nickname:</span> <b>${esc(j.nickname)}</b></div>` : ''}</div></div>
+      ${j.nickname ? `<div><span>Nickname:</span> <b>${esc(j.nickname)}</b></div>` : ''}${refs('HBL') !== '-' ? `<div><span>No. HBL:</span> <b>${esc(refs('HBL'))}</b></div>` : ''}${extra.map(([k, v]) => `<div><span>${k}:</span> <b>${esc(v)}</b></div>`).join('')}</div></div>
     <div class="tabs">${JO_TABS.map(([k, n]) => `<a class="btn ${tab === k ? '' : 'sec'} sm" href="#jo/${id}${k === 'material' ? '' : '/' + k}">${n}${k === 'checklist' && miss ? ` <span class="more" style="margin-left:6px">${miss}</span>` : ''}</a>`).join('')}</div>
     <div id="jt"></div>`;
   ({ material: joMatTab, dokumen: joDocTab, checklist: joCheckTab, remarks: joRemarkTab }[tab] || joMatTab)();
@@ -46,7 +47,7 @@ const joMatTab = run(async () => {
       <button class="btn sec" onclick="joScan()">Scan Barcode</button><button class="btn sec out" onclick="joTemplate()">Download Template</button>
       <button class="btn sec" ${done ? 'disabled' : ''} onclick="joImport()">Upload List</button><button class="btn" ${done ? 'disabled' : ''} onclick="joMatForm()">+ Add data</button></div>
     <div class="card tw"><table><tr><th>No</th><th>Product/Container No</th><th>Description</th><th>Spec</th><th title="tebal · lebar · bentuk">Thickness</th><th class="num">Net Weight</th><th class="num">Gross Weight</th><th class="num">Qty</th><th>Satuan</th><th>Dari</th><th>Tujuan</th><th>Edit</th></tr>
-    ${d.rows.map((m, i) => `<tr class="row"><td>${d.offset + i + 1}</td><td><b>${esc(m.product_no)}</b>${m.kondisi === 'PARTIAL' ? ' <span class="more" title="Partial">P</span>' : ''}</td><td>${esc(m.description)}</td><td>${esc(m.spec)}</td><td>${esc(dim(m))}</td><td class="num">${fmtN(m.net_weight)}</td><td class="num">${fmtN(m.gross_weight)}</td><td class="num">${m.qty}</td><td>${esc(m.unit)}</td><td>${esc(m.origin)}</td><td>${esc(m.destination)}</td>
+    ${d.rows.map((m, i) => `<tr class="row"><td>${d.offset + i + 1}</td><td><b>${esc(m.product_no)}</b>${m.kondisi === 'PARTIAL' ? ' <span class="more" title="Partial">P</span>' : ''}${m.container_no ? ` <span class="more" title="Nomor kontainer">${esc(m.container_size ? m.container_size + 'ft' : 'CNTR')}</span>` : m.container_size ? ` <span class="more" title="Ukuran kontainer">${esc(m.container_size)}</span>` : ''}</td><td>${esc(m.description)}</td><td>${esc(m.spec)}</td><td>${esc(dim(m))}</td><td class="num">${fmtN(m.net_weight)}</td><td class="num">${fmtN(m.gross_weight)}</td><td class="num">${m.qty}</td><td>${esc(m.unit)}</td><td>${esc(m.origin)}</td><td>${esc(m.destination)}</td>
       <td><button class="ib" aria-label="Edit ${esc(m.product_no)}" ${done ? 'disabled' : ''} onclick="joMatForm(${m.id})">✎</button></td></tr>`).join('') || `<tr><td colspan="12" style="text-align:center;color:var(--mut)">${joMq.q ? 'Tidak ada material yang cocok' : 'Belum ada material. Gunakan Add data atau Upload List.'}</td></tr>`}</table>
     ${pagerNum(joMq.page, d.pages, d.total, 'joMatGoto')}</div>`;
   let tm; $('#mq').oninput = e => { clearTimeout(tm); tm = setTimeout(() => { joMq.q = e.target.value; joMq.page = 1; joMatTab().then(() => { const q = $('#mq'); q.focus(); q.setSelectionRange(1e4, 1e4); }); }, 300); };

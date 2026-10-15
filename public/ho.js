@@ -89,7 +89,7 @@ const hoOverview = run(async () => {
     <button class="btn sec out" onclick="hoExport()">Download Excel</button><button class="btn" onclick="hoTicketForm()">+ Tambah Data</button></div>
     <div class="tabs">${tab('', 'All', c.all)}${tab('done', '100%', c.done)}${tab('mid', '50% - 99%', c.mid)}${tab('low', '< 50%', c.low)}</div>
     <div class="card tw"><table><tr><th>No. Ticket</th><th>PIC</th><th>Customer</th><th>Vessel</th><th>Party</th><th class="num">Weight</th><th>Dwelling time</th><th>Report Material</th><th>Trucking Delivery</th><th>Report</th></tr>
-    ${d.rows.map(r => `<tr class="row"><td><a href="#ho/${r.id}/material"><b>${esc(r.ticket_no)}</b></a></td><td>${esc(r.pic_name)}</td><td class="wrap">${multi(r.customers)}</td><td>${multi(r.vessels)}</td><td>${multi(r.parties)}</td><td class="num">${fmtN(r.weight)} ton</td><td>${dwell(r.dwell_min)}</td>
+    ${d.rows.map(r => `<tr class="row"><td><a href="#ho/${r.id}/material"><b>${esc(r.ticket_no)}</b></a>${r.is_placeholder ? ' <span class="lgc" title="Tiket penampung hasil migrasi: berisi surat jalan lama yang belum dikaitkan ke tiket aslinya">Migrasi</span>' : ''}</td><td>${esc(r.pic_name)}</td><td class="wrap">${multi(r.customers)}</td><td>${multi(r.vessels)}</td><td>${multi(r.parties)}</td><td class="num">${fmtN(r.weight)} ton</td><td>${dwell(r.dwell_min)}</td>
       <td>${pbtn(`#ho/${r.id}/material`, 'material', r.mat_pct, 'Buka Report Material')}</td>
       <td>${pbtn(`#ho/${r.id}/trucking`, 'truck', r.del_pct, 'Buka Trucking Delivery')}</td>
       <td style="white-space:nowrap"><button class="ib" title="Copy report" aria-label="Copy report" onclick="hoCopy(${r.id})">${ICON.copy}</button> <button class="ib" title="Download Excel" aria-label="Download Excel" onclick="hoDl(${r.id},'${esc(r.ticket_no)}')">${ICON.down}</button></td></tr>`).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--mut)">Belum ada ticket</td></tr>'}</table>
@@ -166,7 +166,7 @@ function hoHead(t, tab) {
   const stJo = jos.length && jos.every(j => j.status === 'COMPLETE') ? 'Complete' : 'Not Complete';
   return `<div class="tabs"><a class="btn sec sm" href="#ho">‹ Back</a><a class="btn ${tab === 'material' ? '' : 'sec'} sm" href="#ho/${t.id}/material">Report Material</a><a class="btn ${tab === 'trucking' ? '' : 'sec'} sm" href="#ho/${t.id}/trucking">Trucking Delivery</a>
     <span style="flex:1"></span><button class="btn sec sm out" onclick="hoCopy(${t.id})">Copy Report</button><a class="btn sec sm out" href="/api/ho/tickets/${t.id}/zip?t=${token}" download>Download ZIP</a><button class="btn sec sm" onclick="hoTicketForm(${t.id})">Edit JO</button>${t.sj_count ? '' : `<button class="btn bad sm" onclick="hoDelTicket(${t.id})">Hapus Ticket</button>`}</div>
-    <div class="card hd"><div class="kv"><div><span>Ticket:</span> <b>${esc(t.ticket_no)}</b></div><div><span>PIC:</span> <b>${esc(t.pic_name)}</b></div>
+    <div class="card hd"><div class="kv"><div><span>Ticket:</span> <b>${esc(t.ticket_no)}</b>${t.is_placeholder ? ' <span class="lgc" title="Tiket penampung hasil migrasi">Migrasi</span>' : ''}</div><div><span>PIC:</span> <b>${esc(t.pic_name)}</b></div>
     <div><span>Job Order:</span> <b>${jos.map(x => `<a href="#jo/${x.id}" title="Buka Job Order">${esc(x.no_jo)}</a>`).join(', ') || '-'}</b></div><div><span>Party:</span> <b>${join('party')}</b></div>
     <div><span>Customer:</span> <b>${join('customer_name')}</b></div><div><span>Weight:</span> <b>${fmtN(t.weight)} Ton</b></div>
     <div><span>Vessel:</span> <b>${join('vessel')}</b></div><div><span>No. Aju:</span> <b>${join('aju_no')}</b></div>
@@ -381,9 +381,31 @@ const hoSjView = run(async id => {
     <div style="text-align:center;margin-top:12px">${barcode(s.sj_no)}<div style="font-size:12px">Barcode nomor Surat Jalan</div></div></div>
     <div class="noprint" style="margin-top:14px"><div class="kv"><div><span>Vendor:</span> <b>${esc(s.vendor_code ? s.vendor_code + ' · ' + s.vendor_name : '-')}</b></div><div><span>Start Loading:</span> <b>${fmtT(s.start_at)}</b></div><div><span>Finish Loading:</span> <b>${fmtT(s.finish_at)}</b></div><div><span>Load Time:</span> <b>${loadT(s.load_min)}</b></div></div>
     <b>Foto</b><div class="ph">${s.photos.map(p => `<div><img src="${photoOf(p.path)}" onclick="window.open(this.src)"></div>`).join('') || '<div>Belum ada foto</div>'}</div></div>
-    <div class="acts"><button class="btn sec" onclick="closeMd()">Tutup</button><button class="btn bad" onclick="hoDelSj(${id})">Hapus</button><button class="btn sec" onclick="hoSjForm(${id})">Edit</button>${s.finish_at ? '' : `<button class="btn sec" onclick="hoSjFinish(${id});closeMd()">Finish Loading</button>`}<button class="btn sec" onclick="window.print()">Print</button><a class="btn" href="/api/ho/sj/${id}/pdf?t=${token}" target="_blank" rel="noopener">PDF</a></div></div></div>`;
+    <div class="acts"><button class="btn sec" onclick="closeMd()">Tutup</button>${s.is_legacy ? `<button class="btn sec" onclick="hoRelink(${id})">Tautkan ke tiket</button>` : ''}<button class="btn bad" onclick="hoDelSj(${id})">Hapus</button><button class="btn sec" onclick="hoSjForm(${id})">Edit</button>${s.finish_at ? '' : `<button class="btn sec" onclick="hoSjFinish(${id});closeMd()">Finish Loading</button>`}<button class="btn sec" onclick="window.print()">Print</button><a class="btn" href="/api/ho/sj/${id}/pdf?t=${token}" target="_blank" rel="noopener">PDF</a></div></div></div>`;
 });
 const hoDelSj = run(async id => { if (confirm('Hapus Surat Jalan ini? Material akan kembali tersedia.')) { await api('/ho/sj/' + id, 'DELETE'); closeMd(); route(); } });
 
 /* ---- Code 128: public/../lib/code128.js (juga dipakai server) ---- */
 const barcode = t => Code128.svg(t);
+
+/* ---- tautkan surat jalan data lama ke tiket lain ---- */
+const hoRelink = run(async id => {
+  const s = await api('/ho/sj/' + id);
+  $('#md').innerHTML = `<div class="modal"><form class="card" id="rlf" novalidate style="max-width:520px"><h3 style="margin-top:0">Tautkan ke tiket</h3>
+    <p class="muted2" style="margin-top:0">Surat jalan <b>${esc(s.sj_no)}</b> saat ini di tiket <b>${esc(s.ticket_no)}</b>. JO dari isi surat jalan ikut ditambahkan ke tiket tujuan.</p>
+    <label for="rl-q">Cari tiket tujuan</label><input id="rl-q" type="search" placeholder="Nomor tiket, customer, vessel, atau no. JO" autocomplete="off"><div class="rl-list" id="rl-list" role="listbox" aria-label="Tiket tujuan"></div>
+    <div class="err" id="rl-err" role="alert"></div><div class="acts"><button type="button" class="btn sec" onclick="hoSjView(${id})">Batal</button><button class="btn" id="rl-go" disabled>Tautkan</button></div></form></div>`;
+  let pick = null, tm;
+  const draw = async () => {
+    const d = await api('/ho/tickets?' + new URLSearchParams({ q: $('#rl-q').value.trim(), from: '2000-01-01', to: '2999-12-31', page: 1 })), rows = d.rows.filter(t => !t.is_placeholder && t.id !== s.ticket_id);
+    if (!$('#rl-list')) return;                                  // modal sudah ditutup selagi daftar dimuat
+    $('#rl-list').innerHTML = rows.map(t => `<button type="button" class="rl-item ${pick === t.id ? 'on' : ''}" role="option" aria-selected="${pick === t.id}" data-id="${t.id}"><b>${esc(t.ticket_no)}</b><span>${esc(t.customer || '-')} · ${esc(t.vessel || '-')}</span></button>`).join('') || '<p class="muted2">Tidak ada tiket yang cocok.</p>';
+    $('#rl-list').querySelectorAll('.rl-item').forEach(b => b.onclick = () => { pick = +b.dataset.id; $('#rl-go').disabled = false; draw(); });
+  };
+  $('#rl-q').oninput = () => { clearTimeout(tm); tm = setTimeout(draw, 300); }; draw(); $('#rl-q').focus();
+  $('#rlf').onsubmit = async e => {
+    e.preventDefault(); $('#rl-go').disabled = true;
+    try { await api(`/ho/delivery-notes/${id}/relink`, 'PUT', { ticket_id: pick }); toast('Surat jalan ditautkan'); location.hash = `#ho/${pick}/trucking`; closeMd(); }
+    catch (er) { $('#rl-err').textContent = er.message; $('#rl-go').disabled = false; }
+  };
+});
