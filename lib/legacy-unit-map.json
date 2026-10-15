@@ -1,0 +1,20 @@
+{
+  "_catatan": "Padanan penulisan satuan sistem lama -> kode satuan LESAT. Kunci = huruf besar tanpa spasi berlebih. Penulisan yang tidak ada di sini tidak ditebak: teks aslinya disimpan sebagai party_text. Revisi bersama client; arti 'BE' belum diketahui (sengaja tidak dipetakan).",
+  "map": {
+    "COIL": "COIL", "COILS": "COIL", "CL": "COIL", "CCL": "COIL",
+    "BUNDLE": "BUNDLE", "BUNDLES": "BUNDLE", "BUNDL": "BUNDLE", "BUND": "BUNDLE", "BDL": "BUNDLE", "BDLS": "BUNDLE", "-BUNDLES": "BUNDLE",
+    "PCS": "PCS", "PC": "PCS", "PCE": "PCS", "PIECE": "PCS", "PIECES": "PCS", "EA": "PCS", "EACH": "PCS",
+    "CARTON": "CARTON", "CARTONS": "CARTON", "CT": "CARTON", "CTN": "CARTON", "CTNS": "CARTON", "CCTN": "CARTON",
+    "PACKAGE": "PACKAGE", "PACKAGES": "PACKAGE", "PACKAG": "PACKAGE", "PACKG": "PACKAGE", "PACKGS": "PACKAGE", "PKG": "PACKAGE", "PKGS": "PACKAGE", "PK": "PACKAGE", "PX": "PACKAGE",
+    "PALLET": "PALLET", "PALLETS": "PALLET", "PLT": "PALLET", "PLTS": "PALLET",
+    "BAG": "BAG", "BAGS": "BAG", "BG": "BAG", "BGS": "BAG",
+    "CASE": "CASE", "CASES": "CASE", "CS": "CASE", "WODEN CASE": "CASE", "WOODEN CASE": "CASE",
+    "DRUM": "DRUM", "DRUMS": "DRUM", "DR": "DRUM", "DM": "DRUM",
+    "ROLL": "ROLL", "ROLLS": "ROLL", "RO": "ROLL", "RL": "ROLL",
+    "BOX": "BOX", "BOXES": "BOX", "BX": "BOX", "STEEL BOX": "BOX",
+    "UNIT": "UNIT", "UNITS": "UNIT", "UNT": "UNIT", "UN": "UNIT",
+    "BALE": "BALE", "BALES": "BALE", "CRATE": "CRATE", "CRATES": "CRATE", "SKID": "SKID", "SKIDS": "SKID", "SET": "SET", "SETS": "SET", "IBC": "IBC", "IBCS": "IBC",
+    "20FT": "20FT", "20 FT": "20FT", "40FT": "40FT", "40 FT": "40FT"
+  },
+  "kosong": ["", "-", ".", "0", "1", "N/A", "NA", "CONTAINER", "KONTAINER"]
+}
