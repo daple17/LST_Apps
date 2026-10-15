@@ -1,0 +1,13 @@
+# Salinan mentah sistem lama (MariaDB) HANYA untuk uji migrasi lokal. Jangan dipakai di server.
+# Jalankan: docker compose -f docker-compose.legacy.yml up -d   (port 3308)
+services:
+  legacy:
+    image: mariadb:10.11
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: lst_legacy
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_general_ci", "--max-allowed-packet=256M"]
+    ports: ["127.0.0.1:3308:3306"]
+    volumes: ["legacydata:/var/lib/mysql"]
+volumes:
+  legacydata:

@@ -3,3 +3,6 @@ uploads/*
 !uploads/.gitkeep
 .env
 .DS_Store
+
+# data klien (jangan di-commit): dump sistem lama, laporan impor
+data/
