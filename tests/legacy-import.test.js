@@ -101,7 +101,7 @@ test('impor bagian 1: dry-run tidak menulis; commit memetakan master, pengguna, 
   for (const i of [0, 1, 2, 3, 4, 5, 6, 8, 9, 10]) assert.equal(again[i].length, first[i].length, 'tabel ke-' + i);   // jumlah baris sama
   assert.equal((await q("SELECT COUNT(*) n FROM job_orders WHERE origin='LEGACY'"))[0].n, 4); assert.equal((await q('SELECT COUNT(*) n FROM jo_references'))[0].n, 7 + 3);
   assert.equal(String((await q("SELECT delivery_plan FROM job_orders WHERE no_jo='0027USC'"))[0].delivery_plan).slice(0, 10), '2026-03-01');
-  assert.equal((await q("SELECT COUNT(*) n FROM users WHERE username='migrasi-sistem-lama'"))[0].n, 1); assert.equal((await q("SELECT COUNT(*) n FROM legacy_quarantine"))[0].n, 2);   // karantina dibangun ulang, tidak menumpuk
+  assert.equal((await q("SELECT COUNT(*) n FROM users WHERE username='migrasi-sistem-lama'"))[0].n, 1); assert.equal((await q("SELECT COUNT(*) n FROM legacy_quarantine WHERE source_table='job_orders'"))[0].n, 2);   // karantina dibangun ulang, tidak menumpuk
   // perubahan di sumber ikut terbawa saat diulang; referensi dengan berkas tidak dihapus
   await dst.query('INSERT INTO files (owner_type, owner_id, filename, path, size, mime) VALUES ("jo_reference", 1, "x.pdf", "x.pdf", 1, "application/pdf")');
   const keep = (await q("SELECT r.id FROM jo_references r JOIN job_orders j ON j.id=r.jo_id WHERE j.no_jo='0027USC' AND r.number='INV2'"))[0].id;
@@ -122,4 +122,59 @@ test('impor bagian 1: dry-run tidak menulis; commit memetakan master, pengguna, 
   assert.equal(await snap(), before);                                                                       // sama persis dengan sebelum impor pertama
   assert.equal((await q("SELECT legacy_id FROM users WHERE username='admin'"))[0].legacy_id, null); assert.equal((await q("SELECT COUNT(*) n FROM roles WHERE name='Pengguna Lama (tanpa akses)'"))[0].n, 0);
   assert.equal((await q("SELECT COUNT(*) n FROM job_orders WHERE no_jo='0001NEW'"))[0].n, 1); assert.equal((await q("SELECT code FROM customers"))[0].code, 'NEW');
+});
+
+test('impor bagian 2: material, tiket, report, surat jalan (termasuk penampung), status tiket', async t => {
+  if (!(await dbAvailable())) return t.skip('MySQL tidak tersedia');
+  const { dst, q, go } = await setup(t);
+  const snap = async () => JSON.stringify(await Promise.all(['customers', 'job_orders', 'jo_references', 'jo_materials', 'handling_tickets', 'ticket_job_orders', 'material_reports', 'delivery_notes', 'delivery_note_items', 'users', 'roles', 'legacy_quarantine', 'counters', 'audit_log'].map(t2 => q(`SELECT * FROM ${t2} ORDER BY 1,2`))));
+  const before = await snap();
+  let r = await go('--commit', '--active-window-days=30');
+  const mat = Object.fromEntries((await q('SELECT * FROM jo_materials')).map(m => [m.legacy_id, m]));
+  assert.deepEqual(Object.keys(mat).map(Number).sort(), [1, 2, 3, 4, 7, 8]);                               // 5 (JO tidak ada) dan 6 (data uji) dikarantina
+  assert.deepEqual(Object.values(mat).map(m => m.product_no).sort(), ['C-2', 'C-2#2', 'MSKU1234567', 'TANPA-NOMOR-4', 'WING BOX', 'Z-8'].sort());   // ganda: akhiran #2 (tak peka huruf besar/kecil)
+  assert.deepEqual([mat[1].container_no, mat[1].container_size, mat[7].container_no, mat[7].container_size, mat[2].container_size], ['MSKU1234567', '20', null, null, '40']);
+  assert.deepEqual([mat[1].unit, mat[2].unit, mat[3].unit, mat[4].unit, mat[7].unit, mat[8].unit], ['20FT', 'COIL', 'UNIT', 'PACKAGE', 'PCS', 'BUNDLE']);
+  assert.deepEqual([Number(mat[1].net_weight), Number(mat[2].net_weight), Number(mat[2].gross_weight), Number(mat[4].gross_weight), Number(mat[7].gross_weight), Number(mat[3].gross_weight)], [8000, 8100, 8140, 18909, 100, 250]);   // Kg / Ton / "Tons" bernilai kg / kosong >=100
+  assert.deepEqual([mat[1].description, mat[1].spec, mat[2].spec, Number(mat[1].thickness), mat[2].thickness, mat[1].origin, mat[1].destination, mat[2].destination, mat[1].kondisi, mat[1].data_origin], ['GALVANIZED COIL', null, 'SPCC', 1.2, null, 'KOREA', 'CIKARANG', null, 'INTACT', 'LEGACY']);
+  assert.equal((await q("SELECT COUNT(*) n FROM jo_materials WHERE data_origin='NEW'"))[0].n, 0);
+  assert.deepEqual((await q("SELECT legacy_id, reason FROM legacy_quarantine WHERE source_table='jo_materials' ORDER BY legacy_id")).map(x => [x.legacy_id, /JO tidak ada|data uji/.exec(x.reason)?.[0]]), [[5, 'JO tidak ada'], [6, 'data uji']]);
+
+  // tiket
+  const tk = Object.fromEntries((await q('SELECT t.*, u.username pic FROM handling_tickets t JOIN users u ON u.id=t.pic_id')).map(x => [x.ticket_no, x]));
+  assert.deepEqual(Object.keys(tk).sort(), ['202601001', '202601001#2', '202601002', 'MIG-202601', 'MIG-202602'].sort());   // nomor ganda diberi akhiran; dua tiket penampung
+  assert.deepEqual([tk['202601001'].pic, tk['202601002'].pic, tk['202601001'].origin, tk['202601001'].is_placeholder], ['budi', 'migrasi-sistem-lama', 'LEGACY', 0]);     // PIC tak dikenal -> pengguna migrasi
+  assert.deepEqual([tk['MIG-202601'].is_placeholder, tk['MIG-202601'].pic, tk['MIG-202601'].done_at !== null, tk['MIG-202602'].is_placeholder], [1, 'migrasi-sistem-lama', true, 1]);
+  const links = (await q('SELECT t.ticket_no, j.no_jo FROM ticket_job_orders z JOIN handling_tickets t ON t.id=z.ticket_id JOIN job_orders j ON j.id=z.jo_id ORDER BY 1,2')).map(x => `${x.ticket_no}:${x.no_jo}`);
+  assert.deepEqual(links, ['202601001:0027USC', '202601001#2:0028BTU', '202601002:0028BTU', 'MIG-202601:0028BTU']);   // JO 0028BTU di dua tiket + penampung berisi JO dari isi surat jalan
+  // report kerusakan
+  const reps = await q('SELECT m.legacy_id, r.status, r.remarks, r.checked_by_name, r.checked_at FROM material_reports r JOIN jo_materials m ON m.id=r.material_id ORDER BY m.legacy_id');
+  assert.deepEqual(reps.map(x => [x.legacy_id, x.status, x.remarks, x.checked_by_name]), [[1, 'OK', null, 'Data lama'], [2, 'DAMAGE', 'penyok', 'Data lama']]);   // K3 ('-', status 0): tidak ada informasi, tidak dibuat
+  // surat jalan
+  const sj = Object.fromEntries((await q('SELECT d.*, t.ticket_no tno, v.code vcode FROM delivery_notes d JOIN handling_tickets t ON t.id=d.ticket_id LEFT JOIN vendors v ON v.id=d.vendor_id')).map(x => [x.legacy_id, x]));
+  assert.deepEqual(Object.values(sj).map(x => x.no_sj).sort(), ['2026010001', '2026010001#2', '2026010003', '2026010005', '2026020001']);
+  assert.deepEqual([sj[1].tno, sj[2].tno, sj[3].tno, sj[4].tno, sj[5].tno], ['202601001', '202601002', 'MIG-202601', 'MIG-202602', 'MIG-202601']);   // kosong dan kontainer tak dikenal -> penampung
+  assert.deepEqual([sj[1].destination, sj[1].origin_address, sj[1].legacy_status, sj[1].origin, sj[1].vcode, sj[2].vendor_id, sj[2].phone, sj[3].phone, sj[1].start_loading, sj[1].finish_loading !== null, sj[2].finish_loading], ['CIKARANG', 'GUDANG A', 1, 'LEGACY', 'MJL', null, null, null, null, true, null]);
+  assert.equal(sj[3].driver, 'SUPIR'); assert.equal((await q('SELECT COUNT(*) n FROM delivery_note_items WHERE dn_id=?', [sj[3].id]))[0].n, 0);            // surat jalan kosong tetap ada
+  const items = Object.fromEntries((await q('SELECT i.*, m.legacy_id mk FROM delivery_note_items i JOIN jo_materials m ON m.id=i.material_id')).map(x => [x.legacy_id, x]));
+  assert.deepEqual(Object.keys(items).map(Number).sort(), [1, 2, 3, 4, 6]);                                 // detil 5 (kontainer tak ada) dan 7 (kontainer uji) dikarantina
+  assert.deepEqual([items[1].qty, Number(items[1].weight), items[1].mark, items[2].qty, Number(items[2].weight), items[2].mark, items[3].mark, items[3].legacy_flag, Number(items[4].weight), items[6].mk], [1, 8000, 'GOOD', 2, 8100, 'DAMAGE', null, 0, 7563.6, 7]);
+  assert.deepEqual((await q("SELECT legacy_id, reason FROM legacy_quarantine WHERE source_table='delivery_note_items' ORDER BY legacy_id")).map(x => [x.legacy_id, /tidak ada di sumber|dikarantina/.exec(x.reason)[0]]), [[5, 'tidak ada di sumber'], [7, 'dikarantina']]);
+  // status tiket + penghitung
+  assert.equal(tk['202601001'].done_at !== null, true); assert.match(String(tk['202601001'].done_at), /2026-01-12/);                            // seluruh qty tercakup: selesai pada tanggal surat jalan terakhir
+  for (const no of ['202601002', '202601001#2']) assert.match(String(tk[no].done_at), /2026-0[12]-/);                                           // belum tuntas dan lama: ditutup migrasi
+  assert.equal((await q("SELECT COUNT(*) n FROM audit_log WHERE entity_type='ticket' AND action='Ditutup oleh migrasi'"))[0].n, 2);
+  assert.deepEqual((await q("SELECT period, last FROM counters WHERE name='SJ' ORDER BY period")).map(x => [x.period, x.last]), [['202601', 5], ['202602', 1]]);   // hanya nomor 10 digit; yang diberi akhiran tidak dihitung
+  assert.equal((await q("SELECT COUNT(*) n FROM counters WHERE name='TICKET'"))[0].n, 0);                  // penghitung tiket tidak disentuh
+  // jendela tiket aktif: jendela sangat lebar -> tiket yang belum tuntas tetap aktif
+  await go('--commit', '--active-window-days=100000');
+  const act = await q("SELECT ticket_no FROM handling_tickets WHERE done_at IS NULL AND is_placeholder=0 ORDER BY 1"); assert.deepEqual(act.map(x => x.ticket_no), ['202601001#2', '202601002']);
+  await go('--commit', '--active-window-days=30');
+  assert.equal((await q("SELECT COUNT(*) n FROM audit_log WHERE entity_type='ticket' AND action='Ditutup oleh migrasi'"))[0].n, 2);                // catatan audit tidak menumpuk saat diulang
+  // idempoten: impor ulang tidak menggandakan
+  const once = JSON.parse(await snap()); await go('--commit', '--active-window-days=30'); const twice = JSON.parse(await snap());
+  once.forEach((rows, i) => assert.equal(twice[i].length, rows.length, 'tabel ke-' + i));
+  // reset mengembalikan semuanya (termasuk tiket penampung, catatan audit, penghitung SJ)
+  await go('--reset-legacy'); const afterReset = JSON.parse(await snap()), orig = JSON.parse(before);
+  orig.forEach((rows, i) => assert.deepEqual(afterReset[i], rows, 'tabel ke-' + i + ' ' + JSON.stringify(afterReset[i]).slice(0, 300) + ' vs ' + JSON.stringify(rows).slice(0, 300)));
 });

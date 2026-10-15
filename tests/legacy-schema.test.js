@@ -16,7 +16,7 @@ test('migrasi 010: skema kompatibilitas data lama (hanya menambah, aman diulang)
   await q("INSERT INTO job_orders (no_jo, type, customer_id, status) VALUES ('0001USC', 'IMPORT', 1, 'NOT_COMP')");
   const before = { jo: (await q('SELECT * FROM job_orders'))[0], c: (await q('SELECT * FROM customers'))[0] };
 
-  assert.deepEqual(await migrate(pool, dir), ['010-legacy-compat.js']); assert.deepEqual(await migrate(pool, dir), []);
+  assert.deepEqual(await migrate(pool, dir), ['010-legacy-compat.js', '011-legacy-material-origin.js']); assert.deepEqual(await migrate(pool, dir), []);
   // data lama tidak berubah; kolom baru terisi default
   const jo = (await q('SELECT * FROM job_orders'))[0];
   for (const k of Object.keys(before.jo)) if (k !== 'updated_at') assert.equal(String(jo[k]), String(before.jo[k]), k);
@@ -25,9 +25,10 @@ test('migrasi 010: skema kompatibilitas data lama (hanya menambah, aman diulang)
   // tabel dan kolom baru
   for (const tb of ['countries', 'ports', 'tps_warehouses', 'jo_containers', 'legacy_quarantine', 'import_runs']) assert.equal(await m.hasTable(tb), true, tb);
   for (const [tb, cols] of Object.entries({ job_orders: ['jo_date', 'completed_at', 'etd', 'port_loading_id', 'port_dest_id', 'tps_id', 'legacy_status', 'origin', 'legacy_id'], customers: ['email', 'phone', 'address', 'city', 'tax_no', 'legacy_code', 'needs_code_review', 'legacy_id'],
-    vendors: ['city', 'npwp', 'pic', 'country_id', 'needs_code_review', 'legacy_id'], shippers: ['city', 'country_id', 'legacy_id'], jo_materials: ['container_no', 'container_size', 'origin', 'legacy_id'],
+    vendors: ['city', 'npwp', 'pic', 'country_id', 'needs_code_review', 'legacy_id'], shippers: ['city', 'country_id', 'legacy_id'], jo_materials: ['container_no', 'container_size', 'data_origin', 'legacy_id'],
     handling_tickets: ['origin', 'is_placeholder', 'legacy_id'], delivery_notes: ['destination', 'origin_address', 'legacy_status', 'origin', 'legacy_id'], delivery_note_items: ['legacy_flag', 'legacy_id'], users: ['legacy_id'] }))
     for (const c of cols) assert.equal(await m.hasColumn(tb, c), true, `${tb}.${c}`);
+  assert.match(await m.columnType('jo_materials', 'origin'), /varchar\(80\)/);                      // `origin` lama (lokasi asal) tidak berubah
   assert.equal(await m.hasColumn('delivery_notes', 'ticket_id'), true);
   assert.equal((await q("SELECT is_nullable n FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='delivery_notes' AND column_name='ticket_id'"))[0].n, 'NO');   // tiket tetap wajib
   // legacy_id unik (NULL boleh banyak)

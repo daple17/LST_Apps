@@ -11,6 +11,7 @@ const C = require('./common'), master = require('./master'), { job_orders } = re
 const STEPS = [['countries', master.countries], ['ports', master.ports], ['tps', master.tps], ['customers', master.customers], ['vendors', master.vendors], ['shippers', master.shippers], ['users', master.users], ['job_orders', job_orders]];
 try { const more = require('./deliveries'); STEPS.push(...more.STEPS); } catch (e) { if (e.code !== 'MODULE_NOT_FOUND') throw e; }
 STEPS.push(['counters', counters]);
+const QUAR_TABLES = { materials: ['jo_materials'], delivery_notes: ['delivery_notes', 'delivery_note_items'] };   // tabel sumber karantina yang dibangun ulang per langkah
 
 async function run(argv, { log = console.log, target: tcfg = cfg.db } = {}) {
   const o = C.parseArgs(argv);
@@ -29,7 +30,7 @@ async function run(argv, { log = console.log, target: tcfg = cfg.db } = {}) {
     if (mode !== 'reset') for (const [name, fn] of STEPS) {
       if (o.only && !o.only.has(name)) continue;
       const t0 = Date.now();
-      await ctx.q('DELETE FROM legacy_quarantine WHERE source_table=? AND resolved_at IS NULL', [name]);   // karantina dibangun ulang tiap run
+      await ctx.q('DELETE FROM legacy_quarantine WHERE source_table IN (?) AND resolved_at IS NULL', [QUAR_TABLES[name] || [name]]);   // karantina dibangun ulang tiap run
       await fn(ctx); log(`[impor] ${name} selesai (${Date.now() - t0} ms)`);
     }
     if (write) { for (const q of ctx.quarantine) await ctx.q('INSERT INTO legacy_quarantine (source_table, legacy_id, reason, payload) VALUES (?,?,?,?)', [q.source_table, q.legacy_id, q.reason, q.payload ? JSON.stringify(q.payload) : null]); await conn.commit(); } else await conn.rollback();

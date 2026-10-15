@@ -1,6 +1,6 @@
 # Spesifikasi migrasi data sistem lama → LESAT (Job Order & Handling Ops)
 
-Status: **tahap 0–3 selesai** (master, pengguna, Job Order). Tahap 4 (material, tiket, surat jalan), tahap 5 (validasi, lencana, relink), dan tahap 6 (rekonsiliasi) menyusul; dokumen ini diperbarui di tiap tahap. Cara menjalankan: `docs/migrasi-lokal.md`.
+Status: **tahap 0–4 selesai** (master, pengguna, Job Order, material, tiket, report kerusakan, surat jalan). Tahap 5 (validasi, lencana, relink) dan tahap 6 (rekonsiliasi akhir) menyusul; dokumen ini diperbarui di tiap tahap. Cara menjalankan: `docs/migrasi-lokal.md`.
 
 ## Prinsip
 - Hanya uji lokal. Skrip menolak berjalan tanpa `--lokal` atau di host non-lokal. Dump, laporan, dan karantina ada di `data/` (di-ignore git); tidak ada data nyata di tes (fixture `tests/fixtures/legacy-mini.sql` buatan sendiri).
@@ -33,10 +33,23 @@ Status: **tahap 0–3 selesai** (master, pengguna, Job Order). Tahap 4 (material
 
 **Job Order:** `no_jo = 4 digit NoJobOrder + kode customer` (`0027USC`), `legacy_no = 27`; `type` 1–4 → IMPORT/EXPORT/TRUCKING/PROJECT; `type_bc` dari `ImportType` (`PIB BC 2.0/1.6/2.8/2.3`, `PEB BC 3.0`; "Pilih", "Lainnya", kosong → NULL); `jenis_muatan` FCL/LCL → FCL/LCL_BB; tanggal: IMPORT `eta_etd=DateEta`; EXPORT `eta_etd=COALESCE(DateEtd, DateEta)`; Trucking/Project (keputusan sendiri) `COALESCE(DateEta, DateEtd)`; `etd=DateEtd`; `delivery_plan` dikosongkan (tidak ada di sistem lama) dan **tidak ditimpa** saat impor diulang; `completed_at=JobCompleteDate` hanya bila COMPLETE; pelabuhan/TPS/shipper 0 → NULL; `weight_kg = lcl_ton × 1000`, `cbm = lcl_m3`, `qty = lcl_qty` (pecahan dibulatkan), `unit`/`party_text` dari `lib/legacy-unit-map.json` (tak dikenal → teks asli di `party_text`, tidak ditebak); peti kemas `fcl_20/40/45/ot/fr` → `jo_containers` + `container_count/container_type` (`MIX` bila lebih dari satu jenis); referensi `Invoice`→INVOICE, `NoBL`→BL (+tanggal), `NoHbl`→HBL (+tanggal), `NoSiDo`→lihat keputusan 4, `NoAju`→AJU (satu nomor per baris; pemisah `,` `;` ` dan ` `&`; placeholder dibuang); `jo_checklist` 9 baris default. Kolom `NoBc2`, `NoPib`, `Spk`, `Consignee` tidak dimigrasi (jumlah yang terisi dilaporkan). Penghitung `JO` dinaikkan ke minimal nomor JO lama terbesar (6.035); penghitung `TICKET` tidak disentuh.
 
+## Pemetaan (tahap 4)
+| Sumber | Tujuan | Aturan |
+|---|---|---|
+| `kontainer` (9.440) | `jo_materials` | `product_no` = nomor (trim, huruf besar; kosong/`-` → `TANPA-NOMOR-<id>`; pasangan (JO, nomor) ganda tak peka huruf besar/kecil → akhiran `#2`, `#3`); `container_no` hanya bila pola ISO (`^[A-Z]{4}\d{7}$`), `container_size` dari `size` (`20 F`→`20`, `1`→NULL); berat lewat `weightKg` (Kg; Ton ×1000; "Tons" bernilai >1000 dianggap kg; unit kosong: ≥100 kg, <100 ton); satuan lewat peta (`Container` → 20FT/40FT dari ukuran; kosong → `UNIT`); `data_origin='LEGACY'`. Karantina: JO tidak ada (12) dan data uji ("Material bagus", Test, Coba, Tes; 8). |
+| `worksheet` (689) | `handling_tickets` | `ticket_no` = nomor (ganda → `#2`); PIC dari `created_by` (tak dikenal → pengguna `migrasi-sistem-lama`); `created_at` = tanggal; `origin='LEGACY'` |
+| pasangan (`id_worksheet`, `id_job_order`) | `ticket_job_orders` | unik, hanya dari material yang diimpor; satu JO boleh di dua tiket |
+| `kontainer` dengan `id_worksheet>0` dan (status ≠ NOT_CHECKED atau ada keterangan) | `material_reports` | `damage_status` 1→OK, 2→DAMAGE, kosong/0→NOT_CHECKED; `damage_descr` (selain `-`/kosong) → `remarks`; `checked_by_name='Data lama'`, `checked_at=updated_time` bila ada status |
+| `surat_jalan` (3.818) | `delivery_notes` | `no_sj` = nomor (ganda → `#2`); `nopol`/`driver` kosong → `-`; `phone` `.`/kosong → NULL; vendor lewat `legacy_id`; `destination`, `origin_address`, `finish_loading=date_finish`, `created_at=date_created`, `legacy_status=status_kirim`; `start_loading` dikosongkan. Tiket = satu-satunya `id_worksheet` dari isinya; bila tak ada (kosong, atau isinya kontainer yang tak diimpor) → tiket penampung `MIG-YYYYMM` bulan `tanggal` (`is_placeholder=1`, selesai, PIC = `migrasi-sistem-lama`; JO dari isi yang diimpor ditautkan agar tampil); bila isinya menunjuk >1 tiket → karantina |
+| `surat_jalan_detil` (7.962) | `delivery_note_items` | `weight = net_weight material × qty / qty material` (0 bila qty material 0); `mark` dari `material_reports` (OK→GOOD, DAMAGE→DAMAGE, selain itu NULL); `legacy_flag` = nilai mentah. Karantina: kontainer tidak ada (144) dan kontainer yang dikarantina (2). Kontainer di lebih dari satu surat jalan diimpor semua. |
+**Status tiket (`done_at`):** selesai bila `SUM(qty surat jalan) >= SUM(qty material)` (tiket tanpa material atau semua qty 0 dianggap selesai), pada tanggal surat jalan terakhir; yang belum tuntas dan lebih lama dari `--active-window-days` (default 30) ditutup migrasi (`done_at` = tanggal tiket, catatan audit "Ditutup oleh migrasi"); sisanya aktif. **Kolom provenans material memakai `data_origin`** (bukan `origin`, karena `jo_materials.origin` sudah berarti lokasi asal barang; migrasi `011-legacy-material-origin.js`). Penghitung `SJ` per bulan = urutan surat jalan lama terbesar (hanya nomor 10 digit; yang diberi akhiran tidak dihitung).
+
 ## Hal yang diputuskan sendiri
 - `--dry-run` berjalan di transaksi yang dibatalkan; `import_runs` tetap dicatat (mode `dry-run`).
 - `--reset-legacy` menghapus semua baris hasil impor di database tujuan (termasuk `import_runs`) dan mengembalikan penghitung `JO` ke nilai sebelum impor pertama.
 - Impor ulang membuat ulang `jo_containers` dan menyelaraskan referensi (referensi yang punya berkas tidak dihapus).
+- Nomor tiket/surat jalan/material ganda di sumber diberi akhiran `#2`... (nomor tiket ganda 1, surat jalan ganda 15, material ganda 44 pasangan menurut perbandingan tak peka huruf besar/kecil; prompt memperkirakan 34 pasangan).
+- `jo_materials.unit` kosong diisi `UNIT`, qty 0 diimpor apa adanya, `start_loading` surat jalan dikosongkan.
 - Tanggal `DateCreated` diimpor apa adanya (zona waktu sistem lama tidak diketahui).
 
 ## Keterbatasan

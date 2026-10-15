@@ -33,3 +33,21 @@ INSERT INTO job_order (id, JobOrderType, Tanggal, Invoice, IdCustomer, ImportTyp
  (104, 4, '2026-01-08', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, NULL, 30, 0, '2026-01-08 11:00:00', 0, NULL, 0, 0, 0, 0, 0, NULL, NULL, NULL),
  (105, 1, '2026-01-09', NULL, 99, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, NULL, 31, 0, '2026-01-09 11:00:00', 0, NULL, 0, 0, 0, 0, 0, NULL, NULL, NULL),
  (106, 7, '2026-01-10', NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, NULL, 32, 0, '2026-01-10 11:00:00', 0, NULL, 0, 0, 0, 0, 0, NULL, NULL, NULL);
+
+INSERT INTO worksheet VALUES (1,'2026-01-10','202601001',2,NULL),(2,'2026-01-11','202601002',99,NULL),(3,'2026-02-01','202601001',2,NULL);
+INSERT INTO kontainer (id, nomor, size, id_job_order, weight, qty, satuan, weight_unit, damage_status, damage_descr, nett_weight, nett_weight_unit, descr_barang, spec, thickness, id_worksheet, dari, tujuan, updated_time) VALUES
+ (1, 'MSKU1234567', '20 F', 101, 8120, 1, 'Container', 'Kg', 1, NULL, 8000, 'Kg', 'GALVANIZED COIL', '1', '1.2', 1, 'KOREA', 'CIKARANG', '2026-01-12 10:00:00'),
+ (2, 'C-2', '40 F', 101, 8.14, 2, 'COIL', 'Ton', 2, 'penyok', 8.1, 'Ton', 'STEEL COIL', 'SPCC', '0.8x1250', 1, NULL, '-', '2026-01-12 11:00:00'),
+ (3, 'c-2', NULL, 101, 250, 1, '', NULL, 0, '-', 0, NULL, NULL, NULL, NULL, 1, NULL, NULL, NULL),
+ (4, '-', '40 F', 102, 18909, 5, 'Package', 'Tons', NULL, NULL, 18909, 'Tons', 'PARTS', NULL, NULL, 2, NULL, NULL, NULL),
+ (5, 'X-5', '20 F', 999, 1, 1, 'COIL', 'Kg', 0, NULL, 1, 'Kg', 'TANPA JO', NULL, NULL, 0, NULL, NULL, NULL),
+ (6, 'Test', '20 F', 101, 1, 1, 'COIL', 'Kg', 0, NULL, 1, 'Kg', 'Material bagus', NULL, NULL, 0, NULL, NULL, NULL),
+ (7, 'WING BOX', '1', 102, 100, 3, 'Pieces', 'Kg', 0, NULL, 90, 'Kg', 'WING BOX', NULL, NULL, 0, NULL, NULL, NULL),
+ (8, 'Z-8', '45 F', 102, 5, 4, 'BDL', 'Kg', 0, NULL, 4.5, 'Kg', 'BUNDLE', NULL, NULL, 3, NULL, NULL, NULL);
+INSERT INTO surat_jalan VALUES
+ (1, '2026010001', '2026-01-12', 'BUDI', 'B 1234 XY', 'CIKARANG', '0812', 1, 1, 'GUDANG A', 2, '2026-01-12 09:00:00', '2026-01-12 12:30:00'),
+ (2, '2026010001', '2026-01-13', 'ANDI', 'B 9 Z', 'BEKASI', '.', 99, 0, 'GUDANG B', 2, '2026-01-13 09:00:00', NULL),
+ (3, '2026010003', '2026-01-14', 'SUPIR', 'B 7', 'TEST', '', 1, 0, '', 2, '2026-01-14 09:00:00', NULL),
+ (4, '2026020001', '2026-02-01', 'DEDI', 'B 8 AB', 'JAKARTA', '081', 1, 0, 'GUDANG', 2, '2026-02-01 09:00:00', NULL),
+ (5, '2026010005', '2026-01-15', 'EKO', 'B 5 CD', 'DEPOK', '082', 1, 0, 'GUDANG', 2, '2026-01-15 09:00:00', NULL);
+INSERT INTO surat_jalan_detil VALUES (1, 1, 1, 1, 101, 1), (2, 1, 2, 2, 101, 1), (3, 1, 3, 1, 101, 0), (4, 2, 4, 2, 102, 1), (5, 4, 12345, 1, 101, 1), (6, 5, 7, 1, 102, 1), (7, 5, 6, 1, 101, 1);
