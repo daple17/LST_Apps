@@ -1,5 +1,6 @@
 services:
   db:
+    restart: unless-stopped
     image: mysql:8.0
     environment:
       MYSQL_ROOT_PASSWORD: root

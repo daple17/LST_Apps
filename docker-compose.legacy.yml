@@ -2,6 +2,7 @@
 # Jalankan: docker compose -f docker-compose.legacy.yml up -d   (port 3308)
 services:
   legacy:
+    restart: unless-stopped
     image: mariadb:10.11
     environment:
       MARIADB_ROOT_PASSWORD: root

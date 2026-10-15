@@ -32,5 +32,25 @@ DB_NAME=lst_dev npm run migrate                        # membuat skema LESAT + m
 ```
 Menjalankan aplikasi terhadap `lst_dev`: `DB_NAME=lst_dev ADMIN_PASSWORD=admin123 npm start` (port 3100 dipakai bersama; hentikan server `lesat` dulu atau pakai `PORT=3101`).
 
-## 4. Menjalankan impor (tahap 3 dst.)
-Lihat bagian "Skrip impor" di `docs/spec-migrasi-lama.md` setelah tahap itu selesai.
+## 4. Menyiapkan `lst_dev` agar mirip produksi
+`lst_dev` perlu satu pengguna `admin` dan peran bawaan; data master contoh (customer/vendor/shipper) dibersihkan supaya tidak bentrok dengan kode customer lama:
+```bash
+DB_NAME=lst_dev ADMIN_PASSWORD=admin123 node -e "
+const mysql=require('mysql2/promise'),cfg=require('./config'),{seedMaster}=require('./server');
+(async()=>{const p=mysql.createPool(cfg.db);await seedMaster(p);
+for (const t of ['customers','vendors','shippers']) await p.query('DELETE FROM '+t+' WHERE legacy_id IS NULL');await p.end();})()"
+```
+
+## 5. Menjalankan impor
+Skrip: `scripts/legacy-import/index.js`. Selalu pakai `--lokal`; skrip menolak berjalan bila host MySQL tujuan atau host sistem lama bukan lokal. Tujuan = konfigurasi aplikasi (`DB_NAME=lst_dev`); sistem lama = MariaDB `127.0.0.1:3308/lst_legacy` (ubah dengan `--legacy-host/--legacy-port/--legacy-db/--legacy-user/--legacy-pass`).
+```bash
+DB_NAME=lst_dev node scripts/legacy-import/index.js --lokal                    # dry-run (default): semua perubahan dibatalkan, laporan tetap ditulis
+DB_NAME=lst_dev node scripts/legacy-import/index.js --lokal --commit           # tulis ke lst_dev
+DB_NAME=lst_dev node scripts/legacy-import/index.js --lokal --commit --only=customers,vendors
+DB_NAME=lst_dev node scripts/legacy-import/index.js --lokal --reset-legacy     # hapus hasil impor di lst_dev (data LESAT lain tidak disentuh), penghitung dikembalikan
+```
+- **Idempoten** lewat `legacy_id` (upsert): menjalankan ulang tidak menggandakan. Sistem lama masih jalan, jadi impor diulang beberapa kali; *baris hasil impor dibuat ulang dari sumber pada tiap run* (kecuali `delivery_plan` JO dan referensi yang sudah punya berkas, yang dipertahankan).
+- `--dry-run` berjalan di dalam transaksi lalu dibatalkan; hanya tabel `import_runs` yang dicatat (mode `dry-run`).
+- Setiap run: satu baris `import_runs` + `data/reports/run-<waktu>.md` + `run-<waktu>-karantina.csv` (di `data/`, tidak di-commit).
+- `--reset-legacy` (tanpa `--commit`) hanya menghapus; dengan `--commit` menghapus lalu mengimpor ulang.
+- Pada produksi/cutover, impor **tidak boleh** dijalankan lewat skrip ini sebelum disetujui (skrip menolak host non-lokal).
