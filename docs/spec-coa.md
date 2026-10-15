@@ -2,6 +2,9 @@
 
 Sumber: sheet **Account Code** dan **Update** di `account_codes (5).xlsx`, serta `docs/prompt-coa-claude-code.md`. Status: dibangun (akun, kelompok, ekspor). Yang belum dibangun ada di bagian paling bawah.
 
+## Type Job Order (masukan client)
+Tiap akun punya **type Job Order tempat akun berlaku** (Import, Export, Trucking, Project; boleh lebih dari satu, **opsional**; kosong = berlaku untuk semua type, mis. akun neraca). Disimpan di `coa_accounts.job_types` (kolom SET, migrasi `012-coa-job-types.js`). 365 akun awal dibiarkan kosong ("Semua type") sampai client mengisinya; tidak ada tebakan. Tampil sebagai kolom "Type JO" di daftar COA (dengan filter "Semua type JO"), pilihan centang di form tambah/ubah, dan kolom "Type JO" di Excel. API: `job_types: ["IMPORT", ...]` pada POST/PUT (tidak dikirim = tidak berubah; `[]` = semua type), filter `job_type=` (akun yang berlaku untuk type itu, termasuk yang kosong). Perubahannya tercatat di audit. Belum dipakai menyaring transaksi karena Submission/Settlement belum ada.
+
 ## Aturan bisnis
 1. Satu akun: **Account Code** (5 angka, tidak diawali 0), **Account Name**, **Jenis Account**, **Sub Header**, **Group Account**.
 2. Jenis Account ada lima: Aset, Liabilitas, Ekuitas, Revenue, Beban. Hirarki Jenis › Sub Header › Group Account. **Aset, Liabilitas, Ekuitas tidak punya Group Account** (disimpan kosong); Revenue dan Beban **wajib** punya Group Account.

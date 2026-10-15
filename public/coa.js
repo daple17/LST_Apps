@@ -1,7 +1,8 @@
 /* COA (FAT > COA): tab Account Code (#coa) dan Master General Ledger (#coa/gl). API: /api/coa. Akun tidak dihapus, hanya dinonaktifkan. */
-let coaRows = [], coaSt = { q: '', jenis: '', status: '', page: 1 }, coaHeaders = [];
+let coaRows = [], coaSt = { q: '', jenis: '', job_type: '', status: '', page: 1 }, coaHeaders = [];
 const COA_JENIS = [['ASET', 'Aset', 's-done'], ['LIABILITAS', 'Liabilitas', 's-open'], ['EKUITAS', 'Ekuitas', 's-eta'], ['REVENUE', 'Revenue', 's-mat'], ['BEBAN', 'Beban', 's-del']];
 const coaHasGroup = j => j === 'REVENUE' || j === 'BEBAN';
+const coaJt = a => (a.job_types.length ? a.job_types.map(c => `<span class="jtc">${esc(R().JO_TYPES.find(t => t.code === c)?.label || c)}</span>`).join('') : '<span class="muted2" style="margin:0">Semua type</span>');
 const coaStatus = on => on ? '<span class="schip ok"><i></i>Aktif</span>' : '<span class="schip off"><i></i>Nonaktif</span>';
 
 function coaRoute(rest) {
@@ -19,19 +20,20 @@ async function coaList() {
     ${COA_JENIS.map(([c, l, k]) => `<div class="card stat ${k}" ${clickAttr(`coaSet('jenis','${c}')`)}><b>${fmtN(s.per_jenis[c])}</b><span>${l}</span></div>`).join('')}</div>
     <div class="bar fbar"><input id="cq" type="search" aria-label="Cari akun" placeholder="Cari kode atau nama akun" value="${esc(coaSt.q)}">
       <select id="cj" aria-label="Filter jenis"><option value="">Semua jenis</option>${COA_JENIS.map(([c, l]) => `<option value="${c}" ${coaSt.jenis === c ? 'selected' : ''}>${l}</option>`).join('')}</select>
+      <select id="cjt" aria-label="Filter type Job Order"><option value="">Semua type JO</option>${R().JO_TYPES.map(t => `<option value="${t.code}" ${coaSt.job_type === t.code ? 'selected' : ''}>${esc(t.label)}</option>`).join('')}</select>
       <select id="cs" aria-label="Filter status">${[['', 'Semua status'], ['active', 'Aktif'], ['inactive', 'Nonaktif']].map(([v, l]) => `<option value="${v}" ${coaSt.status === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
       <button class="btn sec" onclick="coaReset()">Reset</button><span style="flex:1"></span>
       <button class="btn sec out" onclick="coaExport()">Download Excel</button><button class="btn" onclick="coaForm()">+ Tambah COA</button></div>
-    <div class="card tw"><table><tr><th>Code</th><th>Account Name</th><th>Jenis</th><th>Sub Header</th><th>Group Account</th><th>Status</th><th>Aksi</th></tr>
-    ${d.rows.map(a => `<tr class="${a.is_active ? '' : 'dim'}"><td><b class="cnum">${a.code}</b></td><td class="wrap">${esc(a.name)}</td><td>${esc(a.jenis_label)}</td><td>${esc(a.sub_header)}</td><td>${esc(a.group_account || '—')}</td><td>${coaStatus(a.is_active)}</td>
-      <td><button class="btn sec sm" onclick="coaForm(${a.id})">Edit</button></td></tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--mut)">Tidak ada akun yang cocok.</td></tr>'}</table>
+    <div class="card tw"><table><tr><th>Code</th><th>Account Name</th><th>Jenis</th><th>Sub Header</th><th>Group Account</th><th>Type JO</th><th>Status</th><th>Aksi</th></tr>
+    ${d.rows.map(a => `<tr class="${a.is_active ? '' : 'dim'}"><td><b class="cnum">${a.code}</b></td><td class="wrap">${esc(a.name)}</td><td>${esc(a.jenis_label)}</td><td>${esc(a.sub_header)}</td><td>${esc(a.group_account || '—')}</td><td class="jtcell">${coaJt(a)}</td><td>${coaStatus(a.is_active)}</td>
+      <td><button class="btn sec sm" onclick="coaForm(${a.id})">Edit</button></td></tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--mut)">Tidak ada akun yang cocok.</td></tr>'}</table>
     ${pagerNum(d.page, d.pages, d.total, 'coaGoto')}</div>`;
   const q = $('#cq'); let tm;
   q.oninput = () => { clearTimeout(tm); tm = setTimeout(() => { coaSt.q = q.value.trim(); coaSt.page = 1; coaList().then(() => { const n = $('#cq'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); }); }, 300); };
-  $('#cj').onchange = e => coaSet('jenis', e.target.value); $('#cs').onchange = e => coaSet('status', e.target.value);
+  $('#cj').onchange = e => coaSet('jenis', e.target.value); $('#cjt').onchange = e => coaSet('job_type', e.target.value); $('#cs').onchange = e => coaSet('status', e.target.value);
 }
 const coaSet = (k, v) => { coaSt[k] = v; coaSt.page = 1; coaList(); };
-const coaReset = () => { coaSt = { q: '', jenis: '', status: '', page: 1 }; coaList(); };
+const coaReset = () => { coaSt = { q: '', jenis: '', job_type: '', status: '', page: 1 }; coaList(); };
 const coaGoto = n => { coaSt.page = n; coaList(); };
 const coaExport = run(async () => {
   const r = await raw('/coa/export?' + new URLSearchParams({ ...coaSt, page: '' }));
@@ -54,17 +56,19 @@ function coaFieldErrors(er, form) {
 }
 async function coaForm(id) {
   coaHeaders = await api('/coa/headers');
-  const a = id ? coaRows.find(x => x.id === id) : { code: '', name: '', header_id: 0, is_active: true };
+  const a = id ? coaRows.find(x => x.id === id) : { code: '', name: '', header_id: 0, is_active: true, job_types: [] };
   $('#md').innerHTML = `<div class="modal"><form class="card" id="cform" novalidate style="width:min(620px,100%)"><h3 style="margin-top:0">${id ? 'Edit COA' : 'Tambah COA'}</h3>
     <div class="g"><div><label for="cf-code">Code ${id ? '(terkunci, dipakai transaksi)' : '(5 angka)'}</label><input id="cf-code" name="code" value="${esc(a.code)}" inputmode="numeric" maxlength="5" autocomplete="off" ${id ? 'disabled' : 'required'}><div class="ferr" id="fe-code" role="alert"></div></div>
       <div><label for="cf-active">Status</label><select id="cf-active" name="is_active" ${id ? '' : 'disabled'}><option value="1" ${a.is_active ? 'selected' : ''}>Aktif</option><option value="0" ${a.is_active ? '' : 'selected'}>Nonaktif</option></select><div class="ferr" id="fe-is_active" role="alert"></div></div>
       <div class="full"><label for="cf-name">Account Name</label><input id="cf-name" name="name" value="${esc(a.name)}" maxlength="150" required autocomplete="off"><div class="ferr" id="fe-name" role="alert"></div></div>
-      <div class="full"><label for="cf-header">Kelompok (Sub Header › Group Account)</label><select id="cf-header" name="header_id" required><option value="">Pilih kelompok…</option>${coaGroupOptions(a.header_id)}</select><div class="ferr" id="fe-header_id" role="alert"></div></div></div>
+      <div class="full"><label for="cf-header">Kelompok (Sub Header › Group Account)</label><select id="cf-header" name="header_id" required><option value="">Pilih kelompok…</option>${coaGroupOptions(a.header_id)}</select><div class="ferr" id="fe-header_id" role="alert"></div></div>
+      <fieldset class="full cijt"><legend>Type Job Order (opsional)</legend>${R().JO_TYPES.map(t => `<label class="chk"><input type="checkbox" name="jt" value="${t.code}" ${(a.job_types || []).includes(t.code) ? 'checked' : ''}> ${esc(t.label)}</label>`).join('')}
+        <p class="muted2" style="margin:4px 0 0;flex-basis:100%">Pilih type JO tempat akun ini dipakai (boleh lebih dari satu). Kosongkan = berlaku untuk semua type, mis. akun neraca.</p><div class="ferr" id="fe-job_types" role="alert"></div></fieldset></div>
     <p class="muted2">Akun tidak dihapus, hanya dinonaktifkan. Kelompok dikelola di tab Master General Ledger.</p>
     <div class="err" role="alert"></div><div class="acts"><button type="button" class="btn sec" onclick="closeMd()">Batal</button><button class="btn" id="csave">${id ? 'Simpan' : 'Tambah COA'}</button></div></form></div>`;
   $(id ? '#cf-name' : '#cf-code').focus();
   $('#cform').onsubmit = async e => {
-    e.preventDefault(); const f = e.target, b = { name: f.name.value, header_id: +f.header_id.value || null };
+    e.preventDefault(); const f = e.target, b = { name: f.name.value, header_id: +f.header_id.value || null, job_types: [...f.querySelectorAll('input[name=jt]:checked')].map(x => x.value) };
     if (id) b.is_active = f.is_active.value === '1'; else b.code = f.code.value.trim();
     $('#csave').disabled = true;
     try { await api(id ? '/coa/' + id : '/coa', id ? 'PUT' : 'POST', b); closeMd(); toast(id ? 'Akun disimpan' : 'Akun ditambahkan'); coaRoute(['']); }

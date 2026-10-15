@@ -4,6 +4,9 @@ const { wrap, httpError } = require('../lib/http');
 const audit = require('../lib/audit');
 const excel = require('../lib/excel');
 const C = require('../lib/coa');
+const rules = require('../lib/rules');
+const JO_TYPES = rules.JO_TYPES.map(t => t.code), jtLabel = c => rules.JO_TYPES.find(t => t.code === c)?.label || c;
+const jtText = arr => (arr.length ? arr.map(jtLabel).join(', ') : 'Semua type');
 
 const PAGE = 50;
 const invalid = (field, message) => Object.assign(httpError(400, message), { fields: { [field]: message } });
@@ -13,10 +16,11 @@ const JENIS_ORDER = `FIELD(h.jenis, ${C.JENIS_CODES.map(c => `'${c}'`).join(',')
 
 module.exports = pool => {
   const r = express.Router(), q = async (s, p) => (await pool.query(s, p))[0], one = async (s, p) => (await q(s, p))[0];
-  const SEL = `SELECT a.id, a.code, a.name, a.header_id, a.is_active, a.updated_at, h.jenis, h.sub_header, h.group_account, h.is_active header_active
+  const SEL = `SELECT a.id, a.code, a.name, a.header_id, a.is_active, a.updated_at, a.job_types, h.jenis, h.sub_header, h.group_account, h.is_active header_active
     FROM coa_accounts a JOIN coa_headers h ON h.id = a.header_id`;
   const shape = a => ({ id: a.id, code: a.code, name: a.name, header_id: a.header_id, jenis: a.jenis, jenis_label: C.jenisLabel(a.jenis), sub_header: a.sub_header, group_account: a.group_account,
-    header_label: C.headerLabel(a), is_active: !!a.is_active, updated_at: a.updated_at });
+    header_label: C.headerLabel(a), is_active: !!a.is_active, updated_at: a.updated_at,
+    job_types: a.job_types ? a.job_types.split(',') : [], job_types_label: jtText(a.job_types ? a.job_types.split(',') : []) });
 
   function where(qs) {
     const w = [], p = [], s = squash(qs.q);
@@ -24,6 +28,7 @@ module.exports = pool => {
     if (C.JENIS_CODES.includes(qs.jenis)) { w.push('h.jenis=?'); p.push(qs.jenis); }
     if (qs.sub_header) { w.push('h.sub_header=?'); p.push(String(qs.sub_header)); }
     if (qs.group) { w.push('h.group_account=?'); p.push(String(qs.group)); }
+    if (JO_TYPES.includes(qs.job_type)) { w.push("(a.job_types='' OR FIND_IN_SET(?, a.job_types))"); p.push(qs.job_type); }          // akun yang berlaku untuk type itu (kosong = semua type)
     if (qs.status === 'active') w.push('a.is_active=1'); else if (qs.status === 'inactive') w.push('a.is_active=0');
     return [w.length ? ' WHERE ' + w.join(' AND ') : '', p];
   }
@@ -42,8 +47,8 @@ module.exports = pool => {
     const [cond, p] = where(req.query), rows = await q(`${SEL}${cond} ORDER BY a.code`, p);
     await excel.send(res, `coa-${new Date().toISOString().slice(0, 10)}.xlsx`, [{ name: 'Account Code', columns: [
       { header: 'Account Code', key: 'code', width: 14 }, { header: 'Account Name', key: 'name', width: 40 }, { header: 'Jenis Account', key: 'jenis', width: 16 },
-      { header: 'Sub Header', key: 'sub', width: 28 }, { header: 'Group Account', key: 'group', width: 30 }, { header: 'Status', key: 'status', width: 12 }],
-      rows: rows.map(a => ({ code: a.code, name: a.name, jenis: C.jenisLabel(a.jenis), sub: a.sub_header, group: a.group_account, status: a.is_active ? 'Aktif' : 'Nonaktif' })) }]);
+      { header: 'Sub Header', key: 'sub', width: 28 }, { header: 'Group Account', key: 'group', width: 30 }, { header: 'Type JO', key: 'jt', width: 26 }, { header: 'Status', key: 'status', width: 12 }],
+      rows: rows.map(a => ({ code: a.code, name: a.name, jenis: C.jenisLabel(a.jenis), sub: a.sub_header, group: a.group_account, jt: jtText(a.job_types ? a.job_types.split(',') : []), status: a.is_active ? 'Aktif' : 'Nonaktif' })) }]);
   }));
 
   /* ---------- kelompok (Master General Ledger) ---------- */
@@ -95,13 +100,20 @@ module.exports = pool => {
   }));
 
   /* ---------- akun ---------- */
+  // type JO: daftar kode valid (tanpa ganda), urutan baku; kosong = semua type
+  function jobTypes(b, cur) {
+    if (b.job_types === undefined) return cur ? (cur.job_types ? cur.job_types.split(',') : []) : [];
+    if (!Array.isArray(b.job_types)) throw invalid('job_types', 'Type JO tidak valid');
+    const bad = b.job_types.filter(t => !JO_TYPES.includes(t)); if (bad.length) throw invalid('job_types', `Type JO tidak dikenal: ${bad.join(', ')}`);
+    return JO_TYPES.filter(t => b.job_types.includes(t));
+  }
   async function accountFields(b, cur = null) {
     const name = C.cleanName(b.name ?? cur?.name);
     if (name.length < C.NAME_MIN || name.length > C.NAME_MAX) throw invalid('name', `Nama akun ${C.NAME_MIN}-${C.NAME_MAX} karakter`);
     const header_id = +(b.header_id ?? cur?.header_id) || 0, h = header_id && await one('SELECT id, jenis, is_active FROM coa_headers WHERE id=?', [header_id]);
     if (!h) throw invalid('header_id', 'Kelompok wajib dipilih');
     if (!h.is_active && (!cur || cur.header_id !== header_id)) throw invalid('header_id', 'Kelompok nonaktif tidak bisa dipakai');
-    return { name, header_id };
+    return { name, header_id, job_types: jobTypes(b, cur) };
   }
   const logAcc = (req, id, action, text) => audit.log(pool, { entity: 'coa', id, action, note: note(text), user: req.user });
 
@@ -111,10 +123,10 @@ module.exports = pool => {
     const f = await accountFields(req.body);
     if (await one('SELECT id FROM coa_accounts WHERE code=?', [code])) throw invalid('code', 'Kode akun sudah dipakai');
     let id;
-    try { [{ insertId: id }] = await pool.query('INSERT INTO coa_accounts (code, name, header_id, created_by, updated_by) VALUES (?,?,?,?,?)', [+code, f.name, f.header_id, req.user.id, req.user.id]); }
+    try { [{ insertId: id }] = await pool.query('INSERT INTO coa_accounts (code, name, header_id, job_types, created_by, updated_by) VALUES (?,?,?,?,?,?)', [+code, f.name, f.header_id, f.job_types.join(','), req.user.id, req.user.id]); }
     catch (e) { if (e.code === 'ER_DUP_ENTRY') throw invalid('code', 'Kode akun sudah dipakai'); throw e; }
     const h = await one('SELECT jenis, sub_header, group_account FROM coa_headers WHERE id=?', [f.header_id]);
-    await logAcc(req, id, 'Dibuat', `${code} ${f.name}; ${C.jenisLabel(h.jenis)} › ${C.headerLabel(h)}`);
+    await logAcc(req, id, 'Dibuat', `${code} ${f.name}; ${C.jenisLabel(h.jenis)} › ${C.headerLabel(h)}; type JO: ${jtText(f.job_types)}`);
     res.json({ id });
   }));
 
@@ -125,10 +137,12 @@ module.exports = pool => {
     const f = await accountFields(req.body, cur), active = req.body.is_active === undefined ? !!cur.is_active : !!req.body.is_active;
     const target = await one('SELECT jenis, sub_header, group_account, is_active FROM coa_headers WHERE id=?', [f.header_id]);
     if (active && !target.is_active) throw invalid('is_active', 'Kelompok akun ini nonaktif. Aktifkan kelompoknya dulu.');
-    await pool.query('UPDATE coa_accounts SET name=?, header_id=?, is_active=?, updated_by=? WHERE id=?', [f.name, f.header_id, active ? 1 : 0, req.user.id, cur.id]);
+    await pool.query('UPDATE coa_accounts SET name=?, header_id=?, job_types=?, is_active=?, updated_by=? WHERE id=?', [f.name, f.header_id, f.job_types.join(','), active ? 1 : 0, req.user.id, cur.id]);
     const diff = [];
     if (f.name !== cur.name) diff.push(`nama: ${cur.name} → ${f.name}`);
     if (f.header_id !== cur.header_id) diff.push(`kelompok: ${C.jenisLabel(cur.jenis)} › ${C.headerLabel(cur)} → ${C.jenisLabel(target.jenis)} › ${C.headerLabel(target)}`);
+    const before = cur.job_types ? cur.job_types.split(',') : [];
+    if (before.join() !== f.job_types.join()) diff.push(`type JO: ${jtText(before)} → ${jtText(f.job_types)}`);
     if (!!cur.is_active !== active) diff.push(active ? 'diaktifkan' : 'dinonaktifkan');
     await logAcc(req, cur.id, !!cur.is_active !== active ? (active ? 'Diaktifkan' : 'Dinonaktifkan') : 'Diubah', `${cur.code} ${cur.name}${diff.length ? '; ' + diff.join('; ') : ''}`);
     res.json({ ok: true });

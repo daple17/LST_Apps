@@ -65,6 +65,21 @@ test('API COA: daftar, filter, validasi, ubah, kelompok, ekspor, izin, audit', a
   const ok = await app.post('/coa', { ...base, name: '  AKUN   UJI ' }); assert.equal(ok.status, 200);
   assert.equal((await list('?q=19999')).rows[0].name, 'AKUN UJI');
 
+  // type Job Order: opsional, bisa lebih dari satu, kosong = semua type; akun awal tetap kosong
+  assert.ok((await list()).rows.every(r => Array.isArray(r.job_types) && r.job_types.length === 0 && r.job_types_label === 'Semua type'));
+  for (const [jt, f] of [[['IMPORT', 'BOGUS'], 'job_types'], ['IMPORT', 'job_types'], [[1], 'job_types']]) { const x = await app.post('/coa', { ...base, code: '19980', job_types: jt }); assert.equal(x.status, 400, JSON.stringify(jt)); assert.ok(x.data.fields[f]); }
+  assert.equal((await q('SELECT COUNT(*) n FROM coa_accounts WHERE code=19980'))[0].n, 0);
+  const jt1 = await app.post('/coa', { ...base, code: '19980', name: 'AKUN TYPE JO', job_types: ['EXPORT', 'IMPORT', 'IMPORT'] }); assert.equal(jt1.status, 200);
+  let row = (await list('?q=19980')).rows[0]; assert.deepEqual(row.job_types, ['IMPORT', 'EXPORT']); assert.equal(row.job_types_label, 'Import, Export');   // urutan baku, tanpa ganda
+  assert.ok((await list('?job_type=IMPORT')).rows.some(r => r.code === 19980)); assert.equal((await list('?job_type=TRUCKING&q=19980')).total, 0);
+  assert.equal((await list('?job_type=TRUCKING')).total, 366); assert.equal((await list('?job_type=XX')).total, 367);           // type kosong berlaku untuk semua; type tak dikenal diabaikan
+  assert.equal((await app.put(`/coa/${jt1.data.id}`, { name: 'AKUN TYPE JO 2' })).status, 200); assert.deepEqual((await list('?q=19980')).rows[0].job_types, ['IMPORT', 'EXPORT']);   // tidak dikirim = tetap
+  assert.equal((await app.put(`/coa/${jt1.data.id}`, { job_types: ['PROJECT'] })).status, 200); assert.deepEqual((await list('?q=19980')).rows[0].job_types, ['PROJECT']);
+  assert.equal((await app.put(`/coa/${jt1.data.id}`, { job_types: ['X'] })).status, 400);
+  assert.equal((await app.put(`/coa/${jt1.data.id}`, { job_types: [] })).status, 200); assert.equal((await list('?q=19980')).rows[0].job_types_label, 'Semua type');
+  assert.ok((await q("SELECT note FROM audit_log WHERE entity_type='coa' AND note LIKE '%type JO: Import, Export → Project%'")).length === 1); assert.ok((await q("SELECT note FROM audit_log WHERE entity_type='coa' AND action='Dibuat' AND note LIKE '%type JO: Import, Export'")).length === 1);
+  await q('DELETE FROM audit_log WHERE entity_type="coa"'); await q('DELETE FROM coa_accounts WHERE code=19980');             // dibersihkan agar hitungan di bawah tetap
+
   // ubah: kode terkunci, nama, pindah kelompok, nonaktif/aktif
   let r = await app.put(`/coa/${ok.data.id}`, { code: '19998' }); assert.equal(r.status, 400); assert.match(r.data.fields.code, /tidak bisa diubah/);
   assert.equal((await app.put(`/coa/${ok.data.id}`, { code: 19999, name: 'AKUN BARU' })).status, 200);                  // kode sama = boleh
@@ -102,9 +117,9 @@ test('API COA: daftar, filter, validasi, ubah, kelompok, ekspor, izin, audit', a
   // ekspor Excel mengikuti filter
   const ex = await app.raw('/coa/export?jenis=ASET'); assert.equal(ex.status, 200); assert.match(ex.type, /spreadsheetml/);
   const wb = new ExcelJS.Workbook(); await wb.xlsx.load(ex.buf); const ws = wb.worksheets[0];
-  assert.deepEqual(ws.getRow(1).values.slice(1), ['Account Code', 'Account Name', 'Jenis Account', 'Sub Header', 'Group Account', 'Status']);
+  assert.deepEqual(ws.getRow(1).values.slice(1), ['Account Code', 'Account Name', 'Jenis Account', 'Sub Header', 'Group Account', 'Type JO', 'Status']);
   assert.equal(ws.rowCount, 1 + 31 + 1); assert.equal(ws.getRow(2).getCell(3).value, 'Aset');                                // 31 seed + AKUN BARU (nonaktif) pindah ke Aktiva Tetap
-  assert.ok([...Array(ws.rowCount - 1)].some((_, i) => ws.getRow(i + 2).getCell(6).value === 'Nonaktif'));
+  assert.ok([...Array(ws.rowCount - 1)].some((_, i) => ws.getRow(i + 2).getCell(7).value === 'Nonaktif')); assert.equal(ws.getRow(2).getCell(6).value, 'Semua type');
 
   // izin: tanpa coa.* = 403; hanya coa.view = baca saja; DELETE tidak ada (403 bahkan untuk Super Admin)
   const mk = async (name, perms) => { const rl = await q('INSERT INTO roles (name) VALUES (?)', [name]); if (perms.length) await q('INSERT INTO role_permissions (role_id, permission) VALUES ?', [perms.map(p => [rl.insertId, p])]);
