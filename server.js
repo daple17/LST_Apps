@@ -86,7 +86,7 @@ function createApp(pool, opts = {}) {   // opts.now: jam server yang bisa digant
   app.use('/api/checkin', guard('checkin'), require('./routes/checkin').router(pool, opts));
   app.use('/api/checkin-rekap', guard('checkin_rekap', [['GET', /^\/export$/, 'export']]), require('./routes/checkin-rekap')(pool, opts));
   app.use('/api/customers', guard('customer', [['GET', /^\/export$/, 'export'], ['GET', /^\/suggest-code$/, 'create'], ['POST', /^\/\d+\/(de)?activate$/, 'update']]), require('./routes/customers')(pool));
-  app.use('/api/vendors', guard('vendor', [['GET', /^\/export$/, 'export'], ['GET', /^\/suggest-code$/, 'create'], ['POST', /^\/\d+\/(de)?activate$/, 'update']]), require('./routes/vendors')(pool));
+  app.use('/api/vendors', guard('vendor', [['GET', /^\/export$/, 'export'], ['GET', /^\/suggest-code$/, 'create'], ['POST', /^\/\d+\/(de)?activate$/, 'update'], ['POST', /^\/cities$/, 'update']]), require('./routes/vendors')(pool));
   app.use('/api/coa', guard('coa', [['GET', /^\/export$/, 'export']]), require('./routes/coa')(pool));
   app.use('/api/roles', guard('role'), require('./routes/roles')(pool));
   app.use('/api/job-orders', require('./routes/jo-materials')(pool, { refreshTickets: handling.refreshForJo }));

@@ -41,19 +41,25 @@ test('API vendor: daftar, kode otomatis, kunci kode, nonaktif, hapus, ekspor, iz
   assert.equal((await app.get('/vendors?status=inactive')).data.total, 1); assert.equal((await app.post(`/vendors/${a.data.id}/activate`)).status, 200);
   assert.equal((await app.del(`/vendors/${b2.data.id}`)).status, 200); assert.equal((await app.get(`/vendors/${b2.data.id}`)).status, 404); assert.equal((await app.del('/vendors/999999')).status, 404);
 
-  // tarif: daftar per kota + tonase + ritase (satu angka per vendor); dijumlahkan di menu PO nanti
-  const R = (city, pc) => ({ city, price_city: pc }), put = b => app.put(`/vendors/${a.data.id}`, { name: 'PT Mitra Angkut Jaya', ...b }), rates = async () => (await app.get(`/vendors/${a.data.id}`)).data;
-  for (const [b, f] of [[{ rates: [R('', 1)] }, 'rates.0.city'], [{ rates: [R('A', 0)] }, 'rates.0.price_city'], [{ rates: [R('A', 'x')] }, 'rates.0.price_city'], [{ rates: [R('A', 1), R('a ', 2)] }, 'rates.1.city'], [{ rates: 'x' }, 'rates'], [{ price_ton: -1 }, 'price_ton'], [{ price_trip: 'x' }, 'price_trip']]) {
+  // kota = dropdown dari master; tarif: daftar per kota + tonase + ritase (satu angka per vendor), dijumlahkan di menu PO nanti
+  const cities = (await app.get('/vendors/cities')).data, cid1 = cities.find(c => c.name === 'Cikarang').id, cid2 = cities.find(c => c.name === 'Bekasi').id;
+  assert.ok(cities.length > 50);
+  const R = (city_id, pc) => ({ city_id, price_city: pc }), put = b => app.put(`/vendors/${a.data.id}`, { name: 'PT Mitra Angkut Jaya', ...b }), rates = async () => (await app.get(`/vendors/${a.data.id}`)).data;
+  for (const [b, f] of [[{ rates: [R('', 1)] }, 'rates.0.city_id'], [{ rates: [R(999999, 1)] }, 'rates.0.city_id'], [{ rates: [R(cid1, 0)] }, 'rates.0.price_city'], [{ rates: [R(cid1, 'x')] }, 'rates.0.price_city'], [{ rates: [R(cid1, 1), R(cid1, 2)] }, 'rates.1.city_id'], [{ rates: 'x' }, 'rates'], [{ price_ton: -1 }, 'price_ton'], [{ price_trip: 'x' }, 'price_trip']]) {
     const x = await put(b); assert.equal(x.status, 400, f); assert.ok(x.data.fields[f], f);
   }
   let g = await rates(); assert.deepEqual([g.rates.length, g.price_ton, g.price_trip], [0, 0, 0]);
-  assert.equal((await put({ rates: [R('Cikarang', 1500000), R('Bekasi', 900000.5)], price_ton: 85000.5, price_trip: 250000 })).status, 200);
-  g = await rates(); assert.deepEqual(g.rates, [R('Bekasi', 900000.5), R('Cikarang', 1500000)]); assert.deepEqual([g.rate_count, g.price_ton, g.price_trip], [2, 85000.5, 250000]);
+  assert.equal((await put({ rates: [R(cid1, 1500000), R(cid2, 900000.5)], price_ton: 85000.5, price_trip: 250000 })).status, 200);
+  g = await rates(); assert.deepEqual(g.rates, [{ ...R(cid2, 900000.5), city: 'Bekasi' }, { ...R(cid1, 1500000), city: 'Cikarang' }]); assert.deepEqual([g.rate_count, g.price_ton, g.price_trip], [2, 85000.5, 250000]);
   assert.equal((await put({ city: 'Jakarta' })).status, 200); g = await rates(); assert.deepEqual([g.rates.length, g.price_ton, g.price_trip], [2, 85000.5, 250000]);        // tanpa field tarif: tidak berubah
-  assert.equal((await put({ rates: [R('Cikarang', 1600000)], price_trip: '' })).status, 200); g = await rates(); assert.deepEqual([g.rates, g.price_ton, g.price_trip], [[R('Cikarang', 1600000)], 85000.5, 0]);
-  const nv = await app.post('/vendors', { name: 'Vendor Dengan Tarif', price_ton: 50000, rates: [R('Karawang', 700000)] }); assert.equal(nv.status, 200); const ng = (await app.get(`/vendors/${nv.data.id}`)).data; assert.deepEqual([ng.rates[0].city, ng.price_ton, ng.price_trip], ['Karawang', 50000, 0]);
-  assert.equal((await app.post('/vendors', { name: 'Vendor Tarif Salah', rates: [R('X', 0)] })).status, 400); assert.equal((await q("SELECT COUNT(*) n FROM vendors WHERE name='Vendor Tarif Salah'"))[0].n, 0);
+  assert.equal((await put({ rates: [R(cid1, 1600000)], price_trip: '' })).status, 200); g = await rates(); assert.deepEqual([g.rates.map(x => [x.city, x.price_city]), g.price_ton, g.price_trip], [[['Cikarang', 1600000]], 85000.5, 0]);
+  const nv = await app.post('/vendors', { name: 'Vendor Dengan Tarif', price_ton: 50000, rates: [R(cid2, 700000)] }); assert.equal(nv.status, 200); const ng = (await app.get(`/vendors/${nv.data.id}`)).data; assert.deepEqual([ng.rates[0].city, ng.price_ton, ng.price_trip], ['Bekasi', 50000, 0]);
+  assert.equal((await app.post('/vendors', { name: 'Vendor Tarif Salah', rates: [R(cid1, 0)] })).status, 400); assert.equal((await q("SELECT COUNT(*) n FROM vendors WHERE name='Vendor Tarif Salah'"))[0].n, 0);
   assert.equal((await put({ rates: [] })).status, 200); assert.equal((await rates()).rate_count, 0);
+  // kota baru: tidak ada dua penulisan untuk kota yang sama
+  const ck = await app.post('/vendors/cities', { name: '  bekasi ' }); assert.deepEqual([ck.data.id, ck.data.name, ck.data.existing], [cid2, 'Bekasi', true]);
+  const cn2 = await app.post('/vendors/cities', { name: 'Kota   Baru Uji' }); assert.equal(cn2.data.existing, false); assert.equal((await app.post('/vendors/cities', { name: 'kota baru UJI' })).data.id, cn2.data.id);
+  assert.equal((await app.post('/vendors/cities', { name: 'A' })).status, 400); assert.ok((await app.get('/vendors/cities')).data.some(c => c.name === 'Kota Baru Uji'));
 
   const acts = (await q("SELECT action FROM audit_log WHERE entity_type='vendor'")).map(x => x.action); for (const x of ['Dibuat', 'Diubah', 'Dinonaktifkan', 'Diaktifkan', 'Dihapus', 'Tarif diubah']) assert.ok(acts.includes(x), x);
 
@@ -62,8 +68,8 @@ test('API vendor: daftar, kode otomatis, kunci kode, nonaktif, hapus, ekspor, iz
 
   const mk = async (name, perms) => { const rl = (await q('INSERT INTO roles (name) VALUES (?)', [name])).insertId; if (perms.length) await q('INSERT INTO role_permissions (role_id, permission) VALUES ?', [perms.map(p => [rl, p])]); return (await q('INSERT INTO users (username,password,name,role_id,email) VALUES (?,?,?,?,?)', [name, 'x', name, rl, name + '@x.id'])).insertId; };
   const as = id => (m, u, bd) => app.callAs(jwt.sign({ id }, cfg.secret), m, u, bd), none = as(await mk('tanpa', ['jo.view'])), view = as(await mk('lihat', ['vendor.view']));
-  const all = [['GET', '/vendors'], ['GET', '/vendors/1'], ['GET', '/vendors/export'], ['GET', '/vendors/suggest-code?name=x'], ['POST', '/vendors'], ['PUT', '/vendors/1'], ['POST', '/vendors/1/deactivate'], ['DELETE', '/vendors/1']];
+  const all = [['GET', '/vendors'], ['GET', '/vendors/1'], ['GET', '/vendors/export'], ['GET', '/vendors/cities'], ['POST', '/vendors/cities'], ['GET', '/vendors/suggest-code?name=x'], ['POST', '/vendors'], ['PUT', '/vendors/1'], ['POST', '/vendors/1/deactivate'], ['DELETE', '/vendors/1']];
   for (const [m, u] of all) assert.equal((await none(m, u, {})).status, 403, 'tanpa ' + m + u);
   assert.equal((await view('GET', '/vendors')).status, 200);
-  for (const [m, u] of all.filter(x => !(x[0] === 'GET' && /^\/vendors(\/1)?$/.test(x[1])))) assert.equal((await view(m, u, {})).status, 403, 'lihat ' + m + u);
+  for (const [m, u] of all.filter(x => !(x[0] === 'GET' && /^\/vendors(\/1|\/cities)?$/.test(x[1])))) assert.equal((await view(m, u, {})).status, 403, 'lihat ' + m + u);
 });

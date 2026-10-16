@@ -50,6 +50,14 @@ module.exports = pool => {
       rows: rows.map(v => ({ code: v.code, name: v.name, city: v.city, country: v.country_name, pic: v.pic, npwp: v.npwp, sj: +v.sj_count, status: v.is_active ? 'Aktif' : 'Nonaktif' })) }]);
   }));
 
+  // Master kota untuk dropdown tarif. Kota baru dicek tanpa peka huruf besar/kecil agar tidak ada dua penulisan untuk kota yang sama.
+  r.get('/cities', wrap(async (req, res) => res.json(await q('SELECT id, name FROM cities WHERE is_active=1 ORDER BY name'))));
+  r.post('/cities', wrap(async (req, res) => {
+    const name = squash(req.body.name); if (name.length < 2 || name.length > 100) throw invalid('name', 'Nama kota 2-100 karakter');
+    const ex = await one('SELECT id, name FROM cities WHERE LOWER(name)=LOWER(?)', [name]); if (ex) return res.json({ ...ex, existing: true });
+    const [{ insertId }] = await pool.query('INSERT INTO cities (name) VALUES (?)', [name]);
+    await audit.log(pool, { entity: 'vendor', id: 0, action: 'Kota ditambah', note: name, user: req.user }); res.json({ id: insertId, name, existing: false });
+  }));
   r.get('/countries', wrap(async (req, res) => res.json(await q('SELECT id, name FROM countries ORDER BY name'))));
   r.get('/suggest-code', wrap(async (req, res) => res.json({ code: suggestCode(req.query.name, await takenCodes()) })));
 
@@ -59,7 +67,7 @@ module.exports = pool => {
   }));
 
   r.post('/', wrap(async (req, res) => {
-    const f = await fields(req.body), rates = req.body.rates === undefined ? [] : rateList(req.body.rates);
+    const f = await fields(req.body), rates = req.body.rates === undefined ? [] : await rateList(req.body.rates);
     let code = req.body.code ? squash(req.body.code).toUpperCase() : null;               // kode manual hanya untuk pemanggil lama; form baru selalu otomatis
     if (code && !MANUAL_CODE.test(code)) throw invalid('code', 'Kode vendor 2-10 huruf/angka');
     let id;
@@ -77,7 +85,7 @@ module.exports = pool => {
   r.put('/:id(\\d+)', wrap(async (req, res) => {
     const cur = await one(`${SEL} WHERE v.id=?`, [req.params.id]); if (!cur) throw httpError(404, 'Vendor tidak ditemukan');
     if (req.body.code !== undefined && squash(req.body.code).toUpperCase() !== cur.code.toUpperCase()) throw invalid('code', 'Kode vendor tidak bisa diubah (tampil di surat jalan)');
-    const f = await fields(req.body, cur.id), rates = req.body.rates === undefined ? null : rateList(req.body.rates), active = req.body.is_active === undefined ? !!cur.is_active : !!req.body.is_active;
+    const f = await fields(req.body, cur.id), rates = req.body.rates === undefined ? null : await rateList(req.body.rates), active = req.body.is_active === undefined ? !!cur.is_active : !!req.body.is_active;
     const review = req.body.needs_code_review === false || req.body.needs_code_review === 0 ? 0 : cur.needs_code_review;
     await pool.query('UPDATE vendors SET name=?, city=?, npwp=?, pic=?, country_id=?, is_active=?, needs_code_review=?, price_ton=?, price_trip=? WHERE id=?', [f.name, f.city, f.npwp, f.pic, f.country_id, active ? 1 : 0, review, f.price_ton ?? cur.price_ton, f.price_trip ?? cur.price_trip, cur.id]);
     const diff = [];
@@ -110,26 +118,28 @@ module.exports = pool => {
 
   // Tarif per kota tujuan (daftar) + tarif tonase dan ritase (satu angka per vendor). Disimpan di sini; perhitungan ada di menu PO nanti.
   const money = (v, field, label, min) => { const n = v === '' || v == null ? 0 : Number(v); if (!Number.isFinite(n) || n < min || n > 9999999999999) throw invalid(field, `${label} ${min ? 'harus lebih dari 0' : 'tidak boleh negatif'}`); return Math.round(n * 100) / 100; };
-  function rateList(raw) {
+  async function rateList(raw) {
     if (!Array.isArray(raw)) throw invalid('rates', 'Tarif harus berupa daftar');
     if (raw.length > 200) throw invalid('rates', 'Maksimal 200 kota per vendor');
-    const seen = new Set();
-    return raw.map((x, i) => {
-      const city = squash(x.city), k = `rates.${i}.`;
-      if (!city || city.length > 100) throw invalid(k + 'city', 'Kota wajib diisi (maks. 100 karakter)');
-      if (seen.has(city.toLowerCase())) throw invalid(k + 'city', `Kota ${city} diisi dua kali`); seen.add(city.toLowerCase());
-      return [city, money(x.price_city, k + 'price_city', 'Tarif kota', 1)];
-    });
+    const seen = new Set(), out = [];
+    for (const [i, x] of raw.entries()) {
+      const id = Number(x.city_id), k = `rates.${i}.`;
+      if (!Number.isInteger(id) || id < 1) throw invalid(k + 'city_id', 'Pilih kota');
+      const c = await one('SELECT id, name FROM cities WHERE id=?', [id]); if (!c) throw invalid(k + 'city_id', 'Kota tidak ditemukan');
+      if (seen.has(id)) throw invalid(k + 'city_id', `Kota ${c.name} dipilih dua kali`); seen.add(id);
+      out.push([c.id, money(x.price_city, k + 'price_city', 'Tarif kota', 1), c.name]);
+    }
+    return out;
   }
-  const rateRows = async vid => (await q('SELECT city, price_city FROM vendor_rates WHERE vendor_id=? ORDER BY city', [vid])).map(x => ({ city: x.city, price_city: +x.price_city }));
+  const rateRows = async vid => (await q('SELECT r.city_id, c.name city, r.price_city FROM vendor_rates r JOIN cities c ON c.id=r.city_id WHERE r.vendor_id=? ORDER BY c.name', [vid])).map(x => ({ city_id: x.city_id, city: x.city, price_city: +x.price_city }));
   async function saveRates(vid, list, user) {
     const old = await rateRows(vid), cn = await pool.getConnection();
     try {
       await cn.beginTransaction(); await cn.query('DELETE FROM vendor_rates WHERE vendor_id=?', [vid]);
-      if (list.length) await cn.query('INSERT INTO vendor_rates (vendor_id, city, price_city) VALUES ?', [list.map(l => [vid, ...l])]);
+      if (list.length) await cn.query('INSERT INTO vendor_rates (vendor_id, city_id, price_city) VALUES ?', [list.map(l => [vid, l[0], l[1]])]);
       await cn.commit();
     } catch (e) { await cn.rollback(); throw e; } finally { cn.release(); }
-    const key = x => `${x.city}|${x.price_city}`, before = new Set(old.map(key)), after = list.map(l => ({ city: l[0], price_city: l[1] }));
+    const key = x => `${x.city_id}|${x.price_city}`, before = new Set(old.map(key)), after = list.map(l => ({ city_id: l[0], city: l[2], price_city: l[1] }));
     const diff = [...after.filter(x => !before.has(key(x))).map(x => `${x.city}: ${x.price_city}`), ...old.filter(x => !after.some(y => key(y) === key(x))).map(x => `hapus/ubah ${x.city}`)];
     if (diff.length) await audit.log(pool, { entity: 'vendor', id: vid, action: 'Tarif diubah', note: note(diff.join('; ')), user });
   }
