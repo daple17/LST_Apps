@@ -61,6 +61,19 @@ function fields(b, legacyCur = null) {
 }
 
 // sinkron baris referensi (cocokkan lewat id, bila tidak ada lewat kind+nomor agar file lama tetap menempel)
+// No. BL harus unik di seluruh JO (tanpa peka huruf besar/kecil dan spasi). Saat edit, BL yang sudah ada di JO ini (termasuk data lama) tidak dipersoalkan; hanya BL baru/berubah.
+const blKey = n => String(n ?? '').replace(/\s+/g, '').toUpperCase();
+async function assertBlUnique(conn, joId, list, curRefs = []) {
+  const had = new Set(curRefs.filter(x => x.kind === 'BL').map(x => blKey(x.number))), seen = new Set();
+  for (const x of list) {
+    if (x.kind !== 'BL' || !String(x.number ?? '').trim()) continue;
+    const key = blKey(x.number), n = String(x.number).trim();
+    if (seen.has(key)) throw Object.assign(httpError(400, `No. BL ${n} diisi dua kali dalam JO ini`), { fields: [] });
+    seen.add(key); if (had.has(key)) continue;
+    const [[dup]] = await conn.query("SELECT j.no_jo FROM jo_references x JOIN job_orders j ON j.id=x.jo_id WHERE x.kind='BL' AND REPLACE(UPPER(x.number),' ','')=? AND j.id<>? LIMIT 1", [key, joId]);
+    if (dup) throw Object.assign(httpError(400, `No. BL ${n} sudah dipakai JO ${dup.no_jo}, tidak bisa diinput lagi`), { fields: [] });
+  }
+}
 async function syncRefs(conn, joId, list, user) {
   const old = (await conn.query('SELECT * FROM jo_references WHERE jo_id=?', [joId]))[0], keep = new Set(), ids = [];
   let sort = 0;
@@ -159,7 +172,7 @@ module.exports = pool => {
     await excel.send(res, `job-order-${new Date().toISOString().slice(0, 10)}.xlsx`, exportsLib.joSheets(rows.map(shape), refs));
   }));
 
-  // peringatan (bukan blokir): nomor BL / aju / invoice ... sudah dipakai JO lain?
+  // nomor BL / aju / invoice ... sudah dipakai JO lain? (BL diblokir saat simpan; jenis lain hanya peringatan)
   r.get('/check-refs', wrap(async (req, res) => {
     const { kind, number, exclude = 0 } = req.query;
     if (!REF_KINDS.includes(kind) || !String(number || '').trim()) return res.json([]);
@@ -243,6 +256,7 @@ module.exports = pool => {
       const [[c]] = await conn.query('SELECT code, is_active FROM customers WHERE id=?', [b.customer_id]);
       if (!c) throw httpError(400, 'Customer tidak ditemukan');
       if (!c.is_active) throw httpError(400, 'Customer nonaktif tidak bisa dipakai untuk JO baru');
+      await assertBlUnique(conn, 0, b.references || []);
       const no_jo = await numbering.joNumber(conn, c.code);
       const cols = ['no_jo', 'customer_id', 'created_by', ...Object.keys(f)];
       const [ins] = await conn.query(`INSERT INTO job_orders (${cols.join(',')}) VALUES (${cols.map(() => '?').join(',')})`, [no_jo, b.customer_id, req.user.id, ...Object.values(f)]);
@@ -281,6 +295,7 @@ module.exports = pool => {
       if (cur.status === 'COMPLETE') throw httpError(409, 'JO sudah Complete, tidak bisa diubah');
       const legacy = cur.origin === 'LEGACY', f = fields({ ...b, type: b.type || cur.type }, legacy ? cur : null);
       const curRefs = (await conn.query('SELECT kind, number FROM jo_references WHERE jo_id=?', [id]))[0], refsForCheck = b.references || curRefs;
+      if (b.references) await assertBlUnique(conn, id, b.references, curRefs);
       // data lama: kolom wajib yang tidak disentuh tidak divalidasi; kolom yang diubah divalidasi penuh. Data baru: tidak berubah
       if (legacy && f.type === cur.type) {
         if (f.weight_kg != null && cur.weight_kg != null && Math.abs(f.weight_kg - Number(cur.weight_kg)) <= 5) f.weight_kg = Number(cur.weight_kg);    // pembulatan ton di form tidak boleh mengubah berat lama

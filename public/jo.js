@@ -148,7 +148,7 @@ function joRefChange(el) { // simpan ke state tanpa gambar ulang; nomor dicek du
 const joRefCheck = async (k, i) => {
   const row = jf.rows[k]?.[i]; if (!row) return;
   const n = row.number.trim(); row.warn = '';
-  if (n) { try { const d = await api(`/job-orders/check-refs?kind=${k}&number=${encodeURIComponent(n)}&exclude=${jf.id || 0}`); if (d.length) row.warn = `⚠ Nomor ini sudah dipakai JO ${d.map(x => x.no_jo).join(', ')}`; } catch { /* peringatan saja */ } }
+  if (n) { try { const d = await api(`/job-orders/check-refs?kind=${k}&number=${encodeURIComponent(n)}&exclude=${jf.id || 0}`); if (d.length) row.warn = k === 'BL' ? `⛔ No. BL sudah dipakai JO ${d.map(x => x.no_jo).join(', ')}, tidak bisa diinput lagi` : `⚠ Nomor ini sudah dipakai JO ${d.map(x => x.no_jo).join(', ')}`; } catch { /* peringatan saja */ } }
   const w = $(`#w-${k}-${i}`); if (w) w.textContent = row.warn;
 };
 const joRefAdd = k => { jf.rows[k].push(emptyRow()); joRefDraw(k); };
@@ -196,6 +196,8 @@ async function joSubmit(e) {
   e.preventDefault();
   const f = $('#jf'), { b, rowsFlat } = joBody(), err = $('#fe'); err.textContent = '';
   f.querySelectorAll('[aria-invalid]').forEach(x => x.removeAttribute('aria-invalid'));
+  const blDup = Object.entries(jf.rows).flatMap(([k, rs]) => k === 'BL' ? rs.filter(r => r.warn.startsWith('⛔')) : []);
+  if (blDup.length) { err.textContent = blDup.map(r => `No. BL ${r.number.trim()} sudah dipakai JO lain`).join('; '); return; }
   const errs = jf.legacy ? [] : joClientErrors(b);       // data lama: server memvalidasi hanya kolom yang berubah
   if (errs.length) { err.textContent = errs.map(x => x.label).join('; '); errs.forEach(x => f.querySelector(x.sel)?.setAttribute('aria-invalid', 'true')); f.querySelector(errs[0].sel)?.focus(); return; }
   if (b.eta_etd && b.delivery_plan && b.delivery_plan < b.eta_etd && !confirm('Rencana delivery lebih awal dari ETA. Lanjut simpan?')) return;
