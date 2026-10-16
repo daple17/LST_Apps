@@ -56,7 +56,7 @@ test('data lama: edit sebagian, lencana, filter, relink, NULL-safe', async t => 
   r = await A('PUT', `/job-orders/${jo['0027USC']}`, body({ vessel: '' })); assert.equal(r.status, 400); assert.match(r.data.error, /Vessel wajib/);           // kolom yang diubah divalidasi penuh
   r = await A('PUT', `/job-orders/${jo['0027USC']}`, body({ delivery_plan: '2026-03-01', vessel: 'KAPAL BARU' })); assert.equal(r.status, 200);
   assert.deepEqual((await q('SELECT vessel, status FROM job_orders WHERE id=?', [jo['0027USC']]))[0], { vessel: 'KAPAL BARU', status: 'NOT_COMP' });
-  r = await A('PUT', `/job-orders/${jo['0027USC']}`, body({ references: [{ kind: 'AJU', number: '' }] })); assert.equal(r.status, 400); assert.match(r.data.error, /Nomor aju/);   // referensi wajib yang diubah menjadi kosong
+  r = await A('PUT', `/job-orders/${jo['0027USC']}`, body({ references: [{ kind: 'INVOICE', number: '' }] })); assert.equal(r.status, 400); assert.match(r.data.error, /No\. invoice/);   // referensi wajib yang diubah menjadi kosong
   // satuan data lama yang tidak ada di daftar form (CARTON) boleh tetap; satuan baru tetap harus valid
   const d30 = (await A('GET', `/job-orders/${jo['0030USC']}`)).data; assert.equal(d30.unit, 'CARTON');
   const b30 = { type: 'PROJECT', customer_id: d30.customer_id, qty: d30.qty, unit: d30.unit, remarks: 'proyek', delivery_plan: '2026-04-01' };

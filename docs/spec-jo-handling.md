@@ -109,7 +109,7 @@ Satu form dengan isian yang sama untuk empat tipe; yang berbeda hanya isian waji
 | Nama customer (cari dari master) | wajib | wajib | wajib | wajib |
 | Shipper | opsional | opsional | opsional | opsional |
 | Type BC | wajib | wajib | opsional | opsional |
-| Nomor aju (bisa banyak) | wajib | wajib | opsional | opsional |
+| Nomor aju (bisa banyak) | opsional (revisi client) | opsional (revisi client) | opsional | opsional |
 | No. invoice + tanggal + file (bisa banyak) | wajib | wajib | opsional | opsional |
 | No. BL + tanggal + file (bisa banyak) | opsional | opsional | opsional | opsional |
 | No. SI/DO + tanggal + file | opsional | tidak ada | opsional | opsional |
@@ -127,7 +127,7 @@ Satu form dengan isian yang sama untuk empat tipe; yang berbeda hanya isian waji
 
 - Isian yang bisa banyak memakai baris berulang dengan tombol tambah dan hapus (ikon X), seperti wireframe.
 - File: PDF, JPG atau PNG, maksimal 10 MB. File yang diunggah di form otomatis muncul juga di tab Dokumen.
-- Peringatan (bukan blokir) jika nomor BL atau aju sudah dipakai JO lain, dan jika delivery plan lebih awal dari ETA.
+- No. BL yang sudah dipakai JO lain **ditolak** saat simpan (revisi client); peringatan (bukan blokir) untuk aju/invoice/SI yang sudah dipakai, dan jika delivery plan lebih awal dari ETA.
 - Saat edit: nomor JO tidak bisa diubah, dan tipe tidak bisa diubah setelah JO punya material.
 - Tombol **Create** menyimpan, **Cancel** menutup dengan konfirmasi jika ada isian yang belum disimpan.
 

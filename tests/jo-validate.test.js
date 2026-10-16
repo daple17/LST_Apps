@@ -8,7 +8,7 @@ const full = {
 };
 
 test('Import: ketat (aju, invoice, BC, vessel, ETA, kontainer, weight, qty wajib; SI/PO tidak ada)', () => {
-  assert.deepEqual(fields({ type: 'IMPORT' }), ['AJU', 'INVOICE', 'containers', 'customer', 'delivery_plan', 'eta_etd', 'jenis_muatan', 'qty', 'type_bc', 'vessel', 'weight']);
+  assert.deepEqual(fields({ type: 'IMPORT' }), ['INVOICE', 'containers', 'customer', 'delivery_plan', 'eta_etd', 'jenis_muatan', 'qty', 'type_bc', 'vessel', 'weight']);
   assert.deepEqual(fields({ ...full, type: 'IMPORT' }), []);                                 // SI/PO tidak wajib untuk Import
 });
 test('Export: wajib SI/PO, SI/DO tidak ada', () => {
@@ -26,5 +26,5 @@ test('kontainer butuh jumlah DAN jenis; party teks cukup sebagai qty', () => {
   assert.ok(!fields({ ...full, type: 'IMPORT', qty: null, unit: null, party: '300 CL' }).includes('qty'));
 });
 test('nomor referensi kosong/spasi tidak dihitung', () => {
-  assert.ok(fields({ ...full, type: 'IMPORT', references: [{ kind: 'AJU', number: '  ' }, { kind: 'INVOICE', number: 'I' }] }).includes('AJU'));
+  assert.ok(fields({ ...full, type: 'IMPORT', references: [{ kind: 'AJU', number: '  ' }, { kind: 'INVOICE', number: 'I' }] }).includes('AJU') === false);   // Aju opsional
 });
