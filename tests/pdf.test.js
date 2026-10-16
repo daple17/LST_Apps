@@ -16,7 +16,7 @@ test('PDF Surat Jalan: A4 satu halaman berisi data muatan, truk, tabel material,
   assert.equal(buf.subarray(0, 5).toString(), '%PDF-'); assert.equal(pages(buf), 1);
   assert.match(buf.toString('latin1'), /\/MediaBox \[0 0 595\.28 841\.89\]/);
   const t = pdfText(buf);
-  for (const want of ['PT LIMA SARANA TRANS', 'SURAT JALAN', '2026100086', 'PT UNITED STEEL SERVICE INDONESIA', 'CIBITUNG', 'ASANKWJK012', '123456 (14-10-2026)', 'B 9854 TEJ', 'YANTO', 'PIC OPS', 'Administrator', 'CQH410B', 'Good', 'Damage', '61,57 MT', 'Masuk Pabrik', 'Keluar Pabrik', 'Barcode nomor Surat Jalan'])
+  for (const want of ['PT LIMA SARANA TRANS', 'SURAT JALAN', '2026100086', 'PT UNITED STEEL SERVICE INDONESIA', 'CIBITUNG', 'ASANKWJK012', '123456 (14-10-2026)', 'B 9854 TEJ', 'YANTO', 'PIC OPS', 'Administrator', 'CQH410B', 'Good', 'Damage', '61,57 MT', 'Masuk Pabrik', 'Keluar Pabrik', 'Scan barcode untuk melihat surat jalan digital'])
     assert.ok(t.includes(want.replace(/\s+/g, '')), `PDF harus memuat "${want}"`);
 });
 test('PDF Surat Jalan: material banyak berlanjut ke halaman berikutnya (header tabel diulang)', async () => {

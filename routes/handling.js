@@ -4,7 +4,7 @@ const rules = require('../lib/rules'), calc = require('../lib/calc'), fmt = requ
 const numbering = require('../lib/numbering'), audit = require('../lib/audit'), files = require('../lib/files');
 const { wrap, bad, httpError, tx } = require('../lib/http');
 const { sjPdf, damagePdf } = require('../lib/pdf'), { ticketReportText } = require('../lib/report-text');
-const sjLink = require('../lib/sj-link'), qr = require('../lib/qr');
+const sjLink = require('../lib/sj-link');
 const excel = require('../lib/excel'), exportsLib = require('../lib/exports'), { ZipArchive } = require('archiver');
 
 const nul = v => (v === '' || v === undefined ? null : v);
@@ -405,7 +405,7 @@ module.exports = pool => {
     return s;
   }
   const fmtDate = d => String(d).slice(0, 10).split('-').reverse().join('-');
-  r.get('/sj/:id', wrap(async (req, res) => { const s = await sjFull(req.params.id); if (!s) return res.sendStatus(404); const link = sjLink.url(req, s.id); res.json({ ...s, public_url: link, qr_svg: qr.svg(link, 3) }); }));
+  r.get('/sj/:id', wrap(async (req, res) => { const s = await sjFull(req.params.id); if (!s) return res.sendStatus(404); const link = sjLink.url(req, s.id); res.json({ ...s, public_url: link }); }));
 
   // Finish Loading: catat waktu selesai (bisa dikoreksi lewat Edit)
   r.post('/sj/:id/finish', wrap(async (req, res) => {
@@ -442,11 +442,11 @@ module.exports = pool => {
   }));
 
   // PDF Surat Jalan (A4) dibuat di server
-  async function sjPdfBuffer(id, qrUrl) {
+  async function sjPdfBuffer(id, link) {
     const s = await sjFull(id);
     if (!s) return null;
     const uniqJoin = f => uniq(s.jos.map(j => j[f])).join(', '), totalKg = s.items.reduce((a, i) => a + +i.weight, 0);
-    return sjPdf({ qr_url: qrUrl, no_sj: s.sj_no, nopol: s.nopol, driver: s.driver, phone: s.phone, vendor_name: s.vendor_name, start_loading: s.start_at, finish_loading: s.finish_at, entry_at: s.entry_at, exit_at: s.exit_at, pic_name: s.pic_name,
+    return sjPdf({ link, no_sj: s.sj_no, nopol: s.nopol, driver: s.driver, phone: s.phone, vendor_name: s.vendor_name, start_loading: s.start_at, finish_loading: s.finish_at, entry_at: s.entry_at, exit_at: s.exit_at, pic_name: s.pic_name,
       customer: uniqJoin('customer_name'), origin: s.origin, destination: s.destination, jo_numbers: uniqJoin('jo_no'), invoices: uniqJoin('invoice_no'), bl: uniqJoin('bl_no'), vessel: uniqJoin('vessel'), party: uniqJoin('party'),
       weight_ton: calc.kgToTon(totalKg), nopen: s.nopen, aju: uniqJoin('aju_no'),
       items: s.items.map(i => ({ product_no: i.product_no, description: i.description, spec: i.spec, qty: i.qty, weight: +i.weight, mark: i.mark })), unit: s.unit, total_qty: s.qty, total_weight_kg: totalKg });

@@ -378,7 +378,7 @@ const hoSjView = run(async id => {
     <p style="text-align:center"><b>Total: ${tq} ${esc(s.unit || '')} &nbsp; ${fmtN(tw / 1000)} MT</b></p>
     <div class="g" style="gap:10px"><div class="kv" style="grid-template-columns:1fr"><div><span>Nopol:</span> <b>${esc(s.nopol)}</b></div><div><span>Driver:</span> <b>${esc(s.driver)}</b></div><div><span>No. Hp:</span> <b>${esc(s.phone || '-')}</b></div><div><span>PIC OPS:</span> <b>${esc(s.pic_name)}</b></div></div>
     <div><div class="box"><u>Tanggal dan Waktu Masuk Pabrik</u>${s.entry_at ? esc(s.entry_at.slice(0, 16)) : ''}</div><div class="box" style="margin-top:6px"><u>Tanggal dan Waktu Keluar Pabrik</u>${s.exit_at ? esc(s.exit_at.slice(0, 16)) : ''}</div></div></div>
-    <div style="text-align:center;margin-top:12px;overflow-x:auto">${barcode(s.sj_no)}<div style="font-size:13px;letter-spacing:.12em;font-variant-numeric:tabular-nums">${esc(s.sj_no)}</div><div style="font-size:11px;color:var(--mut)">Barcode nomor Surat Jalan</div>${s.qr_svg ? `<div style="margin-top:10px">${s.qr_svg}</div><div style="font-size:11px;color:var(--mut)">Scan QR: surat jalan digital (tanpa login)</div>` : ''}</div></div>
+    <div style="text-align:center;margin-top:12px;overflow-x:auto">${barcode(s.public_url || s.sj_no)}<div style="font-size:13px;letter-spacing:.12em;font-variant-numeric:tabular-nums">${esc(s.sj_no)}</div><div style="font-size:11px;color:var(--mut)">Scan barcode untuk melihat surat jalan digital (tanpa login)</div></div></div>
     <div class="noprint" style="margin-top:14px"><div class="kv"><div><span>Vendor:</span> <b>${esc(s.vendor_code ? s.vendor_code + ' · ' + s.vendor_name : '-')}</b></div><div><span>Start Loading:</span> <b>${fmtT(s.start_at)}</b></div><div><span>Finish Loading:</span> <b>${fmtT(s.finish_at)}</b></div><div><span>Load Time:</span> <b>${loadT(s.load_min)}</b></div></div>
     <b>Foto</b><div class="ph">${s.photos.map(p => `<div><img src="${photoOf(p.path)}" onclick="window.open(this.src)"></div>`).join('') || '<div>Belum ada foto</div>'}</div></div>
     <div class="acts"><button class="btn sec" onclick="closeMd()">Tutup</button>${s.is_legacy ? `<button class="btn sec" onclick="hoRelink(${id})">Tautkan ke tiket</button>` : ''}<button class="btn bad" onclick="hoDelSj(${id})">Hapus</button><button class="btn sec" onclick="hoSjForm(${id})">Edit</button>${s.finish_at ? '' : `<button class="btn sec" onclick="hoSjFinish(${id});closeMd()">Finish Loading</button>`}<button class="btn sec" onclick="window.print()">Print</button><a class="btn" href="/api/ho/sj/${id}/pdf?t=${token}" target="_blank" rel="noopener">PDF</a></div></div></div>`;
@@ -386,7 +386,7 @@ const hoSjView = run(async id => {
 const hoDelSj = run(async id => { if (confirm('Hapus Surat Jalan ini? Material akan kembali tersedia.')) { await api('/ho/sj/' + id, 'DELETE'); closeMd(); route(); } });
 
 /* ---- Code 128: public/../lib/code128.js (juga dipakai server) ---- */
-const barcode = t => Code128.svg(t);
+const barcode = t => Code128.svg(t, { maxWidth: 840 });
 
 /* ---- tautkan surat jalan data lama ke tiket lain ---- */
 const hoRelink = run(async id => {

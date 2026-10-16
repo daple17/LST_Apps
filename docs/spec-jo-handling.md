@@ -325,5 +325,8 @@ Selesai jika semua poin di "Selesai jika" terpenuhi. Di akhir, tulis ringkasan: 
 ```
 
 
-## Surat jalan digital (QR)
-PDF dan layar Surat Jalan memuat QR berisi link `/s/<id>/<tanda tangan>`. Link dibuka tanpa login dan menampilkan PDF surat jalan terkini (hanya-baca). Tanda tangan = HMAC id dengan `JWT_SECRET` (`lib/sj-link.js`); mengganti `JWT_SECRET` mencabut semua link lama. Siapa pun yang memegang QR bisa melihat isi surat jalan (nopol, driver, material). Domain link mengikuti alamat yang dipakai saat membuka, atau env `PUBLIC_URL` bila diisi. Barcode garis (Code 128) tetap ada untuk scanner khusus.
+## Surat jalan digital (scan barcode)
+Barcode pada layar dan PDF Surat Jalan berisi **link**: `<alamat>/s/<id><12 angka tanda tangan>`. Setelah di-scan (aplikasi barcode scanner yang menampilkan/membuka link), halaman terbuka tanpa login dan menampilkan PDF surat jalan terkini (nomor, customer, nopol, driver, tabel material), hanya-baca. Orang di luar LST yang memegang barcode bisa melihatnya. Nomor surat jalan tetap tercetak sebagai teks di bawah barcode.
+- Tanda tangan = HMAC id dengan `JWT_SECRET` (`lib/sj-link.js`, 40 bit); mengganti `JWT_SECRET` mencabut semua link lama. Link tidak kedaluwarsa.
+- Alamat link = alamat yang dipakai saat membuka aplikasi, atau env `PUBLIC_URL` bila diisi. **Domain pendek membuat barcode lebih sempit dan lebih mudah dibaca**; barcode dari `localhost` hanya berfungsi di komputer itu.
+- Code 128 memadatkan deretan angka (set C) agar barcode berisi link tetap muat (±600 modul, 1 px per modul di layar lebar, ±0,8 pt di PDF).

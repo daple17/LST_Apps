@@ -40,8 +40,17 @@ test('svg: latar putih (zona tenang) dan lebar piksel bulat per modul', () => {
   assert.match(s, /<rect width="\d+" height="32" fill="#fff"\/>/); assert.match(s, new RegExp(`viewBox="0 0 ${m} 32" width="${m * 2}" height="64"`));   // proporsi viewBox = ukuran gambar: tepat 2 px per modul
 });
 
-test('QR surat jalan terbaca ZXing', () => {
-  const Z = require('../public/vendor/zxing-library.min.js'), { matrix } = require('../lib/qr'), url = 'https://lesat.example.com/s/12/0123456789abcdef01234567', m = matrix(url), px = 6, q = 4, n = m.size + 2 * q, W = n * px, lum = new Uint8ClampedArray(W * W).fill(255);
-  for (let r = 0; r < m.size; r++) for (let c = 0; c < m.size; c++) if (m.get(r, c)) for (let y = 0; y < px; y++) for (let x = 0; x < px; x++) lum[((r + q) * px + y) * W + (c + q) * px + x] = 0;
-  assert.equal(new Z.MultiFormatReader().decode(new Z.BinaryBitmap(new Z.HybridBinarizer(new Z.RGBLuminanceSource(lum, W, W))), new Map([[Z.DecodeHintType.POSSIBLE_FORMATS, [Z.BarcodeFormat.QR_CODE]]])).getText(), url);
+test('set C: deretan angka dipadatkan, tetap terbaca ZXing (termasuk link surat jalan)', () => {
+  const Z = require('../public/vendor/zxing-library.min.js');
+  assert.deepEqual(C.encode('1234').values.slice(0, 3), [105, 12, 34]);                       // mulai langsung di set C
+  assert.ok(C.encode('2026100041').values.length < C.encode('abcdefghij').values.length);
+  for (const t of ['2026100041', '12345', 'ab12345c', 'SJ-20261001-01', 'https://lesat-production.up.railway.app/s/180123456789012', 'x1234y5678']) {
+    const b = C.bars(t), mw = 2, W = b.modules * mw, H = 40, lum = new Uint8ClampedArray(W * H).fill(255);
+    for (const r of b.bars) for (let x = r.x * mw; x < (r.x + r.w) * mw; x++) for (let y = 0; y < H; y++) lum[y * W + x] = 0;
+    assert.equal(new Z.MultiFormatReader().decode(new Z.BinaryBitmap(new Z.HybridBinarizer(new Z.RGBLuminanceSource(lum, W, H))), new Map([[Z.DecodeHintType.POSSIBLE_FORMATS, [Z.BarcodeFormat.CODE_128]]])).getText(), t);
+  }
+});
+test('svg dengan maxWidth memilih lebar modul bulat yang muat', () => {
+  const t = 'https://lesat-production.up.railway.app/s/180123456789012', m = C.bars(t).modules, s = C.svg(t, { maxWidth: 840 });
+  assert.match(s, new RegExp(`width="${m * Math.max(1, Math.min(2, Math.floor(840 / m)))}"`)); assert.ok(m < 840);
 });
