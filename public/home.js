@@ -64,8 +64,7 @@ const HOME_LOADERS = {
       ${d.rows.slice(0, HOME_ROWS).map(t => `<tr ${rowLink('#ho/' + t.id + '/material')}><td><a href="#ho/${t.id}/material"><b>${esc(t.ticket_no)}</b></a><span class="pic sub">${picAv(t.pic)}${esc(t.pic)}</span></td>
         <td class="cust">${t.customers.length ? custCell(t.customers[0]) + (t.customers.length > 1 ? ` <span class="more" title="${esc(t.customers.join('\n'))}">+${t.customers.length - 1}</span>` : '') : '-'}<span class="sub ves">${ico(IC.ship)}${multi(t.vessels)}</span></td>
         <td>${multi(t.parties)}</td><td class="num">${ton2(t.weight)}<small> ton</small></td><td class="hpw">${hpBar('RM', t.mat_pct)}${hpBar('TD', t.del_pct)}</td>
-        <td class="act" onclick="event.stopPropagation()"><div class="menu"><button class="ib" type="button" aria-label="Aksi ${esc(t.ticket_no)}" aria-haspopup="true" onclick="menuToggle(this)">⋮</button><div class="menu-list" role="menu">
-          <button role="menuitem" onclick="location.hash='#ho/${t.id}/material'">Go to..</button><button role="menuitem" onclick="hoCopy(${t.id})">Copy Report</button></div></div></td></tr>`).join('')}</table></div>`,
+        <td class="act" onclick="event.stopPropagation()">${rowMenu(t.ticket_no, [{ t: 'Go to..', js: `location.hash='#ho/${t.id}/material'` }, { t: 'Copy Report', js: `hoCopy(${t.id})` }])}</td></tr>`).join('')}</table></div>`,
   },
 };
 

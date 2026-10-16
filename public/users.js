@@ -49,8 +49,7 @@ async function usersList() {
       const lock = u.locked && !isSuper(), self = u.id === me.id;
       return `<tr class="${u.is_active ? '' : 'dim'}"><td><span class="uname">${uAv(u.name)}${canU && !lock ? `<a href="#" onclick="userForm(${u.id});return false">${esc(u.name)}</a>` : `<b>${esc(u.name)}</b>`}${self ? ' <span class="more">Anda</span>' : ''}</span></td>
         <td>${esc(u.employee_no || '-')}</td><td>${esc(u.email || '—')}</td><td><b>${esc(u.pic_code || '-')}</b></td><td>${roleChip(u)}</td><td>${lastLogin(u.last_login_at)}</td><td>${statusChip(u)}</td>
-        <td class="uact">${lock ? '<span class="soon">Dikunci</span>' : !canU ? '' : `<button class="btn sec sm" onclick="userForm(${u.id})">Edit</button>${self || u.locked ? '' : u.is_active
-          ? `<button class="btn sec sm" onclick="userToggle(${u.id},false,'${esc(u.name).replace(/'/g, '')}')">Nonaktifkan</button>` : `<button class="btn out sm" onclick="userToggle(${u.id},true)">Aktifkan</button>`}`}</td></tr>`;
+        <td class="uact">${lock ? '<span class="soon">Dikunci</span>' : !canU ? '' : rowMenu(u.name, [{ t: 'Edit', js: `userForm(${u.id})` }, !(self || u.locked) && { t: u.is_active ? 'Nonaktifkan' : 'Aktifkan', js: `userToggle(${u.id},${!u.is_active},'${u.name.replace(/['"]/g, '')}')`, danger: u.is_active }])}</td></tr>`;
     }).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--mut)">Tidak ada user yang cocok.</td></tr>'}</table>
     <p class="tnote">Hapus permanen hanya untuk user tanpa transaksi; selebihnya dinonaktifkan.</p>${pagerNum(d.page, d.pages, d.total, 'usrGoto')}</div>`;
   const q = $('#uq'); let tm;

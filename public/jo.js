@@ -31,9 +31,8 @@ async function joList() {
       <td>${multi(r.refs.AJU)}</td><td>${multi(r.refs.BL)}</td><td>${multi(r.refs.INVOICE)}</td><td>${multi([...r.refs.SI_PO, ...r.refs.SI_DO])}</td>
       <td>${esc(r.vessel)}</td><td>${esc(r.party)}</td><td class="num">${fmtN(r.weight)}</td><td>${fmtD(r.eta_etd)}</td><td ${late(r) ? 'style="color:var(--bad);font-weight:600" title="Lewat rencana delivery"' : ''}>${fmtD(r.delivery_plan)}</td>
       <td><span class="tag ${r.status}">${r.status === 'COMPLETE' ? 'Complete' : 'Not Comp'}</span></td>
-      <td onclick="event.stopPropagation()"><div class="menu"><button class="ib" aria-label="Aksi ${esc(r.no_jo)}" aria-haspopup="true" onclick="menuToggle(this)">⋯</button><div class="menu-list" role="menu">
-        <button role="menuitem" onclick="joOpen(${r.id})">Detail</button><button role="menuitem" onclick="joOpen(${r.id},'dokumen')">Dokumen</button><button role="menuitem" onclick="joOpen(${r.id},'preview')">Preview</button>
-        <button role="menuitem" ${r.status === 'COMPLETE' ? 'disabled title="JO Complete tidak bisa diedit"' : ''} onclick="joForm(${r.id})">Edit</button></div></div></td></tr>`).join('') || '<tr><td colspan="14" style="text-align:center;color:var(--mut)">Belum ada data</td></tr>'}</table>
+      <td onclick="event.stopPropagation()">${rowMenu(r.no_jo, [{ t: 'Detail', js: `joOpen(${r.id})` }, { t: 'Dokumen', js: `joOpen(${r.id},'dokumen')` }, { t: 'Preview', js: `joOpen(${r.id},'preview')` },
+        { t: 'Edit', js: `joForm(${r.id})`, disabled: r.status === 'COMPLETE', title: r.status === 'COMPLETE' ? 'JO Complete tidak bisa diedit' : '' }])}</td></tr>`).join('') || '<tr><td colspan="14" style="text-align:center;color:var(--mut)">Belum ada data</td></tr>'}</table>
     ${pagerNum(joSt.page, d.pages, d.total, 'joGoto')}</div>`;
   $('#fs').value = joSt.status; $('#fc').value = joSt.customer_id; $('#fo').value = joSt.incomplete === '1' ? 'INCOMPLETE' : joSt.origin;
   $('#fo').onchange = e => { joSt.origin = e.target.value === 'LEGACY' ? 'LEGACY' : ''; joSt.incomplete = e.target.value === 'INCOMPLETE' ? '1' : ''; joSt.page = 1; joList(); };

@@ -102,12 +102,12 @@ async function ciGo() {
 }
 
 /* ---------- tab DAILY REPORT ---------- */
-const ciItemRows = (items, editable) => items.map((i, n) => `<tr><td>${n + 1}</td><td>${esc(i.start_time)}</td><td>${i.end_time ? esc(i.end_time) : '-'}</td><td class="wrap">${esc(i.activity)}</td>${editable ? `<td><button class="btn sec sm" onclick="ciReportForm(${i.id})">edit</button></td>` : ''}</tr>`).join('');
+const ciItemRows = (items, editable) => items.map((i, n) => `<tr><td>${n + 1}</td><td>${esc(i.start_time)}</td><td>${i.end_time ? esc(i.end_time) : '-'}</td><td class="wrap">${esc(i.activity)}</td>${editable ? `<td>${rowMenu(i.activity, [{ t: 'Edit', js: `ciReportForm(${i.id})` }])}</td>` : ''}</tr>`).join('');
 async function ciReport() {
   const t = await ciLoadToday(); ciRepItems = t.report;
   $('#ci-body').innerHTML = `<section class="card tw" aria-label="Laporan harian"><div class="cirh"><div><p class="cieyebrow" style="margin:0">LAPORAN HARIAN</p><b class="cirn">${esc(t.user.name)}</b><span class="muted2" style="margin:0 0 0 10px">No. ID ${esc(t.user.employee_no || '-')}</span><span class="muted2" style="margin:0 0 0 10px">${IdFmt.longDate(new Date(t.date + 'T12:00:00+07:00'))}</span></div>
       ${can('checkin.create') ? '<button class="btn" onclick="ciReportForm()">ADD ACTIVITY ++</button>' : ''}</div>
-    <table><tr><th>No</th><th>Start</th><th>Finish</th><th>Activity</th>${can('checkin.update') ? '<th>Act</th>' : ''}</tr>${ciItemRows(t.report, can('checkin.update')) || `<tr><td colspan="5" style="text-align:center;color:var(--mut)">Belum ada kegiatan hari ini. Tambahkan lewat ADD ACTIVITY.</td></tr>`}</table></section>
+    <table><tr><th>No</th><th>Start</th><th>Finish</th><th>Activity</th>${can('checkin.update') ? '<th>Aksi</th>' : ''}</tr>${ciItemRows(t.report, can('checkin.update')) || `<tr><td colspan="5" style="text-align:center;color:var(--mut)">Belum ada kegiatan hari ini. Tambahkan lewat ADD ACTIVITY.</td></tr>`}</table></section>
     <section class="card tw" aria-label="Riwayat" style="margin-top:16px"><div class="cirh"><b class="cirn">Riwayat</b><label class="inl" style="margin:0">Tanggal <input type="date" id="ci-hd" max="${t.date}" value="${C_prevDay(t.date)}" onchange="ciHist()"></label></div><div id="ci-hist"></div></section>`;
   ciHist();
 }
@@ -151,7 +151,7 @@ async function ciRekap() {
     ${d.rows.map((x, i) => `<tr><td>${i + 1}</td><td>${esc(x.employee_no || '-')}</td><td><a href="#" onclick="rekapDetail(${x.id});return false"><b>${esc(x.name)}</b></a>${x.is_active ? '' : ' <span class="more">nonaktif</span>'}</td>
       <td class="num">${x.attendance}</td><td class="num">${x.permit}</td><td class="num">${x.alfa}</td><td class="num">${x.late}</td>
       ${day ? `<td>${x.day?.photo_url ? ciThumb(x.day.photo_url) : '—'}</td><td>${x.day?.time ? ciMaps(x.day) : '—'}</td><td>${x.day?.time ? esc(x.day.time) + (x.day.late ? ' <span class="more" title="Terlambat">Past</span>' : '') : '—'}</td><td>${x.day ? ciChip(x.day.status, x.day.virtual) : '—'}</td><td class="wrap" title="${esc(x.report)}">${esc(x.report || '—')}</td>` : ''}
-      <td><button class="btn sec sm" onclick="rekapOverride(${x.id},'${esc(x.name).replace(/'/g, '')}','${day ? d.from : d.to}')">Koreksi</button></td></tr>`).join('') || `<tr><td colspan="${day ? 13 : 8}" style="text-align:center;color:var(--mut)">Tidak ada data pada ${day ? 'tanggal' : 'periode'} ini.</td></tr>`}</table></div>
+      <td>${rowMenu(x.name, [{ t: 'Detail', js: `rekapDetail(${x.id})` }, { t: 'Koreksi status', js: `rekapOverride(${x.id},'${x.name.replace(/['"]/g, '')}','${day ? d.from : d.to}')` }])}</td></tr>`).join('') || `<tr><td colspan="${day ? 13 : 8}" style="text-align:center;color:var(--mut)">Tidak ada data pada ${day ? 'tanggal' : 'periode'} ini.</td></tr>`}</table></div>
     <p class="muted2">Hari kerja (Senin–Jumat) yang sudah lewat tanpa absensi dihitung Alfa otomatis untuk pegawai aktif. Kalender libur nasional belum ada.</p>`;
   const on = (id, f) => { const e = $(id); if (e) e.onchange = f; };
   on('#rk-d', e => { ciRk.date = e.target.value || ciRk.date; ciRekap(); }); on('#rk-f', e => { ciRk.from = e.target.value || ciRk.from; ciRekap(); }); on('#rk-t', e => { ciRk.to = e.target.value || ciRk.to; ciRekap(); });
@@ -177,7 +177,7 @@ async function rekapDetail(id, from, to) {
     <div class="tw"><table><tr><th>Tanggal</th><th>Status</th><th>Check In</th><th>Foto</th><th>Lokasi</th><th>Report</th>${canU ? '<th>Aksi</th>' : ''}</tr>
     ${d.days.map(x => `<tr class="${x.weekday ? '' : 'dim'}"><td>${IdFmt.shortDate(x.date)}${x.weekday ? '' : ' <span class="more">libur</span>'}</td><td>${x.status ? ciChip(x.status, x.virtual) : '—'}</td><td>${x.attendance?.time ? esc(x.attendance.time) + (x.attendance.late ? ' <span class="more">Past</span>' : '') : '—'}</td>
       <td>${x.attendance?.photo_url ? ciThumb(x.attendance.photo_url) : '—'}</td><td>${x.attendance?.time ? ciMaps(x.attendance) : '—'}</td><td class="wrap">${x.report.map(i => `${esc(i.start_time)}–${esc(i.end_time || '-')} ${esc(i.activity)}${canU ? ` <button class="btn sec sm" onclick="rekapReportEdit(${i.id})">edit</button>` : ''}`).join('<br>') || '—'}${x.attendance?.note ? `<br><span class="muted2" style="margin:0">${esc(x.attendance.note)}</span>` : ''}</td>
-      ${canU ? `<td><button class="btn sec sm" onclick="rekapOverride(${d.user.id},'${esc(d.user.name).replace(/'/g, '')}','${x.date}')">Koreksi</button></td>` : ''}</tr>`).join('')}</table></div>
+      ${canU ? `<td>${rowMenu(x.date, [{ t: 'Koreksi status', js: `rekapOverride(${d.user.id},'${d.user.name.replace(/['"]/g, '')}','${x.date}')` }])}</td>` : ''}</tr>`).join('')}</table></div>
     <div class="acts"><button class="btn sec" onclick="closeMd()">Tutup</button></div></div></div>`;
 }
 const C_addDays = (s, n) => new Date(Date.parse(s + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10);

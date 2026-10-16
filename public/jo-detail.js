@@ -46,9 +46,9 @@ const joMatTab = run(async () => {
       <span class="tag" style="color:var(--ink)">Net ${fmtN(t.net)} kg</span><span class="tag" style="color:var(--ink)">Gross ${fmtN(t.gross)} kg</span><span class="tag" style="color:var(--ink)">Qty ${fmtN(t.qty)}</span><span style="flex:1"></span>
       <button class="btn sec" onclick="joScan()">Scan Barcode</button><button class="btn sec out" onclick="joTemplate()">Download Template</button>
       <button class="btn sec" ${done ? 'disabled' : ''} onclick="joImport()">Upload List</button><button class="btn" ${done ? 'disabled' : ''} onclick="joMatForm()">+ Add data</button></div>
-    <div class="card tw"><table><tr><th>No</th><th>Product/Container No</th><th>Description</th><th>Spec</th><th title="tebal · lebar · bentuk">Thickness</th><th class="num">Net Weight</th><th class="num">Gross Weight</th><th class="num">Qty</th><th>Satuan</th><th>Dari</th><th>Tujuan</th><th>Edit</th></tr>
+    <div class="card tw"><table><tr><th>No</th><th>Product/Container No</th><th>Description</th><th>Spec</th><th title="tebal · lebar · bentuk">Thickness</th><th class="num">Net Weight</th><th class="num">Gross Weight</th><th class="num">Qty</th><th>Satuan</th><th>Dari</th><th>Tujuan</th><th>Aksi</th></tr>
     ${d.rows.map((m, i) => `<tr class="row"><td>${d.offset + i + 1}</td><td><b>${esc(m.product_no)}</b>${m.kondisi === 'PARTIAL' ? ' <span class="more" title="Partial">P</span>' : ''}${m.container_no ? ` <span class="more" title="Nomor kontainer">${esc(m.container_size ? m.container_size + 'ft' : 'CNTR')}</span>` : m.container_size ? ` <span class="more" title="Ukuran kontainer">${esc(m.container_size)}</span>` : ''}</td><td>${esc(m.description)}</td><td>${esc(m.spec)}</td><td>${esc(dim(m))}</td><td class="num">${fmtN(m.net_weight)}</td><td class="num">${fmtN(m.gross_weight)}</td><td class="num">${m.qty}</td><td>${esc(m.unit)}</td><td>${esc(m.origin)}</td><td>${esc(m.destination)}</td>
-      <td><button class="ib" aria-label="Edit ${esc(m.product_no)}" ${done ? 'disabled' : ''} onclick="joMatForm(${m.id})">✎</button></td></tr>`).join('') || `<tr><td colspan="12" style="text-align:center;color:var(--mut)">${joMq.q ? 'Tidak ada material yang cocok' : 'Belum ada material. Gunakan Add data atau Upload List.'}</td></tr>`}</table>
+      <td>${rowMenu(m.product_no, [{ t: 'Edit', js: `joMatForm(${m.id})`, disabled: done, title: done ? 'JO Complete tidak bisa diedit' : '' }, { t: 'Hapus', js: `joMatDelete(${m.id})`, danger: true, disabled: done || m.in_sj > 0, title: done ? 'JO Complete tidak bisa diedit' : m.in_sj > 0 ? 'Sudah ada di surat jalan' : '' }])}</td></tr>`).join('') || `<tr><td colspan="12" style="text-align:center;color:var(--mut)">${joMq.q ? 'Tidak ada material yang cocok' : 'Belum ada material. Gunakan Add data atau Upload List.'}</td></tr>`}</table>
     ${pagerNum(joMq.page, d.pages, d.total, 'joMatGoto')}</div>`;
   let tm; $('#mq').oninput = e => { clearTimeout(tm); tm = setTimeout(() => { joMq.q = e.target.value; joMq.page = 1; joMatTab().then(() => { const q = $('#mq'); q.focus(); q.setSelectionRange(1e4, 1e4); }); }, 300); };
 });
@@ -133,11 +133,9 @@ function joDocTab() {
       <div><label>No. dokumen</label><input name="doc_no" maxlength="80" placeholder="opsional"></div>
       <div><label>File (PDF/JPG/PNG, maks ${R().LIMITS.FILE_MAX_MB} MB) <b style="color:var(--bad)">*</b></label><input type="file" name="file" accept=".pdf,.jpg,.jpeg,.png" required></div></div>
       <div class="err" id="fe" role="alert"></div><div class="acts" style="margin-top:8px"><button class="btn">Upload</button></div></form>
-    <div class="card tw"><table><tr><th>No</th><th>Jenis</th><th>No. Dokumen</th><th>Nama File</th><th class="num">Ukuran</th><th>Diunggah</th><th>Download</th><th>Upload</th><th>Delete</th></tr>
+    <div class="card tw"><table><tr><th>No</th><th>Jenis</th><th>No. Dokumen</th><th>Nama File</th><th class="num">Ukuran</th><th>Diunggah</th><th>Aksi</th></tr>
     ${j.documents.map((d, i) => `<tr class="row"><td>${i + 1}</td><td>${esc(docLabel(d.doc_type))}</td><td>${esc(d.doc_no || '-')}</td><td style="white-space:normal;word-break:break-all;max-width:260px">${esc(d.filename)}</td><td class="num">${fmtSize(d.size)}</td><td>${fmtDT(d.created_at)}${d.uploaded_by ? ' · ' + esc(d.uploaded_by) : ''}</td>
-      <td><a class="btn sec sm" href="/uploads/${d.path}?t=${token}" download="${esc(d.filename)}" target="_blank" rel="noopener">Download</a></td>
-      <td><label class="btn sec sm" style="margin:0">Upload<input type="file" hidden accept=".pdf,.jpg,.jpeg,.png" onchange="joDocReplace(${d.id},this)"></label></td>
-      <td><button class="btn bad sm" onclick="joDocDelete(${d.id},'${esc(d.filename).replace(/'/g, '')}')">Delete</button></td></tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--mut)">Belum ada dokumen</td></tr>'}</table></div>`;
+      <td>${rowMenu(d.filename, [{ t: 'Download', js: `joDocDownload('${d.path}','${d.filename.replace(/['"\\]/g, '')}')` }, { t: 'Ganti file', js: `joDocPick(${d.id})` }, { t: 'Hapus', js: `joDocDelete(${d.id},'${d.filename.replace(/['"\\]/g, '')}')`, danger: true }])}</td></tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--mut)">Belum ada dokumen</td></tr>'}</table></div>`;
   $('#df').onsubmit = run(async e => {
     e.preventDefault();
     const f = e.target, file = f.file.files[0], err = file ? fileErr(file) : 'File wajib dipilih';
@@ -192,4 +190,12 @@ function joPreview(id) {
       <section><h4>Checklist Kelengkapan</h4><div class="a4chk">${R().CHECKLIST_ITEMS.map(it => `<div><b>${esc(it.label)}</b><span>${ck[it.code]?.inv ? '☑' : '☐'} INV</span><span>${ck[it.code]?.fp ? '☑' : '☐'} FP</span></div>`).join('')}</div></section>
       <section><h4>Catatan operasional (tulis tangan dengan pulpen)</h4><div class="a4box big" style="min-height:70mm"></div></section>
     </article></div>`;
+}
+
+// aksi dokumen dari menu ⋯ (menu ditutup setelah klik, jadi input berkas dibuat sementara di body)
+const joDocDownload = (path, name) => { const a = Object.assign(document.createElement('a'), { href: `/uploads/${path}?t=${token}`, download: name, target: '_blank', rel: 'noopener' }); document.body.appendChild(a); a.click(); a.remove(); };
+function joDocPick(id) {
+  const inp = Object.assign(document.createElement('input'), { type: 'file', accept: '.pdf,.jpg,.jpeg,.png', hidden: true });
+  inp.onchange = async () => { try { await joDocReplace(id, inp); } finally { inp.remove(); } };
+  document.body.appendChild(inp); inp.click();
 }

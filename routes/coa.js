@@ -99,6 +99,16 @@ module.exports = pool => {
     res.json({ ok: true });
   }));
 
+  // hapus kelompok: hanya yang masih kosong (tidak punya akun, aktif maupun nonaktif)
+  r.delete('/headers/:id(\\d+)', wrap(async (req, res) => {
+    const cur = await one(`${HSEL} WHERE h.id=? GROUP BY h.id`, [req.params.id]);
+    if (!cur) throw httpError(404, 'Kelompok tidak ditemukan');
+    if (+cur.accounts > 0) throw httpError(400, `Kelompok masih berisi ${cur.accounts} akun, jadi tidak bisa dihapus. Nonaktifkan saja.`);
+    await pool.query('DELETE FROM coa_headers WHERE id=?', [cur.id]);
+    await audit.log(pool, { entity: 'coa_group', id: cur.id, action: 'Dihapus', note: note(`${C.jenisLabel(cur.jenis)} › ${C.headerLabel(cur)}`), user: req.user });
+    res.json({ ok: true });
+  }));
+
   /* ---------- akun ---------- */
   // type JO: daftar kode valid (tanpa ganda), urutan baku; kosong = semua type
   function jobTypes(b, cur) {
@@ -147,5 +157,7 @@ module.exports = pool => {
     await logAcc(req, cur.id, !!cur.is_active !== active ? (active ? 'Diaktifkan' : 'Dinonaktifkan') : 'Diubah', `${cur.code} ${cur.name}${diff.length ? '; ' + diff.join('; ') : ''}`);
     res.json({ ok: true });
   }));
+  // akun TIDAK dihapus (kode dipakai transaksi): hanya dinonaktifkan
+  r.delete('/:id(\\d+)', (req, res) => res.status(405).json({ error: 'Akun COA tidak dihapus, hanya dinonaktifkan' }));
   return r;
 };

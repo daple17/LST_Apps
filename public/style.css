@@ -430,7 +430,7 @@ tr.dim td{opacity:.55}tr.dim td.uact{opacity:1}
 .menu-list{display:none;position:fixed;z-index:50;min-width:160px;padding:6px;border:1px solid var(--line-h);border-radius:var(--r-ctl);background:var(--solid);box-shadow:var(--shadow)}
 .menu-list.floating{display:block}
 .menu-list button{display:block;width:100%;padding:8px 12px;border:0;border-radius:8px;background:none;text-align:left;cursor:pointer;color:var(--ink)}
-.menu-list button:hover:not(:disabled){background:var(--tint)}.menu-list button:disabled{color:var(--mut);cursor:not-allowed}
+.menu-list button:hover:not(:disabled),.menu-list button:focus-visible{background:var(--tint);outline:0}.menu-list button.danger{color:var(--bad)}.menu-list button.danger:not(:first-child){margin-top:4px;border-top:1px solid var(--line);border-radius:0 0 8px 8px}.menu-list button.danger:hover:not(:disabled){background:var(--c-r-bg)}.menu .ib:focus-visible{outline:2px solid var(--focus)}.menu-list button:disabled{color:var(--mut);cursor:not-allowed}
 
 /* ---------- Handling Ops ---------- */
 .pbtn{display:inline-flex;align-items:center;gap:6px;padding:5px 8px 5px 6px;border:1px solid var(--ctl-bd);border-radius:var(--r-ctl);background:var(--ctl-bg);color:var(--ink);text-decoration:none;transition:border-color var(--ease),box-shadow var(--ease),transform var(--ease)}

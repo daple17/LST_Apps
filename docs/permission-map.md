@@ -43,7 +43,8 @@ Seluruh router: `GET /upcoming`, `/plan`, `/tickets`.
 | GET `/export` | `coa.export` *(pengecualian)* |
 | POST `/`, POST `/headers` | `coa.create` |
 | PUT `/:id`, PUT `/headers/:id` | `coa.update` |
-| DELETE (apa pun) | tidak ada: `coa.delete` tidak didefinisikan, jadi selalu 403 (akun hanya dinonaktifkan) |
+| DELETE `/headers/:id` | `coa.delete` (hanya kelompok kosong) |
+| DELETE `/:id` (akun) | selalu 405: akun tidak dihapus, hanya dinonaktifkan |
 
 ## HR (SDM)
 **Check In & Daily Report (`checkin.*`)** — `/api/checkin/*`, selalu dibatasi ke user yang login

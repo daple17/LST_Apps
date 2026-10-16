@@ -26,12 +26,15 @@ async function coaList() {
       <button class="btn sec out" onclick="coaExport()">Download Excel</button><button class="btn" onclick="coaForm()">+ Tambah COA</button></div>
     <div class="card tw"><table><tr><th>Code</th><th>Account Name</th><th>Jenis</th><th>Sub Header</th><th>Group Account</th><th>Type JO</th><th>Status</th><th>Aksi</th></tr>
     ${d.rows.map(a => `<tr class="${a.is_active ? '' : 'dim'}"><td><b class="cnum">${a.code}</b></td><td class="wrap">${esc(a.name)}</td><td>${esc(a.jenis_label)}</td><td>${esc(a.sub_header)}</td><td>${esc(a.group_account || '—')}</td><td class="jtcell">${coaJt(a)}</td><td>${coaStatus(a.is_active)}</td>
-      <td><button class="btn sec sm" onclick="coaForm(${a.id})">Edit</button></td></tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--mut)">Tidak ada akun yang cocok.</td></tr>'}</table>
+      <td>${rowMenu(a.code + ' ' + a.name, [{ t: 'Edit', js: `coaForm(${a.id})` }, { t: a.is_active ? 'Nonaktifkan' : 'Aktifkan', js: `coaToggle(${a.id},${!a.is_active})`, danger: a.is_active }])}</td></tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--mut)">Tidak ada akun yang cocok.</td></tr>'}</table>
     ${pagerNum(d.page, d.pages, d.total, 'coaGoto')}</div>`;
   const q = $('#cq'); let tm;
   q.oninput = () => { clearTimeout(tm); tm = setTimeout(() => { coaSt.q = q.value.trim(); coaSt.page = 1; coaList().then(() => { const n = $('#cq'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); }); }, 300); };
   $('#cj').onchange = e => coaSet('jenis', e.target.value); $('#cjt').onchange = e => coaSet('job_type', e.target.value); $('#cs').onchange = e => coaSet('status', e.target.value);
 }
+const coaToggle = run(async (id, on) => { await api('/coa/' + id, 'PUT', { is_active: on }); toast(on ? 'Akun diaktifkan' : 'Akun dinonaktifkan'); coaList(); });
+const coaGroupToggle = run(async (id, on) => { await api('/coa/headers/' + id, 'PUT', { is_active: on }); toast(on ? 'Kelompok diaktifkan' : 'Kelompok dinonaktifkan'); coaGl(); });
+const coaGroupDelete = run(async (id, label) => { if (!confirm(`Hapus kelompok "${label}"? Hanya kelompok kosong yang bisa dihapus. Tindakan ini tidak bisa dibatalkan.`)) return; await api('/coa/headers/' + id, 'DELETE'); toast('Kelompok dihapus'); coaGl(); });
 const coaSet = (k, v) => { coaSt[k] = v; coaSt.page = 1; coaList(); };
 const coaReset = () => { coaSt = { q: '', jenis: '', job_type: '', status: '', page: 1 }; coaList(); };
 const coaGoto = n => { coaSt.page = n; coaList(); };
@@ -82,7 +85,8 @@ async function coaGl() {
     ${COA_JENIS.map(([c, l]) => {
       const hs = coaHeaders.filter(h => h.jenis === c), g = coaHasGroup(c);
       return `<section class="card tw glcard" aria-label="${l}"><h3 class="glh">${l} <span class="hc-n">${hs.length}</span></h3><table><tr><th>Sub Header</th>${g ? '<th>Group Account</th>' : ''}<th class="num">Akun aktif / total</th><th>Status</th><th>Aksi</th></tr>
-        ${hs.map(h => `<tr class="${h.is_active ? '' : 'dim'}"><td>${esc(h.sub_header)}</td>${g ? `<td>${esc(h.group_account)}</td>` : ''}<td class="num">${h.active_accounts} / ${h.accounts}</td><td>${coaStatus(h.is_active)}</td><td><button class="btn sec sm" onclick="coaGroupForm(${h.id})">Edit</button></td></tr>`).join('')
+        ${hs.map(h => `<tr class="${h.is_active ? '' : 'dim'}"><td>${esc(h.sub_header)}</td>${g ? `<td>${esc(h.group_account)}</td>` : ''}<td class="num">${h.active_accounts} / ${h.accounts}</td><td>${coaStatus(h.is_active)}</td><td>${rowMenu(h.label, [{ t: 'Edit', js: `coaGroupForm(${h.id})` }, { t: h.is_active ? 'Nonaktifkan' : 'Aktifkan', js: `coaGroupToggle(${h.id},${!h.is_active})`, danger: h.is_active },
+          { t: 'Hapus', js: `coaGroupDelete(${h.id},'${h.label.replace(/['"]/g, '')}')`, danger: true, disabled: h.accounts > 0, title: h.accounts > 0 ? `Berisi ${h.accounts} akun: nonaktifkan saja` : '' }])}</td></tr>`).join('')
           || `<tr><td colspan="${g ? 5 : 4}" style="text-align:center;color:var(--mut)">Belum ada kelompok.</td></tr>`}</table></section>`;
     }).join('')}`;
 }

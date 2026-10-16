@@ -15,7 +15,8 @@ async function cuList() {
     <button class="btn sec" onclick="cuReset()">Reset</button><span style="flex:1"></span><button class="btn sec out" onclick="cuExport()">Download Excel</button><button class="btn" onclick="cuForm()">+ Tambah Customer</button></div>
     <div class="card tw"><table><tr><th>Kode</th><th>Nama</th><th>Kota</th><th>Telepon</th><th>Email</th><th>NPWP</th><th class="num">JO</th><th>Status</th><th>Aksi</th></tr>
     ${d.rows.map(c => `<tr class="${c.is_active ? '' : 'dim'}"><td><b class="cnum">${esc(c.code)}</b>${c.needs_code_review ? ' <span class="lgc inc" title="Kode berasal dari data lama dan belum ditinjau">Tinjau</span>' : ''}</td><td class="wrap">${esc(c.name)}</td><td>${esc(c.city || '—')}</td><td>${esc(c.phone || '—')}</td><td>${esc(c.email || '—')}</td><td>${esc(c.tax_no || '—')}</td>
-      <td class="num">${c.jo_count ? `<a href="#" onclick="cuJos(${c.id});return false" title="Lihat Job Order customer ini">${fmtN(c.jo_count)}</a>` : '0'}</td><td>${cuStatus(c)}</td><td style="white-space:nowrap"><button class="btn sec sm" onclick="cuForm(${c.id})">Edit</button></td></tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--mut)">Tidak ada customer yang cocok.</td></tr>'}</table>
+      <td class="num">${c.jo_count ? `<a href="#" onclick="cuJos(${c.id});return false" title="Lihat Job Order customer ini">${fmtN(c.jo_count)}</a>` : '0'}</td><td>${cuStatus(c)}</td><td>${rowMenu(c.code + ' ' + c.name, [{ t: 'Edit', js: `cuForm(${c.id})` }, { t: c.is_active ? 'Nonaktifkan' : 'Aktifkan', js: `cuToggle(${c.id},${!c.is_active})`, danger: c.is_active },
+        { t: 'Hapus', js: `cuDelete(${c.id},'${c.name.replace(/['"]/g, '')}')`, danger: true, disabled: c.jo_count > 0, title: c.jo_count > 0 ? `Dipakai ${c.jo_count} Job Order: nonaktifkan saja` : '' }])}</td></tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--mut)">Tidak ada customer yang cocok.</td></tr>'}</table>
     ${pagerNum(d.page, d.pages, d.total, 'cuGoto')}</div>`;
   const q = $('#cuq'); let tm;
   q.oninput = () => { clearTimeout(tm); tm = setTimeout(() => { cuSt.q = q.value.trim(); cuSt.page = 1; cuList().then(() => { const n = $('#cuq'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); }); }, 300); };
@@ -52,4 +53,5 @@ function cuForm(id) {
     catch (er) { $('#cusave').disabled = false; coaFieldErrors(er, fm); }
   };
 }
+const cuToggle = run(async (id, on) => { await api(`/customers/${id}/${on ? 'activate' : 'deactivate'}`, 'POST'); toast(on ? 'Customer diaktifkan' : 'Customer dinonaktifkan'); cuList(); });
 const cuDelete = run(async (id, name) => { if (!confirm(`Hapus customer ${name}? Tindakan ini tidak bisa dibatalkan.`)) return; await api('/customers/' + id, 'DELETE'); closeMd(); toast('Customer dihapus'); cuList(); });

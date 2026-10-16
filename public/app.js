@@ -61,16 +61,38 @@ function pagerNum(page, pages, total, fn) {
 }
 // nilai ganda: yang pertama + lencana "+n" (tooltip berisi semua)
 const multi = (list, cls = '') => !list.length ? '-' : `${esc(list[0])}${list.length > 1 ? `<span class="more ${cls}" title="${esc(list.join('\n'))}">+${list.length - 1}</span>` : ''}`;
+// Kolom "Aksi" seragam di semua menu: tombol ⋯ + daftar item. items: [{ t: 'Edit', js: 'userForm(1)', danger, disabled, title }] (item falsy dilewati).
+// Penyembunyian per izin lewat PERM_BTN (mengecek isi onclick); bila semua item tersembunyi, tombol ⋯ ikut disembunyikan.
+function rowMenu(label, items, glyph = '⋯') {
+  const its = items.filter(Boolean);
+  if (!its.length) return '';
+  return `<div class="menu"><button class="ib" type="button" aria-label="Aksi ${esc(label)}" aria-haspopup="menu" aria-expanded="false" onclick="menuToggle(this)">${glyph}</button><div class="menu-list" role="menu">${its.map(i =>
+    `<button role="menuitem" type="button" class="${i.danger ? 'danger' : ''}" ${i.disabled ? 'disabled' : ''} ${i.title ? `title="${esc(i.title)}"` : ''} onclick="${esc(i.js)}">${esc(i.t)}</button>`).join('')}</div></div>`;
+}
 // menu aksi "⋯": daftar menu dipindah ke <body> saat dibuka (kartu kaca memakai backdrop-filter, yang membuat posisi fixed relatif ke kartu)
-const menuClose = () => { document.querySelectorAll('body > .menu-list').forEach(x => x.remove()); document.querySelectorAll('.menu.open').forEach(x => x.classList.remove('open')); };
+let menuBtnOpen = null;
+const menuClose = (focusBack = false) => {
+  document.querySelectorAll('body > .menu-list').forEach(x => x.remove());
+  document.querySelectorAll('.menu.open').forEach(x => { x.classList.remove('open'); x.querySelector('.ib')?.setAttribute('aria-expanded', 'false'); });
+  if (focusBack === true && menuBtnOpen?.isConnected) menuBtnOpen.focus();
+  menuBtnOpen = null;
+};
+// keyboard: panah atas/bawah, Home/End berpindah item; Esc menutup dan mengembalikan fokus; Tab menutup
+function menuKey(e) {
+  const items = [...e.currentTarget.querySelectorAll('button:not(:disabled)')], i = items.indexOf(document.activeElement);
+  if (e.key === 'Escape') { e.preventDefault(); menuClose(true); }
+  else if (e.key === 'Tab') menuClose();
+  else if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key) && items.length) { e.preventDefault(); items[e.key === 'Home' ? 0 : e.key === 'End' ? items.length - 1 : (i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length].focus(); }
+}
 function menuToggle(btn) {
   const m = btn.parentElement, wasOpen = m.classList.contains('open');
   menuClose();
   if (wasOpen) return;
   const list = m.querySelector('.menu-list').cloneNode(true), r = btn.getBoundingClientRect();
-  list.classList.add('floating'); list.addEventListener('click', () => setTimeout(menuClose));
-  document.body.appendChild(list); m.classList.add('open'); menuAt = Date.now();
+  list.classList.add('floating'); list.addEventListener('click', () => setTimeout(menuClose)); list.addEventListener('keydown', menuKey);
+  document.body.appendChild(list); m.classList.add('open'); btn.setAttribute('aria-expanded', 'true'); menuAt = Date.now(); menuBtnOpen = btn;
   list.style.top = Math.min(r.bottom + 4, innerHeight - list.offsetHeight - 8) + 'px'; list.style.left = Math.max(8, r.right - list.offsetWidth) + 'px';
+  list.querySelector('button:not(:disabled)')?.focus();
 }
 document.addEventListener('click', e => { if (!e.target.closest('.menu')) menuClose(); });
 let menuAt = 0; // scroll yang terjadi tepat setelah menu dibuka (mis. scroll-ke-tampilan oleh klik) diabaikan
@@ -196,7 +218,7 @@ function labelTables() {
 const PERM_BTN = [[/^joNew\(|^joForm\(null|^joDup\(/, 'jo.create'], [/^joForm\(/, 'jo.update'], [/^joSetStatus\(/, 'jo.update'], [/^joDelete\(|^joMatDelete\(|^joDocDelete\(/, 'jo.delete'],
   [/^joExport\(|^joTemplate\(/, 'jo.export'], [/^joImport\(/, 'jo.create'], [/^joMatForm\(\)/, 'jo.create'], [/^joMatForm\(/, 'jo.update'],
   [/^hoExport\(|^hoDl\(/, 'ho.export'], [/^hoTicketForm\(\)/, 'ho.create'], [/^hoTicketForm\(/, 'ho.update'], [/^hoDelTicket\(|^hoDelMat\(|^hoDelSj\(/, 'ho.delete'],
-  [/^coaForm\(\)|^coaGroupForm\(\)/, 'coa.create'], [/^coaForm\(|^coaGroupForm\(/, 'coa.update'], [/^coaExport\(/, 'coa.export'], [/^cuForm\(\)/, 'customer.create'], [/^cuForm\(/, 'customer.update'], [/^cuExport\(/, 'customer.export'], [/^cuDelete\(/, 'customer.delete'],
+  [/^coaForm\(\)|^coaGroupForm\(\)/, 'coa.create'], [/^coaForm\(|^coaGroupForm\(/, 'coa.update'], [/^coaExport\(/, 'coa.export'], [/^coaToggle\(|^coaGroupToggle\(/, 'coa.update'], [/^coaGroupDelete\(/, 'coa.delete'], [/^cuToggle\(/, 'customer.update'], [/^userToggle\(/, 'user.update'], [/^joDocDelete\(/, 'jo.delete'], [/^joDocPick\(/, 'jo.update'], [/^cuForm\(\)/, 'customer.create'], [/^cuForm\(/, 'customer.update'], [/^cuExport\(/, 'customer.export'], [/^cuDelete\(/, 'customer.delete'],
   [/^goCheckin\(/, 'checkin.view'], [/^ciReportForm\(\)/, 'checkin.create'], [/^ciReportForm\(/, 'checkin.update'], [/^rekapExport\(/, 'checkin_rekap.export'], [/^rekapOverride\(|^rekapReportEdit\(/, 'checkin_rekap.update'],
   [/^hoSjForm\(\)/, 'ho.create'], [/^hoSjForm\(/, 'ho.update'], [/^hoSjFinish\(/, 'ho.update'], [/^hoMatForm\(/, 'ho.update'], [/^hoRelink\(/, 'ho.update']];
 function applyPerms() {
@@ -206,5 +228,6 @@ function applyPerms() {
     const oc = el.getAttribute('onclick'), hit = PERM_BTN.find(([re]) => re.test(oc));
     if (hit && !can(hit[1])) el.hidden = true;
   });
+  document.querySelectorAll('.menu:not([hidden])').forEach(m => { if (!m.querySelector('.menu-list button:not([hidden])')) m.hidden = true; });
 }
 new MutationObserver(() => requestAnimationFrame(() => { labelTables(); applyPerms(); })).observe(document.body, { childList: true, subtree: true });

@@ -1,7 +1,7 @@
 # LESAT — Sistem Internal PT Lima Sarana Trans
 
 Menu yang sudah jadi: **Dashboard**, **Job Order & Doc**, **Handling Ops** (tiket, Report Material, Trucking Delivery / Surat Jalan), **COA** (FAT › COA: Account Code dan Master General Ledger), **Customer** (Data Master › Customer, kode otomatis), **Check In & Report** (HR › Check In & Report: absensi, laporan harian, rekap HR), serta **User Management** dan **Role Management** (grup ADMINISTRATOR).
-Menu lain di sidebar masih berlabel "segera". Spesifikasi: [docs/spec-customer.md](docs/spec-customer.md), [docs/spec-checkin.md](docs/spec-checkin.md), [docs/spec-coa.md](docs/spec-coa.md), [docs/spec-jo-handling.md](docs/spec-jo-handling.md), audit awal: [docs/audit-jo-handling.md](docs/audit-jo-handling.md).
+Menu lain di sidebar masih berlabel "segera". Konvensi UI kolom Aksi: [docs/ui-aksi.md](docs/ui-aksi.md). Spesifikasi: [docs/spec-customer.md](docs/spec-customer.md), [docs/spec-checkin.md](docs/spec-checkin.md), [docs/spec-coa.md](docs/spec-coa.md), [docs/spec-jo-handling.md](docs/spec-jo-handling.md), audit awal: [docs/audit-jo-handling.md](docs/audit-jo-handling.md).
 
 ## Menjalankan
 ```bash

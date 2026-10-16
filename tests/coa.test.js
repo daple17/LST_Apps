@@ -30,7 +30,7 @@ test('migrasi 007: data awal COA, aman diulang, tidak menimpa perubahan pengguna
   await assert.rejects(q("INSERT INTO coa_accounts (code, name, header_id) VALUES (11010, 'DOBEL', 1)"), /Duplicate/);
   // izin: coa tersedia, ekspor ada, tidak ada hapus; Super Admin ikut memegangnya
   const sa = (await q("SELECT p.permission FROM role_permissions p JOIN roles r ON r.id=p.role_id WHERE r.name='Super Admin'")).map(r => r.permission);
-  assert.ok(sa.includes('coa.export') && !sa.some(p => p === 'coa.delete')); assert.equal(sa.length, P.ALL_PERMISSIONS.length);
+  assert.ok(sa.includes('coa.export') && sa.includes('coa.delete')); assert.equal(sa.length, P.ALL_PERMISSIONS.length);
 });
 
 const jwt = require('jsonwebtoken'), ExcelJS = require('exceljs'), cfg = require('../config');
@@ -129,7 +129,14 @@ test('API COA: daftar, filter, validasi, ubah, kelompok, ekspor, izin, audit', a
   for (const [m, u] of [['GET', '/coa'], ['GET', '/coa/headers'], ['GET', '/coa/export'], ['POST', '/coa'], ['PUT', '/coa/1'], ['POST', '/coa/headers'], ['PUT', '/coa/headers/1']]) assert.equal((await none(m, u, {})).status, 403, 'tanpa ' + m + u);
   assert.equal((await view('GET', '/coa')).status, 200); assert.equal((await view('GET', '/coa/headers')).status, 200);
   for (const [m, u] of [['GET', '/coa/export'], ['POST', '/coa'], ['PUT', '/coa/1'], ['POST', '/coa/headers'], ['PUT', '/coa/headers/1']]) assert.equal((await view(m, u, {})).status, 403, 'lihat ' + m + u);
-  for (const u of ['/coa/1', '/coa/headers/1', '/coa']) { assert.equal((await app.del(u)).status, 403); }
+  // akun tidak pernah dihapus (405 bahkan untuk Super Admin); kelompok hanya bila kosong dan butuh coa.delete
+  r = await app.del('/coa/1'); assert.equal(r.status, 405); assert.match(r.data.error, /tidak dihapus/);
+  const full = (await q('SELECT id FROM coa_headers WHERE id=?', [hid('ASET', 'Aktiva Lancar')]))[0].id; r = await app.del(`/coa/headers/${full}`); assert.equal(r.status, 400); assert.match(r.data.error, /masih berisi 10 akun/);
+  const empty = (await app.post('/coa/headers', { jenis: 'BEBAN', sub_header: 'Biaya Operasional', group_account: 'Kelompok Kosong Uji' })).data.id;
+  const delU = as(await mk('hapusgrp', ['coa.view', 'coa.update'])); assert.equal((await delU('DELETE', `/coa/headers/${empty}`)).status, 403);             // tanpa coa.delete
+  assert.equal((await app.del(`/coa/headers/${empty}`)).status, 200); assert.equal((await app.del(`/coa/headers/${empty}`)).status, 404);
+  assert.ok((await q("SELECT 1 FROM audit_log WHERE entity_type='coa_group' AND action='Dihapus'")).length === 1);
+  assert.equal((await app.get('/coa/headers')).data.length, 32);                                                                                            // 30 awal + 'Aktiva Lainnya' + 'Biaya Baru Sekali'; kelompok kosong uji sudah terhapus
   assert.equal((await q('SELECT COUNT(*) n FROM coa_accounts'))[0].n, 367);                                                  // 365 + 2 akun uji: tidak ada yang terhapus
 
   // audit
