@@ -298,7 +298,7 @@ const hoSjForm = run(async id => {
     <div class="kv"><div><span>Customer:</span> <b>${esc([...new Set(t.jos.map(j => j.customer_name))].join(', '))}</b></div><div><span>PIC Ops:</span> <b>${esc(id ? s.pic_name : look.me?.name || uname)}</b></div><div><span>No. ID:</span> <b>${esc(id ? s.employee_no : look.me?.employee_no || '-')}</b></div></div>
     <div class="g" style="margin-top:14px"><div><label>Nopol *</label><input name="nopol" placeholder="Input Nomor Polisi" value="${esc(s.nopol)}" required></div><div><label>No Hp</label><input name="phone" placeholder="Input Nomor Handphone" value="${esc(s.phone)}"></div>
     <div><label>Driver *</label><input name="driver" placeholder="Input Nama Driver" value="${esc(s.driver)}" required></div>
-    <div><label>Vendor <a href="#" onclick="hoVendorAdd();return false">+ baru</a></label><select name="vendor_id" id="sv"><option value="">Pilih Vendor</option>${look.vendors.map(v => `<option value="${v.id}" ${v.id == s.vendor_id ? 'selected' : ''}>${esc(v.code)} · ${esc(v.name)}</option>`).join('')}</select></div>
+    <div><label>Vendor <a href="#" onclick="hoVendorAdd();return false">+ baru</a></label><select name="vendor_id" id="sv"><option value="">Pilih Vendor</option>${look.vendors.filter(v => v.is_active !== false || v.id == s.vendor_id).map(v => `<option value="${v.id}" ${v.id == s.vendor_id ? 'selected' : ''}>${esc(v.code)} · ${esc(v.name)}${v.is_active === false ? ' (nonaktif)' : ''}</option>`).join('')}</select></div>
     <div><label>Masuk pabrik (opsional)</label><input name="entry_at" type="datetime-local" value="${dtLocal(s.entry_at)}"></div><div><label>Keluar pabrik (opsional)</label><input name="exit_at" type="datetime-local" value="${dtLocal(s.exit_at)}"></div>
     ${id ? `<div><label>Start Loading (koreksi)</label><input name="start_loading" type="datetime-local" value="${tsLocal(s.start_at)}"></div><div><label>Finish Loading (kosongkan jika belum selesai)</label><input name="finish_loading" type="datetime-local" value="${tsLocal(s.finish_at)}"></div>` : ''}</div>
     ${id ? '' : '<p class="warn-note" style="color:var(--mut)">Start Loading dicatat saat surat jalan disimpan. Tekan <b>Finish Loading</b> di daftar surat jalan setelah pemuatan selesai.</p>'}
@@ -351,14 +351,14 @@ const hoFindMat = run(async enter => {
 let hoPickRows = [];
 const hoVendorAdd = () => {
   $('#qa').innerHTML = `<div class="modal" style="z-index:9"><div class="card" id="vf" style="max-width:420px"><h3 style="margin-top:0">Vendor Baru</h3>
-    <div><label>Kode (2-10 huruf/angka)</label><input id="vc" maxlength="10" style="text-transform:uppercase"></div><div style="margin-top:10px"><label>Nama</label><input id="vn"></div><div class="err" id="qe"></div>
+    <p class="muted2" style="margin:0 0 4px">Kode vendor dibuat otomatis.</p><div style="margin-top:6px"><label>Nama</label><input id="vn"></div><div class="err" id="qe"></div>
     <div class="acts"><button type="button" class="btn sec" onclick="$('#qa').innerHTML=''">Batal</button><button type="button" class="btn" onclick="hoVendorSave()">Simpan</button></div></div></div>`;
 };
 const hoVendorSave = async () => {
   try {
-    const r = await api('/vendors', 'POST', { code: $('#vc').value, name: $('#vn').value });
-    look.vendors = await api('/vendors');
-    $('#sv').innerHTML = '<option value="">Pilih Vendor</option>' + look.vendors.map(v => `<option value="${v.id}">${esc(v.code)} · ${esc(v.name)}</option>`).join('');
+    const r = await api('/vendors', 'POST', { name: $('#vn').value });
+    look = { ...(await api('/lookups')) };
+    $('#sv').innerHTML = '<option value="">Pilih Vendor</option>' + look.vendors.filter(v => v.is_active !== false).map(v => `<option value="${v.id}">${esc(v.code)} · ${esc(v.name)}</option>`).join('');
     $('#sv').value = r.id; $('#qa').innerHTML = '';
   } catch (x) { $('#qe').textContent = x.message; }
 };

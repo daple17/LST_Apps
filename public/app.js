@@ -15,14 +15,14 @@ const MENU = [['HOME', [['Dashboard', 'home', 'home']]],
   ['FAT', [['Invoice & Tax'], ['Penerimaan'], ['Overhead'], ['Liability'], ['Equity'], ['Asset'], ['Financial Statement'], ['COA', 'coa', 'coa']]],
   ['APPROVAL', [['Submission', null, 'approval'], ['Expenses', null, 'approval'], ['Job Complete', null, 'approval'], ['Payment', null, 'approval']]],
   ['HR (SDM)', [['Employees'], ['Partner'], ['Check In & Report', 'checkin', 'checkin'], ['Loans']]],
-  ['DATA MASTER', [['Trailer'], ['Rute'], ['Customer', 'customer', 'customer'], ['Vendor', null, 'vendor'], ['Shipper', null, 'shipper'], ['PIB / PEB'], ['Unit', null, 'unit']]],
+  ['DATA MASTER', [['Trailer'], ['Rute'], ['Customer', 'customer', 'customer'], ['Vendor', 'vendor', 'vendor'], ['Shipper', null, 'shipper'], ['PIB / PEB'], ['Unit', null, 'unit']]],
   ['ADMINISTRATOR', [['User Management', 'users', 'user'], ['Role Management', 'roles', 'role']]]];
 let me = null; // pengguna login: role + izin (GET /api/me)
 const can = code => !!me?.permissions?.includes(code);
 // item sidebar terlihat bila tidak dipetakan ke modul, atau user punya izin lihat modul itu
 const menuVisible = ([, , m]) => !m || can(m + '.view') || (m === 'checkin' && can('checkin_rekap.view'));
 // halaman -> modul izin; halaman tanpa izin lihat tidak dibuka
-const ROUTE_MOD = { home: 'home', plan: 'home', jo: 'jo', ho: 'ho', users: 'user', roles: 'role', coa: 'coa', checkin: 'checkin', customer: 'customer' };
+const ROUTE_MOD = { home: 'home', plan: 'home', jo: 'jo', ho: 'ho', users: 'user', roles: 'role', coa: 'coa', checkin: 'checkin', customer: 'customer', vendor: 'vendor' };
 let token = localStorage.getItem('tk'), uname = localStorage.getItem('un'), look = { customers: [], shippers: [] };
 
 async function raw(url, method = 'GET', body) {
@@ -187,6 +187,7 @@ function route() {
   if (!can(mod + '.view') && !(r === 'checkin' && can('checkin_rekap.view'))) return noAccess(location.hash.slice(1) ? '' : firstAllowed());
   if (r === 'coa') return coaRoute(rest);
   if (r === 'customer') return customerRoute();
+  if (r === 'vendor') return vendorRoute();
   if (r === 'checkin') return checkinRoute(rest);
   if (r === 'users') return usersRoute();
   if (r === 'roles') return rolesRoute();
@@ -196,7 +197,7 @@ function route() {
   joRoute(rest);
 }
 // halaman pertama yang boleh dibuka user (bila beranda tidak diizinkan)
-const firstAllowed = () => ['home', 'jo', 'ho', 'coa', 'checkin', 'customer', 'users', 'roles'].find(r => can(ROUTE_MOD[r] + '.view') || (r === 'checkin' && can('checkin_rekap.view')));
+const firstAllowed = () => ['home', 'jo', 'ho', 'coa', 'checkin', 'customer', 'vendor', 'users', 'roles'].find(r => can(ROUTE_MOD[r] + '.view') || (r === 'checkin' && can('checkin_rekap.view')));
 function noAccess(goto) {
   if (goto) { location.hash = '#' + goto; return; }
   $('#ttl').textContent = 'Tidak punya akses';
@@ -218,7 +219,7 @@ function labelTables() {
 const PERM_BTN = [[/^joNew\(|^joForm\(null|^joDup\(/, 'jo.create'], [/^joForm\(/, 'jo.update'], [/^joSetStatus\(/, 'jo.update'], [/^joDelete\(|^joMatDelete\(|^joDocDelete\(/, 'jo.delete'],
   [/^joExport\(|^joTemplate\(/, 'jo.export'], [/^joImport\(/, 'jo.create'], [/^joMatForm\(\)/, 'jo.create'], [/^joMatForm\(/, 'jo.update'],
   [/^hoExport\(|^hoDl\(/, 'ho.export'], [/^hoTicketForm\(\)/, 'ho.create'], [/^hoTicketForm\(/, 'ho.update'], [/^hoDelTicket\(|^hoDelMat\(|^hoDelSj\(/, 'ho.delete'],
-  [/^coaForm\(\)|^coaGroupForm\(\)/, 'coa.create'], [/^coaForm\(|^coaGroupForm\(/, 'coa.update'], [/^coaExport\(/, 'coa.export'], [/^coaToggle\(|^coaGroupToggle\(/, 'coa.update'], [/^coaGroupDelete\(/, 'coa.delete'], [/^cuToggle\(/, 'customer.update'], [/^userToggle\(/, 'user.update'], [/^joDocDelete\(/, 'jo.delete'], [/^joDocPick\(/, 'jo.update'], [/^cuForm\(\)/, 'customer.create'], [/^cuForm\(/, 'customer.update'], [/^cuExport\(/, 'customer.export'], [/^cuDelete\(/, 'customer.delete'],
+  [/^coaForm\(\)|^coaGroupForm\(\)/, 'coa.create'], [/^coaForm\(|^coaGroupForm\(/, 'coa.update'], [/^coaExport\(/, 'coa.export'], [/^coaToggle\(|^coaGroupToggle\(/, 'coa.update'], [/^coaGroupDelete\(/, 'coa.delete'], [/^cuToggle\(/, 'customer.update'], [/^userToggle\(/, 'user.update'], [/^joDocDelete\(/, 'jo.delete'], [/^joDocPick\(/, 'jo.update'], [/^vnForm\(\)/, 'vendor.create'], [/^vnForm\(/, 'vendor.update'], [/^vnToggle\(/, 'vendor.update'], [/^vnExport\(/, 'vendor.export'], [/^vnDelete\(/, 'vendor.delete'], [/^cuForm\(\)/, 'customer.create'], [/^cuForm\(/, 'customer.update'], [/^cuExport\(/, 'customer.export'], [/^cuDelete\(/, 'customer.delete'],
   [/^goCheckin\(/, 'checkin.view'], [/^ciReportForm\(\)/, 'checkin.create'], [/^ciReportForm\(/, 'checkin.update'], [/^rekapExport\(/, 'checkin_rekap.export'], [/^rekapOverride\(|^rekapReportEdit\(/, 'checkin_rekap.update'],
   [/^hoSjForm\(\)/, 'ho.create'], [/^hoSjForm\(/, 'ho.update'], [/^hoSjFinish\(/, 'ho.update'], [/^hoMatForm\(/, 'ho.update'], [/^hoRelink\(/, 'ho.update']];
 function applyPerms() {

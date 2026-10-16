@@ -63,7 +63,7 @@ function createApp(pool, opts = {}) {   // opts.now: jam server yang bisa digant
   app.get('/api/lookups', wrap(async (req, res) => {
     const customers = (await pool.query('SELECT id,code,name,is_active FROM customers ORDER BY name'))[0].map(c => ({ ...c, is_active: !!c.is_active }));
     const [shippers] = await pool.query('SELECT id,name FROM shippers ORDER BY name');
-    const [vendors] = await pool.query('SELECT id,code,name FROM vendors ORDER BY code');
+    const vendors = (await pool.query('SELECT id,code,name,is_active FROM vendors ORDER BY code'))[0].map(v => ({ ...v, is_active: !!v.is_active }));
     const [[me]] = await pool.query('SELECT name,employee_no FROM users WHERE id=?', [req.user.id]);
     res.json({ customers, shippers, vendors, me, rules: rules.client, permissions: permissions.client });
   }));
@@ -74,17 +74,6 @@ function createApp(pool, opts = {}) {   // opts.now: jam server yang bisa digant
     const [r] = await pool.query('INSERT INTO shippers (name) VALUES (?)', [name]);
     res.json({ id: r.insertId });
   }));
-  app.get('/api/vendors', wrap(async (req, res) => res.json((await pool.query('SELECT id,code,name FROM vendors ORDER BY code'))[0])));
-  app.post('/api/vendors', requirePerm('vendor.create'), wrap(async (req, res) => {
-    const code = String(req.body.code || '').trim().toUpperCase(), name = String(req.body.name || '').trim();
-    if (!/^[A-Z0-9 ]{2,10}$/.test(code)) return bad(res, 'Kode vendor 2-10 huruf/angka');
-    if (!name) return bad(res, 'Nama wajib diisi');
-    const [[d]] = await pool.query('SELECT id FROM vendors WHERE code=?', [code]);
-    if (d) return bad(res, 'Kode sudah dipakai');
-    const [r] = await pool.query('INSERT INTO vendors (code,name) VALUES (?,?)', [code, name]);
-    res.json({ id: r.insertId });
-  }));
-
   const jo = require('./routes/job-orders'), handling = require('./routes/handling')(pool);
   const JO_EXPORT = [['GET', /^\/export$/, 'export'], ['GET', /^\/\d+\/materials\/template$/, 'export']];
   app.use('/api/job-orders', guard('jo', JO_EXPORT));
@@ -97,6 +86,7 @@ function createApp(pool, opts = {}) {   // opts.now: jam server yang bisa digant
   app.use('/api/checkin', guard('checkin'), require('./routes/checkin').router(pool, opts));
   app.use('/api/checkin-rekap', guard('checkin_rekap', [['GET', /^\/export$/, 'export']]), require('./routes/checkin-rekap')(pool, opts));
   app.use('/api/customers', guard('customer', [['GET', /^\/export$/, 'export'], ['GET', /^\/suggest-code$/, 'create'], ['POST', /^\/\d+\/(de)?activate$/, 'update']]), require('./routes/customers')(pool));
+  app.use('/api/vendors', guard('vendor', [['GET', /^\/export$/, 'export'], ['GET', /^\/suggest-code$/, 'create'], ['POST', /^\/\d+\/(de)?activate$/, 'update']]), require('./routes/vendors')(pool));
   app.use('/api/coa', guard('coa', [['GET', /^\/export$/, 'export']]), require('./routes/coa')(pool));
   app.use('/api/roles', guard('role'), require('./routes/roles')(pool));
   app.use('/api/job-orders', require('./routes/jo-materials')(pool, { refreshTickets: handling.refreshForJo }));

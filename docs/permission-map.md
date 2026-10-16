@@ -30,6 +30,8 @@ Seluruh router: `GET /upcoming`, `/plan`, `/tickets`.
 ## Data master
 **Customer (`customer.*`) — `/api/customers/*`:** GET `/`, `/:id` → `customer.view`; GET `/export` → `customer.export`; GET `/suggest-code`, POST `/` → `customer.create`; PUT `/:id`, POST `/:id/activate|deactivate` → `customer.update`; DELETE `/:id` → `customer.delete`.
 
+**Vendor (`vendor.*`) — `/api/vendors/*`:** GET `/`, `/:id`, `/countries` → `vendor.view`; GET `/export` → `vendor.export`; GET `/suggest-code`, POST `/` → `vendor.create`; PUT `/:id`, POST `/:id/activate|deactivate` → `vendor.update`; DELETE `/:id` → `vendor.delete` (ditolak bila dipakai surat jalan).
+
 | Route | Izin |
 |---|---|
 | POST `/api/shippers` | `shipper.create` |
