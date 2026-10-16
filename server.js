@@ -11,6 +11,9 @@ const audit = require('./lib/audit');
 function createApp(pool, opts = {}) {   // opts.now: jam server yang bisa diganti di tes (selalu jam server, bukan klien)
   const app = express();
   app.set('trust proxy', 1); // di belakang proxy Railway: req.ip = IP klien (untuk pembatasan login)
+  // halaman dan API driver (tanpa login): dipasang SEBELUM parser 25 MB global dan middleware auth /api; punya batas body sendiri (±12 MB)
+  app.use('/api/pub/d', require('./routes/driver-public')(pool));
+  app.get('/d/:token', (req, res) => res.set({ 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer', 'X-Robots-Tag': 'noindex, nofollow' }).sendFile(path.join(__dirname, 'public', 'driver.html')));
   app.use(express.json({ limit: '25mb' }));
   for (const f of ['code128', 'idfmt']) app.get(`/shared/${f}.js`, (req, res) => res.sendFile(path.join(__dirname, 'lib', `${f}.js`))); // satu berkas untuk server & browser
   app.use(express.static(path.join(__dirname, 'public')));

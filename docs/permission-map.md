@@ -86,3 +86,5 @@ Seluruh router: `GET /upcoming`, `/plan`, `/tickets`.
 - Tombol di layar disembunyikan sesuai izin (`PERM_BTN` di `public/app.js`), tetapi yang menentukan tetap server.
 
 **Tracking surat jalan (`ho.*`) — `/api/ho/sj/:id/*`:** GET `tracking`, `qr.svg` → `ho.view`; POST `ready`, `complete`, `reopen`, `tracking/step`, `tracking/undo`, `tracking/link/revoke|regenerate|unlock` → `ho.update`. (Endpoint publik driver `/api/pub/d/:token/*`: tanpa login, dibatasi token + verifikasi nopol; ditambahkan di tahap 3.)
+
+**Endpoint publik driver — tanpa login, dibatasi token + verifikasi nopol** (`/api/pub/d/:token/*`, dipasang sebelum middleware auth): GET `/` (info minimal: no. surat jalan, rute, status tautan), POST `/verify` (4 angka nopol → sesi), GET `/sj`, POST `/step`, POST `/deliver` (butuh sesi). Halaman: `/d/:token`. Tidak ada izin modul; akses hanya ke satu surat jalan dan hanya aksi status + foto bukti terima.
