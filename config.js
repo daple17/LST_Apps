@@ -16,4 +16,5 @@ if (isProd && !(e.JWT_SECRET || '').trim()) {
   console.error(`JWT_SECRET wajib diisi di production. JWT_SECRET ${'JWT_SECRET' in e ? 'ada tapi kosong' : 'tidak ditemukan'}. Variabel terkait yang terbaca: ${seen}`);
   process.exit(1);
 }
+if (isProd && !(e.PUBLIC_URL || '').trim()) console.warn('PUBLIC_URL belum diisi: tautan driver dan surat jalan digital memakai alamat yang sedang dibuka (disarankan diisi dengan domain HTTPS tetap).');
 module.exports = { isProd, seedDummy: e.SEED_DUMMY || '', db, secret: e.JWT_SECRET || 'lesat-dev-secret', uploadDir: e.UPLOAD_DIR || require('path').join(__dirname, 'uploads'), adminPassword: e.ADMIN_PASSWORD || (isProd ? '' : 'admin123') };

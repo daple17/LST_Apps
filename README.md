@@ -43,6 +43,7 @@ Login awal lokal: `admin` / `admin123` (role Super Admin, email `admin@gmail.com
 | `ADMIN_PASSWORD` | **Wajib di production** saat pertama kali jalan (membuat user `admin`) |
 | `MYSQL_URL` atau `MYSQLHOST` `MYSQLPORT` `MYSQLUSER` `MYSQLPASSWORD` `MYSQLDATABASE` | Koneksi MySQL (otomatis dari Railway); lokal bisa `DB_HOST` `DB_PORT` `DB_USER` `DB_PASS` `DB_NAME` |
 | `UPLOAD_DIR` | Folder file upload (dokumen, foto). Di Railway arahkan ke path **Volume**, mis. `/data/uploads` — tanpa Volume, file hilang saat deploy ulang |
+| `PUBLIC_URL` | Opsional. Alamat dasar untuk tautan yang dibagikan (surat jalan digital, tautan driver), mis. `https://lesat.contoh.co.id`. Kosong = alamat yang sedang dipakai membuka aplikasi. Domain pendek membuat barcode surat jalan lebih sempit |
 | `PORT` | Diisi otomatis oleh Railway |
 | `SEED_DUMMY` | `1` = isi data dummy sekali saat start (hanya bila belum ada); `force` = buat ulang. Untuk environment development saja |
 
