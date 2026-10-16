@@ -37,5 +37,5 @@ test('barcode terbaca pemindai (ZXing): modul bulat, nomor SJ nyata', () => {
 });
 test('svg: latar putih (zona tenang) dan lebar piksel bulat per modul', () => {
   const s = C.svg('SJ-20261001-01'), m = C.bars('SJ-20261001-01').modules;
-  assert.match(s, /<rect width="\d+" height="64" fill="#fff"\/>/); assert.match(s, new RegExp(`width="${m * 2}" height="64"`));
+  assert.match(s, /<rect width="\d+" height="32" fill="#fff"\/>/); assert.match(s, new RegExp(`viewBox="0 0 ${m} 32" width="${m * 2}" height="64"`));   // proporsi viewBox = ukuran gambar: tepat 2 px per modul
 });
