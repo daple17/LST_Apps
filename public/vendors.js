@@ -1,5 +1,8 @@
 /* Data Master › Vendor (#vendor). Kode dibuat otomatis oleh server dan tidak bisa diubah (tampil di surat jalan). API: /api/vendors. Kolom aksi: lihat docs/ui-aksi.md. */
 let vnSt = { q: '', status: '', page: 1 }, vnRows = [], vnCountries = null, vnCities = [];
+// Input uang: ribuan otomatis (1000 → 1.000), desimal pakai koma.
+const vnMoney = v => { const [a, b] = String(v).replace(/[^\d,]/g, '').split(','), i = a.replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.'); return b === undefined ? i : `${i},${b.slice(0, 2)}`; };
+const vnInitMoney = v => (v ? vnMoney(String(v).replace('.', ',')) : '');
 const vnStatus = c => !c.is_active ? '<span class="schip off"><i></i>Nonaktif</span>' : '<span class="schip ok"><i></i>Aktif</span>';
 
 function vendorRoute() {
@@ -43,7 +46,7 @@ async function vnForm(id) {
       <div><label for="vf-country">Negara</label><select id="vf-country" name="country_id"><option value="">—</option>${vnCountries.map(x => `<option value="${x.id}" ${+c.country_id === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select><div class="ferr" id="fe-country_id" role="alert"></div></div>
       ${f('pic', 'PIC', 'maxlength="80"')}${f('npwp', 'NPWP', 'maxlength="30"')}</div>
     <h4 style="margin:14px 0 4px">Tarif</h4><p class="muted2" style="margin:0 0 6px">Biaya di PO dihitung: tarif kota + tarif tonase + tarif ritase. Di sini hanya input tarif; isi 0 bila tidak ada.</p>
-    <div class="g">${f('price_ton', 'Tarif tonase (Rp per ton)', 'inputmode="decimal"').replace('value="0"', 'value=""')}${f('price_trip', 'Tarif ritase (Rp per ritase)', 'inputmode="decimal"').replace('value="0"', 'value=""')}</div>
+    <div class="g">${f('price_ton', 'Tarif tonase (Rp per ton)', 'inputmode="decimal" data-money').replace('value="0"', 'value=""')}${f('price_trip', 'Tarif ritase (Rp per ritase)', 'inputmode="decimal" data-money').replace('value="0"', 'value=""')}</div>
     <h4 style="margin:10px 0 4px">Tarif kota</h4>
     <div class="tw"><table id="vr-tbl"><tr><th>Kota</th><th class="num">Tarif kota (Rp)</th><th></th></tr></table></div>
     <div class="ferr" id="fe-rates" role="alert"></div><button type="button" class="btn sec" id="vr-add" style="margin-top:6px">+ Tambah baris kota</button> <button type="button" class="btn sec" id="vr-new" style="margin-top:6px">Kota belum ada di daftar?</button>
@@ -62,7 +65,9 @@ async function vnForm(id) {
       document.querySelectorAll('#vr-tbl select').forEach(sl => { const cur = sl.value; sl.innerHTML = copts(cur); }); toast(r.existing ? `Kota ${r.name} sudah ada di daftar` : `Kota ${r.name} ditambahkan`); }
     catch (er) { toast(er.fields?.name || er.message); }
   };
-  const num = v => { v = v.trim(); return /^\d{1,3}(\.\d{3})+(,\d+)?$/.test(v) || v.includes(',') ? v.replace(/\./g, '').replace(',', '.') : v; };
+  const num = v => v.trim().replace(/\./g, '').replace(',', '.');
+  $('#vnform').addEventListener('input', e => { const t = e.target; if (!t.matches('[data-money]')) return; const pos = t.value.length - t.selectionStart; t.value = vnMoney(t.value); t.setSelectionRange(t.value.length - pos, t.value.length - pos); });
+  $('#vnform').querySelectorAll('#vf-price_ton,#vf-price_trip').forEach(x => { x.value = vnInitMoney(x.value); });
   $('#vf-name').focus();
   if (!id) { let tm; $('#vf-name').oninput = e => { clearTimeout(tm); tm = setTimeout(async () => { const n = e.target.value.trim(); if (n.length < 2) { $('#vf-code').value = ''; return; } try { const r = await api('/vendors/suggest-code?name=' + encodeURIComponent(n)); $('#vf-code').value = r.code; $('#vf-hint').textContent = 'Usulan; kode final ditetapkan saat disimpan.'; } catch { /* usulan opsional */ } }, 300); }; }
   $('#vnform').onsubmit = async e => {
