@@ -1,5 +1,5 @@
 /* Handling Ops: Overview (tickets), Report Material, Trucking Delivery (Surat Jalan) */
-let hoSt = { q: '', progress: '', page: 1, ...monthRange() }, hoMq = { q: '', status: '', page: 1 }, hoSq = { q: '', page: 1 }, hoT = null;
+let hoSt = { q: '', progress: '', page: 1, ...monthRange() }, hoMq = { q: '', status: '', page: 1 }, hoSq = { q: '', status: '', page: 1 }, hoT = null;
 const pct = v => `${Number(v).toFixed(2).replace('.', ',')}%`;
 const pcls = v => (v >= 80 ? 'p-ok' : v >= 40 ? 'p-warn' : 'p-bad'); // <40% merah, 40-79% oranye, >=80% hijau
 const dwell = m => `${Math.floor(m / 1440)} D : ${String(Math.floor(m / 60) % 24).padStart(2, '0')} H : ${String(m % 60).padStart(2, '0')} M`;
@@ -173,7 +173,7 @@ function hoHead(t, tab) {
     <div><span>No. BL:</span> <b>${join('bl_no')}</b></div><div><span>Status JO:</span> <b>${stJo}</b></div></div></div>
     <div class="cards"><div class="card stat s-mat"><b class="${pcls(t.mat_pct)}">${pct(t.mat_pct)}</b><span>Report Material (${t.mat_checked}/${t.mat_total} dicek)</span></div>
     <div class="card stat s-del"><b class="${pcls(t.del_pct)}">${pct(t.del_pct)}</b><span>Trucking Delivery (${fmtN(t.qty_sent)}/${fmtN(t.qty_total)} qty)</span></div>
-    <div class="card stat s-dw"><b>${dwell(t.dwell_min)}</b><span>Dwelling time${t.done_at ? ' (selesai)' : ''}</span></div></div>`;
+    <div class="card stat s-dw"><b>${dwell(t.dwell_min)}</b><span>Dwelling time${t.done_at ? ' (selesai)' : ''}</span></div>${tab === 'trucking' ? '<div class="card trk-card" id="trk-card"></div>' : ''}</div>`;
 }
 const hoDelTicket = run(async id => { if (confirm('Hapus ticket beserta seluruh material dan fotonya?')) { await api('/ho/tickets/' + id, 'DELETE'); location.hash = '#ho'; } });
 const hoLoadT = async id => { hoT = await api('/ho/tickets/' + id); return hoT; };
@@ -277,14 +277,17 @@ const hoTrucking = run(async id => {
 });
 const hoSjList = run(async () => {
   const t = hoT, d = await api(`/ho/tickets/${t.id}/sj?${hoQs(hoSq)}`), s = d.totals;
+  trkCard(d.status_counts);
   $('#hl').innerHTML = `<div class="bar fbar"><input id="sq" placeholder="Search by nopol, driver, no. surat jalan" value="${esc(hoSq.q)}" style="max-width:320px">
+    <select id="sst" aria-label="Filter status pengiriman"><option value="">Semua status</option>${TRK_STATUSES.map(x => `<option value="${x}" ${hoSq.status === x ? 'selected' : ''}>${TRK_LABEL[x]}</option>`).join('')}</select>
     <span class="tag" style="color:var(--ink)">Net ${fmtN(s.net)}</span><span class="tag" style="color:var(--ink)">Gross ${fmtN(s.gross)}</span><span class="tag" style="color:var(--ink)">Qty ${fmtN(s.qty)}</span><span class="tag" style="color:var(--ink)">${s.trips} RIT</span><span style="flex:1"></span>
     <button class="btn sec" onclick="hoCopy(${t.id})">Copy Report</button><button class="btn" ${t.mat_total ? '' : 'disabled'} onclick="hoSjForm()">Buat Surat Jalan</button></div>
-    <div class="card tw"><table><tr><th>No.</th><th>Nomor Polisi</th><th>Driver</th><th>Vendor</th><th>No. Surat Jalan</th><th>Start Loading</th><th>Load Time</th><th class="num">Net Weight</th><th class="num">Gross Weight</th><th class="num">Qty</th><th>Satuan</th><th>Dari</th><th>Tujuan</th><th>Aksi</th></tr>
-    ${d.rows.map((r, i) => `<tr class="row"><td>${(hoSq.page - 1) * 20 + i + 1}</td><td><b>${esc(r.nopol)}</b></td><td>${esc(r.driver)}</td><td>${esc(r.vendor_code)}</td><td>${esc(r.sj_no)}</td><td>${fmtT(r.start_at)}</td><td>${r.finish_at ? loadT(r.load_min) : '<span class="tag NOT_COMP">Loading</span>'}</td><td class="num">${fmtN(r.net_weight)}</td><td class="num">${fmtN(r.gross_weight)}</td><td class="num">${r.qty}</td><td>${esc(r.unit)}</td><td>${esc(r.origin)}</td><td>${esc(r.destination)}</td>
-      <td>${rowMenu(r.sj_no, [{ t: 'Detail', js: `hoSjView(${r.id})` }, !r.finish_at && { t: 'Finish Loading', js: `hoSjFinish(${r.id})` }])}</td></tr>`).join('') || `<tr><td colspan="14" style="text-align:center;color:var(--mut)">${t.mat_total ? 'Belum ada Surat Jalan' : 'Tambahkan material di Report Material terlebih dahulu'}</td></tr>`}</table>
+    <div class="card tw"><table><tr><th>No.</th><th>Nomor Polisi</th><th>Driver</th><th>Vendor</th><th>No. Surat Jalan</th><th>Load Time</th><th class="num">Net Weight</th><th class="num">Qty</th><th>Rute</th><th>Status</th><th>Aksi</th></tr>
+    ${d.rows.map((r, i) => `<tr class="row"><td>${(hoSq.page - 1) * 20 + i + 1}</td><td><b>${esc(r.nopol)}</b></td><td>${esc(r.driver)}</td><td>${esc(r.vendor_code)}</td><td>${esc(r.sj_no)}</td><td>${r.finish_at ? loadT(r.load_min) : '<span class="tag NOT_COMP">Loading</span>'}</td><td class="num">${fmtN(r.net_weight)}</td><td class="num">${r.qty} ${esc(r.unit || '')}</td><td class="trk-route">${esc(r.origin || '-')} &rarr; ${esc(r.destination || '-')}</td><td>${trkCell(r.track)}</td>
+      <td class="trk-act">${r.track.status === 'PLANNING' ? `<button class="btn sm" onclick="hoTrkReady(${r.id})">Tandai Ready</button>` : ''}${r.track.status === 'DELIVERED' ? `<button class="btn sm" onclick="hoTrkComplete(${r.id})">Tandai Completed</button>` : ''}${rowMenu(r.sj_no, [{ t: 'Lihat progress', js: `hoTrk(${r.id})` }, { t: 'Detail', js: `hoSjView(${r.id})` }, canShare(r.track) && { t: 'Bagikan tautan driver', js: `hoTrkShare(${r.id})` }, canShare(r.track) && { t: 'Salin tautan', js: `hoTrkCopy(${r.id})` }, canShare(r.track) && { t: 'Tampilkan QR', js: `hoTrkQr(${r.id})` },
+        { t: 'Edit surat jalan', js: `hoSjForm(${r.id})` }, !r.finish_at && { t: 'Finish Loading', js: `hoSjFinish(${r.id})` }, { t: 'Cetak surat jalan', js: `hoSjPrint(${r.id})` }, canShare(r.track) && { t: 'Cabut tautan', js: `hoTrkRevoke(${r.id})`, danger: true }])}</td></tr>`).join('') || `<tr><td colspan="11" style="text-align:center;color:var(--mut)">${t.mat_total ? 'Belum ada Surat Jalan' : 'Tambahkan material di Report Material terlebih dahulu'}</td></tr>`}</table>
     ${pagerNum(hoSq.page, d.pages, d.total, 'hoSGoto')}</div>`;
-  searchBind('#sq', hoSq, hoSjList);
+  searchBind('#sq', hoSq, hoSjList); $('#sst').onchange = e => { hoSq.status = e.target.value; hoSq.page = 1; hoSjList(); };
 });
 const hoSGoto = n => { hoSq.page = n; hoSjList(); };
 
@@ -416,3 +419,106 @@ const hoRelink = run(async id => {
     catch (er) { $('#rl-err').textContent = er.message; $('#rl-go').disabled = false; }
   };
 });
+
+
+/* ================= TRACKING SURAT JALAN (docs/spec-tracking.md) ================= */
+const TRK_STATUSES = ['PLANNING', 'READY', 'STARTED', 'ARRIVED_PICKUP', 'LOADED', 'IN_TRANSIT', 'ARRIVED_DEST', 'DELIVERED', 'COMPLETED'];
+const TRK_LABEL = { PLANNING: 'Planning', READY: 'Ready', STARTED: 'Berangkat ke lokasi muat', ARRIVED_PICKUP: 'Tiba di lokasi muat', LOADED: 'Selesai muat', IN_TRANSIT: 'Dalam perjalanan', ARRIVED_DEST: 'Tiba di tujuan', DELIVERED: 'Diterima', COMPLETED: 'Completed' };
+const trkGroup = s => (['STARTED', 'ARRIVED_PICKUP', 'LOADED', 'IN_TRANSIT', 'ARRIVED_DEST'].includes(s) ? 'ROAD' : s);
+const LINK_LABEL = { belum_siap: 'Belum siap', aktif: 'Aktif', terkunci: 'Terkunci', dicabut: 'Dicabut', selesai: 'Selesai' };
+const trkClock = iso => (iso ? new Date(iso).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Jakarta' }) : '');
+const trkWhen = iso => (iso ? new Date(iso).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Jakarta' }).replace(' pukul', ',') : '');
+const trkHeld = m => (m >= 60 ? `${Math.floor(m / 60)} j ${m % 60} m` : `${m} m`);
+const canShare = tr => !['dicabut', 'selesai'].includes(tr.link_state);
+function trkCard(c = {}) {
+  const el = $('#trk-card'); if (!el) return;
+  const g = { PLANNING: 0, READY: 0, ROAD: 0, DELIVERED: 0, COMPLETED: 0 }; let total = 0;
+  for (const [s, n] of Object.entries(c)) { g[trkGroup(s)] += n; total += n; }
+  const defs = [['PLANNING', 'Planning'], ['READY', 'Ready'], ['ROAD', 'Di jalan'], ['DELIVERED', 'Diterima'], ['COMPLETED', 'Completed']];
+  el.innerHTML = `<div class="muted2">Status pengiriman (${total} surat jalan)</div><div class="trk-chips">${defs.map(([k, l]) => `<span class="tk-chip c-${k}">${l} ${g[k]}</span>`).join('')}</div>
+    <div class="trk-comp" role="img" aria-label="Komposisi status pengiriman">${defs.filter(([k]) => g[k]).map(([k]) => `<b class="c-${k}" style="flex:${g[k]}"></b>`).join('') || '<b style="flex:1"></b>'}</div>`;
+}
+function trkCell(tr) {
+  const seg = TRK_STATUSES.map((_, i) => `<b class="${i <= tr.steps_done ? (tr.steps_done >= 2 ? 'ok' : 'on') : ''}"></b>`).join('');
+  let cap = '';
+  if (tr.link_state === 'dicabut' && tr.status !== 'COMPLETED') cap = 'Tautan dicabut';
+  else if (tr.status === 'PLANNING') cap = 'Belum Ready';
+  else if (tr.status === 'READY') cap = tr.link_state === 'terkunci' ? 'Tautan terkunci' : tr.link_opened ? 'Tautan dibuka' : 'Tautan belum dibuka';
+  else if (tr.status === 'DELIVERED') cap = 'Foto diterima, tunggu Completed';
+  else if (tr.status === 'COMPLETED') cap = tr.status_at ? trkWhen(tr.status_at) : 'Selesai';
+  else cap = `Sejak ${trkClock(tr.status_at)} · ${trkHeld(tr.held_min)}`;
+  const warn = (tr.stalled ? '<span class="tk-warn bad">Tertahan</span>' : '') + (tr.needs_check.length ? '<span class="tk-warn">Perlu dicek</span>' : '') + (tr.link_state === 'terkunci' && tr.status !== 'READY' ? '<span class="tk-warn bad">Terkunci</span>' : '');
+  return `<span class="tk-chip c-${trkGroup(tr.status)}">${esc(tr.status === 'IN_TRANSIT' ? 'Dalam perjalanan' : TRK_LABEL[tr.status])}</span><div class="trk-seg" aria-hidden="true">${seg}</div><div class="trk-cap">${esc(cap)} ${warn}</div>`;
+}
+const hoSjPrint = id => window.open(`/api/ho/sj/${id}/pdf?t=${token}`, '_blank', 'noopener');
+
+const hoTrkReady = run(async id => { await api(`/ho/sj/${id}/ready`, 'POST'); toast('Ditandai Ready; tautan driver aktif'); hoSjList(); if (hoDrawerId === id) hoTrk(id); });
+const hoTrkComplete = run(async id => { if (!confirm('Tandai surat jalan ini Completed? Setelah ini status terkunci.')) return; await api(`/ho/sj/${id}/complete`, 'POST'); toast('Surat jalan Completed'); hoSjList(); if (hoDrawerId === id) hoTrk(id); });
+const hoTrkRevoke = run(async id => { if (!confirm('Cabut tautan driver? Driver tidak bisa lagi membuka tautan lama.')) return; await api(`/ho/sj/${id}/tracking/link/revoke`, 'POST'); toast('Tautan dicabut'); hoSjList(); if (hoDrawerId === id) hoTrk(id); });
+const hoTrkRegen = run(async id => { if (!confirm('Buat tautan baru? Tautan lama langsung tidak berlaku.')) return; await api(`/ho/sj/${id}/tracking/link/regenerate`, 'POST'); toast('Tautan baru dibuat'); hoSjList(); hoTrk(id); });
+const hoTrkUnlock = run(async id => { await api(`/ho/sj/${id}/tracking/link/unlock`, 'POST'); toast('Kunci dibuka'); hoSjList(); hoTrk(id); });
+const hoTrkUrl = async id => (await api(`/ho/sj/${id}/tracking`)).link;
+const hoTrkCopy = run(async id => {
+  const l = await hoTrkUrl(id); if (l.state === 'dicabut') throw new Error('Tautan dicabut; buat ulang dulu');
+  try { await navigator.clipboard.writeText(l.url); toast('Tautan disalin'); } catch { prompt('Salin tautan ini:', l.url); }
+});
+const waNumber = p => { const d = String(p || '').replace(/\D/g, ''); return d.length < 8 ? '' : d.startsWith('0') ? '62' + d.slice(1) : d; };
+const hoTrkShare = run(async id => {
+  const d = await api(`/ho/sj/${id}/tracking`); if (d.link.state === 'dicabut') throw new Error('Tautan dicabut; buat ulang dulu');
+  const msg = `Halo ${d.driver}, ini tautan pengiriman surat jalan ${d.no_sj} (nopol ${d.nopol}). Buka, masukkan 4 angka nopol, lalu perbarui status di tiap langkah:\n${d.link.url}`;
+  window.open(`https://wa.me/${waNumber(d.link.phone)}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
+});
+const hoTrkQr = run(async id => {
+  const [d, r] = [await api(`/ho/sj/${id}/tracking`), await raw(`/ho/sj/${id}/qr.svg`)]; if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || 'QR tidak tersedia');
+  $('#md').innerHTML = `<div class="modal" onclick="closeMd()"><div class="card" style="width:min(380px,100%);text-align:center" onclick="event.stopPropagation()"><h3 style="margin-top:0">QR tautan driver</h3><div class="trk-qr" role="img" aria-label="QR tautan driver">${await r.text()}</div>
+    <p class="muted2">SJ ${esc(d.no_sj)} · ${esc(d.nopol)}<br>Driver memindai QR ini, lalu memasukkan 4 angka nopol.</p><div class="acts"><button class="btn" onclick="closeMd()">Tutup</button></div></div></div>`;
+});
+
+let hoDrawerId = null, hoTrkForm = null;
+const hoTrkClose = () => { hoDrawerId = null; hoTrkForm = null; closeMd(); };
+const hoTrk = run(async id => {
+  const d = await api(`/ho/sj/${id}/tracking`), l = d.link; hoDrawerId = id;
+  const tags = e => (e ? `<span class="tag">${e.source === 'DRIVER' ? 'Driver' : e.source === 'SYSTEM' ? 'Sistem' : 'Operasional'}</span>${e.manual && e.source === 'OPS' && !['READY', 'PLANNING', 'COMPLETED'].includes(e.status) ? ' <span class="tag">Diinput operasional</span>' : ''}` : '');
+  const stepRow = (st, i, last) => {
+    const e = st.event, done = st.state === 'done', cur = st.state === 'current', skip = st.state === 'skipped';
+    const dot = done || (cur && e) ? '<div class="d"><svg width="11" height="11" viewBox="0 0 12 12"><path d="M2 6.5L5 9.5L10 3" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>' : skip ? '<div class="o sk"></div>' : cur ? '<div class="d cur"><i></i></div>' : '<div class="o"></div>';
+    const who = e && !skip ? `${trkWhen(e.at)} · ${esc(e.by_label || '')}${e.lat != null ? ` · <a href="https://maps.google.com/?q=${e.lat},${e.lng}" target="_blank" rel="noopener">lokasi</a>` : ''}${e.note && e.manual ? ` · ${esc(e.note)}` : ''}${cur && d.warnings.held_min >= 1 && !['PLANNING', 'READY', 'DELIVERED', 'COMPLETED'].includes(st.status) ? ` · sudah ${trkHeld(d.warnings.held_min)}` : ''}` : skip ? 'Dilewati (vendor luar)' : '';
+    return `<div class="st"><div class="ln">${dot}${last ? '' : `<div class="l ${done || skip ? '' : 'g'}"></div>`}</div><div class="bd ${done || cur ? '' : 'muted'}"><b>${TRK_LABEL[st.status]}</b> ${tags(e && !skip ? e : null)}${st.needs_check ? ' <span class="tk-warn">Perlu dicek</span>' : ''}${who ? `<div class="trk-who">${who}</div>` : ''}${st.status === 'DELIVERED' && d.pod ? `<div class="trk-pod"><a href="${photoOf(d.pod.path)}" target="_blank" rel="noopener"><img src="${photoOf(d.pod.path)}" alt="Foto bukti terima"></a>${d.received_by ? `<div class="trk-who">Penerima: ${esc(d.received_by)}</div>` : ''}</div>` : ''}</div></div>`;
+  };
+  const msg = { belum_siap: 'Tautan aktif setelah surat jalan ditandai Ready.', aktif: l.opened_at ? `Dibuka driver ${trkWhen(l.opened_at)}${l.verified_at ? ', nopol terverifikasi' : ''}.` : 'Tautan belum dibuka driver.', terkunci: 'Terkunci karena 5 kali salah memasukkan nopol. Buka kunci setelah memastikan driver benar.', dicabut: l.legacy ? 'Data lama: tidak ada tautan driver.' : 'Tautan dicabut. Buat ulang untuk mengirim tautan baru.', selesai: 'Pengiriman sudah selesai; tautan tidak berlaku.' }[l.state];
+  $('#md').innerHTML = `<div class="drawer-bg" onclick="hoTrkClose()"><aside class="drawer" role="dialog" aria-modal="true" aria-label="Progress surat jalan ${esc(d.no_sj)}" onclick="event.stopPropagation()">
+    <header><div style="flex:1"><div class="muted2">Tiket ${esc(d.ticket_no)}</div><h3>SJ ${esc(d.no_sj)}</h3><div class="muted2">${esc(d.nopol)} · ${esc(d.driver)}${d.vendor_code ? ' · ' + esc(d.vendor_code) : ''}</div></div>
+      <span class="tk-chip c-${trkGroup(d.status)}">${esc(d.label)}</span><button class="ib" aria-label="Tutup" onclick="hoTrkClose()" id="trk-x">&times;</button></header>
+    <div class="trk-body">
+      <section class="trk-link"><div><b>Tautan driver</b> <span class="tk-chip l-${l.state}">${LINK_LABEL[l.state]}</span></div><p class="muted2">Tanpa login. Hanya untuk surat jalan ini. ${esc(msg)}</p>
+        ${l.state === 'dicabut' && l.legacy ? '' : `<input class="trk-url" readonly value="${esc(l.state === 'dicabut' ? '(dicabut)' : l.url)}" aria-label="Tautan driver" onfocus="this.select()">`}
+        <div class="trk-btns">${l.state !== 'dicabut' ? `<button class="btn wa" onclick="hoTrkShare(${id})">Bagikan lewat WhatsApp</button><button class="btn sec" onclick="hoTrkCopy(${id})">Salin</button><button class="btn sec" onclick="hoTrkQr(${id})">QR</button>` : ''}
+          ${l.state === 'terkunci' ? `<button class="btn sec" onclick="hoTrkUnlock(${id})">Buka kunci</button>` : ''}<span style="flex:1"></span>
+          ${!l.legacy && l.state === 'dicabut' ? `<button class="btn sec" onclick="hoTrkRegen(${id})">Buat tautan baru</button>` : ''}${!['dicabut', 'selesai'].includes(l.state) ? `<button class="btn bad ghost" onclick="hoTrkRevoke(${id})">Cabut</button><button class="btn sec" onclick="hoTrkRegen(${id})">Buat ulang</button>` : ''}</div></section>
+      ${d.warnings.stalled ? `<p class="tk-note bad">Tertahan: status ini sudah ${trkHeld(d.warnings.held_min)} tanpa perubahan.</p>` : ''}
+      <div class="trk-h"><b>Progress</b></div>${d.steps.map((st, i) => stepRow(st, i, i === d.steps.length - 1)).join('')}
+      <div class="trk-tools">${d.can.steps.length ? `<button class="btn sec" onclick="hoTrkManual(${id})">Input atas nama driver</button>` : ''}${d.can.undo ? `<button class="btn sec" onclick="hoTrkUndo(${id})">Batalkan langkah terakhir</button>` : ''}${d.can.reopen ? `<button class="btn sec" onclick="hoTrkReopen(${id})">Buka kembali</button>` : ''}</div>
+      <div id="trk-form"></div>
+    </div>
+    <footer><span class="muted2" style="flex:1">${d.status === 'COMPLETED' ? 'Surat jalan Completed dan terkunci.' : d.can.complete ? 'Foto bukti terima sudah masuk. Tandai Completed untuk menutup.' : 'Tombol Completed aktif setelah driver mengirim foto diterima.'}</span>
+      <button class="btn" ${d.can.complete ? '' : 'disabled'} onclick="hoTrkComplete(${id})">Tandai Completed</button></footer></aside></div>`;
+  $('#trk-x')?.focus();
+});
+const trkErr = e => `<div class="err" role="alert">${esc(e)}</div>`;
+const hoTrkManual = id => {
+  api(`/ho/sj/${id}/tracking`).then(d => {
+    $('#trk-form').innerHTML = `<form class="trk-fm" id="trkf" novalidate><b>Input atas nama driver</b><label for="tf-s">Langkah</label><select id="tf-s" name="status">${d.can.steps.map(s => `<option value="${s}">${TRK_LABEL[s]}</option>`).join('')}</select>
+      <label for="tf-at">Waktu kejadian (kosong = sekarang)</label><input id="tf-at" name="at" type="datetime-local"><label for="tf-n">Catatan (wajib)</label><input id="tf-n" name="note" maxlength="255" placeholder="Mis. driver melapor lewat telepon"><div id="tf-e"></div>
+      <div class="acts"><button type="button" class="btn sec" onclick="document.getElementById('trk-form').innerHTML=''">Batal</button><button class="btn">Simpan</button></div></form>`;
+    $('#tf-n').focus();
+    $('#trkf').onsubmit = async e => { e.preventDefault(); const f = e.target; try { await api(`/ho/sj/${id}/tracking/step`, 'POST', { status: f.status.value, note: f.note.value, at: f.at.value ? new Date(f.at.value).toISOString() : undefined }); toast('Langkah dicatat'); hoSjList(); hoTrk(id); } catch (x) { $('#tf-e').innerHTML = trkErr(x.message); } };
+  });
+};
+const trkReasonForm = (id, title, url, okMsg, btn) => {
+  $('#trk-form').innerHTML = `<form class="trk-fm" id="trkr" novalidate><b>${title}</b><label for="tr-r">Alasan (wajib)</label><input id="tr-r" name="reason" maxlength="255"><div id="tr-e"></div>
+    <div class="acts"><button type="button" class="btn sec" onclick="document.getElementById('trk-form').innerHTML=''">Batal</button><button class="btn bad">${btn}</button></div></form>`;
+  $('#tr-r').focus();
+  $('#trkr').onsubmit = async e => { e.preventDefault(); try { await api(url, 'POST', { reason: e.target.reason.value }); toast(okMsg); hoSjList(); hoTrk(id); } catch (x) { $('#tr-e').innerHTML = trkErr(x.message); } };
+};
+const hoTrkUndo = id => trkReasonForm(id, 'Batalkan langkah terakhir', `/ho/sj/${id}/tracking/undo`, 'Langkah dibatalkan', 'Batalkan langkah');
+const hoTrkReopen = id => trkReasonForm(id, 'Buka kembali surat jalan Completed', `/ho/sj/${id}/reopen`, 'Surat jalan dibuka kembali', 'Buka kembali');

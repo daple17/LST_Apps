@@ -221,7 +221,8 @@ const PERM_BTN = [[/^joNew\(|^joForm\(null|^joDup\(/, 'jo.create'], [/^joForm\(/
   [/^hoExport\(|^hoDl\(/, 'ho.export'], [/^hoTicketForm\(\)/, 'ho.create'], [/^hoTicketForm\(/, 'ho.update'], [/^hoDelTicket\(|^hoDelMat\(|^hoDelSj\(/, 'ho.delete'],
   [/^coaForm\(\)|^coaGroupForm\(\)/, 'coa.create'], [/^coaForm\(|^coaGroupForm\(/, 'coa.update'], [/^coaExport\(/, 'coa.export'], [/^coaToggle\(|^coaGroupToggle\(/, 'coa.update'], [/^coaGroupDelete\(/, 'coa.delete'], [/^cuToggle\(/, 'customer.update'], [/^userToggle\(/, 'user.update'], [/^joDocDelete\(/, 'jo.delete'], [/^joDocPick\(/, 'jo.update'], [/^vnForm\(\)/, 'vendor.create'], [/^vnForm\(/, 'vendor.update'], [/^vnToggle\(/, 'vendor.update'], [/^vnExport\(/, 'vendor.export'], [/^vnDelete\(/, 'vendor.delete'], [/^cuForm\(\)/, 'customer.create'], [/^cuForm\(/, 'customer.update'], [/^cuExport\(/, 'customer.export'], [/^cuDelete\(/, 'customer.delete'],
   [/^goCheckin\(/, 'checkin.view'], [/^ciReportForm\(\)/, 'checkin.create'], [/^ciReportForm\(/, 'checkin.update'], [/^rekapExport\(/, 'checkin_rekap.export'], [/^rekapOverride\(|^rekapReportEdit\(/, 'checkin_rekap.update'],
-  [/^hoSjForm\(\)/, 'ho.create'], [/^hoSjForm\(/, 'ho.update'], [/^hoSjFinish\(/, 'ho.update'], [/^hoMatForm\(/, 'ho.update'], [/^hoRelink\(/, 'ho.update']];
+  [/^hoSjForm\(\)/, 'ho.create'], [/^hoSjForm\(/, 'ho.update'], [/^hoSjFinish\(/, 'ho.update'], [/^hoMatForm\(/, 'ho.update'], [/^hoRelink\(/, 'ho.update'],
+  [/^hoTrk(Ready|Complete|Revoke|Regen|Unlock|Share|Copy|Qr|Manual|Undo|Reopen)\(/, 'ho.update']];
 function applyPerms() {
   if (!me) return;
   document.querySelectorAll('#view [onclick], #md [onclick], #topx [onclick]').forEach(el => {
