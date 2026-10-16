@@ -34,7 +34,7 @@ const vnExport = run(async () => {
 
 async function vnForm(id) {
   vnCountries ||= await api('/vendors/countries');
-  const c = id ? await api('/vendors/' + id) : { code: '', name: '', city: '', pic: '', npwp: '', country_id: vnCountries.find(x => x.name === 'Indonesia')?.id || '', is_active: true, needs_code_review: false, sj_count: 0, rates: [] };
+  const c = id ? await api('/vendors/' + id) : { code: '', name: '', city: '', pic: '', npwp: '', country_id: vnCountries.find(x => x.name === 'Indonesia')?.id || '', is_active: true, needs_code_review: false, sj_count: 0, rates: [], price_ton: '', price_trip: '' };
   const f = (k, label, extra = '') => `<div><label for="vf-${k}">${label}</label><input id="vf-${k}" name="${k}" value="${esc(c[k] || '')}" ${extra}><div class="ferr" id="fe-${k}" role="alert"></div></div>`;
   $('#md').innerHTML = `<div class="modal"><form class="card" id="vnform" novalidate style="width:min(680px,100%)"><h3 style="margin-top:0">${id ? 'Edit Vendor' : 'Tambah Vendor'}</h3>
     <div class="g"><div><label for="vf-code">Kode vendor ${id ? '(terkunci, tampil di surat jalan)' : '(otomatis)'}</label><input id="vf-code" value="${esc(c.code)}" disabled placeholder="Dibuat saat disimpan"><div class="muted2" id="vf-hint" style="margin:3px 0 0">${id ? '' : 'Usulan kode muncul setelah nama diisi.'}</div></div>
@@ -42,21 +42,23 @@ async function vnForm(id) {
       <div class="full">${f('name', 'Nama vendor', 'required maxlength="150" autocomplete="off"')}</div>${f('city', 'Kota', 'maxlength="100"')}
       <div><label for="vf-country">Negara</label><select id="vf-country" name="country_id"><option value="">—</option>${vnCountries.map(x => `<option value="${x.id}" ${+c.country_id === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select><div class="ferr" id="fe-country_id" role="alert"></div></div>
       ${f('pic', 'PIC', 'maxlength="80"')}${f('npwp', 'NPWP', 'maxlength="30"')}</div>
-    <h4 style="margin:14px 0 4px">Tarif per kota</h4><p class="muted2" style="margin:0 0 6px">Biaya di PO dihitung: tarif jarak kota + tarif tonase + tarif ritase. Di sini hanya input tarif; isi 0 bila tidak ada.</p>
-    <div class="tw"><table id="vr-tbl"><tr><th>Kota</th><th class="num">Tarif jarak kota (Rp)</th><th class="num">Tarif tonase (Rp/ton)</th><th class="num">Tarif ritase (Rp/rit)</th><th></th></tr></table></div>
+    <h4 style="margin:14px 0 4px">Tarif</h4><p class="muted2" style="margin:0 0 6px">Biaya di PO dihitung: tarif kota + tarif tonase + tarif ritase. Di sini hanya input tarif; isi 0 bila tidak ada.</p>
+    <div class="g">${f('price_ton', 'Tarif tonase (Rp per ton)', 'inputmode="decimal"').replace('value="0"', 'value=""')}${f('price_trip', 'Tarif ritase (Rp per ritase)', 'inputmode="decimal"').replace('value="0"', 'value=""')}</div>
+    <h4 style="margin:10px 0 4px">Tarif kota</h4>
+    <div class="tw"><table id="vr-tbl"><tr><th>Kota</th><th class="num">Tarif kota (Rp)</th><th></th></tr></table></div>
     <div class="ferr" id="fe-rates" role="alert"></div><button type="button" class="btn sec" id="vr-add" style="margin-top:6px">+ Tambah kota</button>
     ${c.needs_code_review ? '<label class="chk" style="margin-top:8px"><input type="checkbox" name="reviewed"> Kode ini dibuat otomatis saat migrasi dan sudah saya tinjau</label>' : ''}
     ${id && c.sj_count ? `<p class="muted2">Dipakai di ${c.sj_count} surat jalan: vendor ini hanya bisa dinonaktifkan, tidak dihapus.</p>` : ''}
     <div class="err" role="alert"></div><div class="acts"><button type="button" class="btn sec" onclick="closeMd()">Batal</button><button class="btn" id="vnsave">${id ? 'Simpan' : 'Tambah Vendor'}</button></div></form></div>`;
   const rrow = (r = {}) => { const tr = document.createElement('tr'), n = (k, ph) => `<td><input data-k="${k}" ${k === 'city' ? 'maxlength="100" aria-label="Kota"' : `inputmode="decimal" class="num" aria-label="${ph}"`} value="${esc(r[k] ?? '')}"></td>`;
-    tr.innerHTML = n('city') + n('price_city', 'Tarif jarak kota') + n('price_ton', 'Tarif tonase') + n('price_trip', 'Tarif ritase') + '<td><button type="button" class="btn sec" aria-label="Hapus baris">×</button></td>'; tr.querySelector('button').onclick = () => tr.remove(); $('#vr-tbl').appendChild(tr); return tr; };
+    tr.innerHTML = n('city') + n('price_city', 'Tarif kota') + '<td><button type="button" class="btn sec" aria-label="Hapus baris">×</button></td>'; tr.querySelector('button').onclick = () => tr.remove(); $('#vr-tbl').appendChild(tr); return tr; };
   (c.rates || []).forEach(rrow); $('#vr-add').onclick = () => rrow().querySelector('input').focus();
   const num = v => { v = v.trim(); return /^\d{1,3}(\.\d{3})+(,\d+)?$/.test(v) || v.includes(',') ? v.replace(/\./g, '').replace(',', '.') : v; };
   $('#vf-name').focus();
   if (!id) { let tm; $('#vf-name').oninput = e => { clearTimeout(tm); tm = setTimeout(async () => { const n = e.target.value.trim(); if (n.length < 2) { $('#vf-code').value = ''; return; } try { const r = await api('/vendors/suggest-code?name=' + encodeURIComponent(n)); $('#vf-code').value = r.code; $('#vf-hint').textContent = 'Usulan; kode final ditetapkan saat disimpan.'; } catch { /* usulan opsional */ } }, 300); }; }
   $('#vnform').onsubmit = async e => {
     e.preventDefault(); const fm = e.target;
-    const b = { name: fm.name.value, city: fm.city.value, country_id: fm.country_id.value || null, pic: fm.pic.value, npwp: fm.npwp.value };
+    const b = { name: fm.name.value, city: fm.city.value, country_id: fm.country_id.value || null, price_ton: num(fm.price_ton.value), price_trip: num(fm.price_trip.value), pic: fm.pic.value, npwp: fm.npwp.value };
     b.rates = [...$('#vr-tbl').querySelectorAll('tr')].slice(1).map(tr => Object.fromEntries([...tr.querySelectorAll('input')].map(i => [i.dataset.k, i.dataset.k === 'city' ? i.value : num(i.value)])));
     if (id) { b.is_active = fm.is_active.value === '1'; if (fm.reviewed?.checked) b.needs_code_review = false; }
     $('#vnsave').disabled = true;

@@ -9,10 +9,12 @@ Pola sama dengan Customer (`docs/spec-customer.md`, `docs/ui-aksi.md`).
 - Izin: `vendor.view/create/update/delete/export`. Audit entity `vendor`. Excel mengikuti filter.
 - Migrasi `014-vendor-active.js` menambah `vendors.is_active`.
 
-## Tarif per kota (revisi client)
-Diinput di form Tambah/Edit Vendor (bagian "Tarif per kota"); tabel `vendor_rates` (migrasi 016, menggantikan bentuk asal→tujuan di 015). Satu baris per kota (unik per vendor): tarif jarak kota (> 0), tarif tonase, tarif ritase (≥ 0, isi 0 bila tidak ada). Dikirim sebagai `rates` pada POST/PUT `/api/vendors`; bila `rates` dikirim, daftar diganti utuh (satu transaksi); bila tidak dikirim, tarif tidak berubah. Diaudit ("Tarif diubah"). Izin sama dengan vendor.
-Perhitungan ada di menu PO (belum dibuat): biaya = tarif jarak kota + tarif tonase + tarif ritase.
-**Asumsi yang perlu dikonfirmasi:** tarif tonase dan ritase diisi per kota, dan dijumlahkan apa adanya (belum dikalikan jumlah ton/ritase; itu aturan PO). PO sebaiknya menyalin harga saat dibuat. Tidak ada tanggal berlaku.
+## Tarif (revisi client)
+Diinput di form Tambah/Edit Vendor, tiga bagian terpisah:
+- **Tarif kota:** daftar (kota → harga > 0), tabel `vendor_rates` (unik per vendor+kota). Dikirim sebagai `rates`; bila dikirim, daftar diganti utuh dalam satu transaksi; bila tidak, tidak berubah.
+- **Tarif tonase** dan **tarif ritase:** satu angka per vendor (`vendors.price_ton`, `vendors.price_trip`, ≥ 0, 0 = tidak ada).
+Semua diaudit. Migrasi 015–017. Perhitungan ada di menu PO (belum dibuat): biaya = tarif kota + tarif tonase + tarif ritase.
+**Asumsi:** angka dijumlahkan apa adanya; pengalian dengan jumlah ton/ritase adalah aturan PO. PO sebaiknya menyalin harga saat dibuat. Tidak ada tanggal berlaku.
 
 ## Belum / perlu konfirmasi
 - `vendor.jenis` di sistem lama belum jelas artinya, jadi tidak diimpor.
