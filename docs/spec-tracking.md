@@ -29,6 +29,7 @@ GET `/sj/:id/tracking`, GET `/sj/:id/qr.svg` (`ho.view`); POST `/sj/:id/ready`, 
 `/api/pub/d/:token`: GET `/` (no. surat jalan, rute, status tautan), POST `/verify`, GET `/sj`, POST `/step`, POST `/deliver` (tiga terakhir butuh sesi). Halaman `/d/:token`.
 
 ## Model keamanan tautan
+> **Verifikasi 4 angka nopol sedang DIMATIKAN** atas permintaan client (`TRACKING.VERIFY_NOPOL` di `lib/rules.js`, default mati). Tanpa verifikasi, siapa pun yang memegang tautan bisa mengubah status surat jalan itu dan mengunggah foto bukti; satu-satunya pengaman adalah token rahasia (tidak bisa ditebak) dan pembatas laju. Nyalakan kembali dengan env `TRACKING_VERIFY_NOPOL=1` (kode verifikasi, penguncian 5 kali salah, dan tesnya tetap ada). Saat mati: halaman driver langsung masuk tanpa kotak angka, endpoint `/verify` menerbitkan sesi tanpa memeriksa angka, dan "Tandai Ready" tidak lagi mewajibkan nopol memuat angka.
 - Token = `base64url(id).nonce.sig`, `sig = HMAC-SHA256(JWT_SECRET, id.nonce)` 16 byte; tidak ada rahasia di DB; "Cabut" = `link_revoked_at`, "Buat ulang" = ganti nonce (token lama mati).
 - Akses hanya ke satu surat jalan, hanya aksi status + foto bukti terima. Tanpa data customer/berat/nama. Tidak ada akses ke `/uploads`.
 - Verifikasi 4 angka nopol (semua digit nopol; bila >4 digit dipakai 4 pertama; nopol tanpa digit tidak pernah cocok). Salah 5 kali berturut-turut → terkunci sampai operasional membuka kunci. Pesan salah tidak membocorkan nopol. Pembatas laju per IP (30 percobaan/15 menit) di atas penguncian per tautan.

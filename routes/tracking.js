@@ -1,6 +1,6 @@
 // API operasional tracking surat jalan (di bawah /api/ho, dijaga izin ho). Aturan: lib/tracking.js; DB: lib/tracking-db.js.
 const T = require('../lib/tracking'), D = require('../lib/tracking-db'), audit = require('../lib/audit'), sjLink = require('../lib/sj-link'), qr = require('../lib/qr');
-const { wrap, httpError, tx } = require('../lib/http');
+const { wrap, httpError, tx } = require('../lib/http'), { TRACKING } = require('../lib/rules');
 
 module.exports = (r, pool) => {
   const reasonOf = (b, msg = 'Alasan wajib diisi') => { const s = String(b.reason ?? '').trim(); if (!s) throw httpError(400, msg); return s.slice(0, 255); };
@@ -17,7 +17,7 @@ module.exports = (r, pool) => {
     return { id: dn.id, ticket_id: dn.ticket_id, ticket_no: meta.ticket_no, vendor_code: meta.vendor_code, no_sj: dn.no_sj, nopol: dn.nopol, driver: dn.driver, status: dn.track_status, label: T.LABELS[dn.track_status], status_at: dn.status_at_ms ? new Date(+dn.status_at_ms).toISOString() : null, own_fleet: !!dn.is_own_fleet,
       warnings: { needs_check: w.needsCheck, stalled: w.stalled, held_min: Math.floor(w.heldMs / 60000) }, steps, events: evs.map(e => ({ ...e, at: new Date(e.at_ms).toISOString(), at_ms: undefined })),
       link: { url: driverUrl(req, dn), state, opened_at: dn.link_opened_at, verified_at: dn.link_verified_at, fails: dn.verify_fails, locked: !!dn.link_locked, revoked: !!dn.link_revoked_at, legacy: dn.origin === 'LEGACY', has_phone: !!String(dn.phone || '').trim(), phone: dn.phone },
-      can: { ready: dn.track_status === 'PLANNING' && !!String(dn.driver || '').trim() && /\d/.test(dn.nopol || ''), steps: T.nextAllowed(dn.track_status, !!dn.is_own_fleet).map(n => n.status), complete: dn.track_status === 'DELIVERED', reopen: dn.track_status === 'COMPLETED',
+      can: { ready: dn.track_status === 'PLANNING' && !!String(dn.driver || '').trim() && !!String(dn.nopol || '').trim() && (!TRACKING.VERIFY_NOPOL || /\d/.test(dn.nopol)), steps: T.nextAllowed(dn.track_status, !!dn.is_own_fleet).map(n => n.status), complete: dn.track_status === 'DELIVERED', reopen: dn.track_status === 'COMPLETED',
         undo: undo.ok && dn.track_status !== 'COMPLETED' && undo.status !== 'COMPLETED' }, pod: pod || null, received_by: dn.received_by };
   }
 
@@ -26,7 +26,7 @@ module.exports = (r, pool) => {
   r.post('/sj/:id/ready', wrap(async (req, res) => {
     await tx(pool, async conn => {
       const dn = await lockDn(conn, +req.params.id);
-      if (!String(dn.driver || '').trim() || !/\d/.test(dn.nopol || '')) throw httpError(400, 'Nama driver dan nomor polisi (memuat angka) wajib diisi sebelum Ready');
+      if (!String(dn.driver || '').trim() || !String(dn.nopol || '').trim() || (TRACKING.VERIFY_NOPOL && !/\d/.test(dn.nopol))) throw httpError(400, TRACKING.VERIFY_NOPOL ? 'Nama driver dan nomor polisi (memuat angka) wajib diisi sebelum Ready' : 'Nama driver dan nomor polisi wajib diisi sebelum Ready');
       await D.applyStep(conn, dn, { to: 'READY', actor: 'OPS', user: req.user, label: req.user.name });
     });
     res.json(await detail(req, +req.params.id));

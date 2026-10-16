@@ -25,6 +25,7 @@
       const info = await call('GET', '');
       if (info.state !== 'aktif') { const [t, x] = lockedText[info.state] || lockedText.dicabut; return notice(t, x, info.no_sj); }
       if (sess.get() || memSess) { try { return await home(info); } catch (er) { if (er.status !== 401) throw er; sess.set(null); memSess = null; } }
+      if (!info.verify) { const r = await call('POST', '/verify', {}); memSess = r.session; sess.set(r.session); return await home(info); }     // verifikasi nopol dimatikan: langsung masuk
       verifyScreen(info);
     } catch (er) { er.status === 404 ? notice('Tautan tidak valid', 'Periksa kembali tautan yang Anda terima dari operasional.') : retryScreen(er); }
   }

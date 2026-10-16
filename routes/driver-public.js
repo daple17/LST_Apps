@@ -39,7 +39,7 @@ module.exports = pool => {
   // info publik minimal: no. surat jalan, rute, status tautan
   r.get('/:token', handler(async (req, res) => {
     const dn = await byToken(req), rt = await route(dn);
-    res.json({ no_sj: dn.no_sj, from: rt.origin || null, to: rt.destination || null, state: D.linkState(dn) });
+    res.json({ no_sj: dn.no_sj, from: rt.origin || null, to: rt.destination || null, state: D.linkState(dn), verify: !!TRACKING.VERIFY_NOPOL });
   }));
 
   r.post('/:token/verify', handler(async (req, res) => {
@@ -48,7 +48,7 @@ module.exports = pool => {
     const ok = await tx(pool, async conn => {
       const dn = await D.loadDn(conn, dn0.id, true);
       if (dn.link_locked) return { locked: true };
-      if (T.matchNopol(req.body && req.body.digits, dn.nopol)) {
+      if (!TRACKING.VERIFY_NOPOL || T.matchNopol(req.body && req.body.digits, dn.nopol)) {      // verifikasi dimatikan: tautan rahasia cukup
         await conn.query('UPDATE delivery_notes SET verify_fails=0, link_opened_at=COALESCE(link_opened_at, NOW()), link_verified_at=NOW() WHERE id=?', [dn.id]); return { ok: true, dn };
       }
       const fails = dn.verify_fails + 1, locked = fails >= TRACKING.MAX_VERIFY_FAILS;

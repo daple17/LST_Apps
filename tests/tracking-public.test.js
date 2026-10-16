@@ -1,11 +1,12 @@
 const test = require('node:test'), assert = require('node:assert/strict');
-const cfg = require('../config'), T = require('../lib/tracking');
+const cfg = require('../config'), T = require('../lib/tracking'), { TRACKING } = require('../lib/rules');
 const { dbAvailable } = require('./helpers');
 const { startApp, joBody } = require('./app-helper');
 const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 
-test('Tracking surat jalan (driver tanpa login): token, verifikasi nopol, sesi, langkah, bukti terima', async t => {
+test('Tracking surat jalan (driver tanpa login, verifikasi nopol AKTIF): token, verifikasi nopol, sesi, langkah, bukti terima', async t => {
   if (!(await dbAvailable())) return t.skip('MySQL tidak tersedia');
+  TRACKING.VERIFY_NOPOL = true; t.after(() => { TRACKING.VERIFY_NOPOL = false; });          // tes ini menguji mode dengan verifikasi nopol (default produksi: mati)
   const app = await startApp('lesat_test_trkpub'), q = async (s, p) => (await app.pool.query(s, p))[0], root = app.base.replace(/\/api$/, '');
   t.after(() => app.close());
   let ipn = 10; const nextIp = () => `10.1.0.${++ipn}`;
@@ -24,7 +25,7 @@ test('Tracking surat jalan (driver tanpa login): token, verifikasi nopol, sesi, 
   const login = async (token, digits = '9123', ip) => (await pub('POST', `${token}/verify`, { digits }, { ip })).data?.session;
 
   // info publik minimal + header keamanan
-  let r = await pub('GET', tA); assert.equal(r.status, 200); assert.deepEqual(r.data, { no_sj: sjA.sj_no, from: 'PRIOK', to: 'CIBITUNG', state: 'belum_siap' });
+  let r = await pub('GET', tA); assert.equal(r.status, 200); assert.deepEqual(r.data, { no_sj: sjA.sj_no, from: 'PRIOK', to: 'CIBITUNG', state: 'belum_siap', verify: true });
   assert.equal(r.headers.get('cache-control'), 'no-store'); assert.equal(r.headers.get('referrer-policy'), 'no-referrer'); assert.match(r.headers.get('x-robots-tag'), /noindex/); assert.equal(r.headers.get('set-cookie'), null); assert.equal(r.headers.get('access-control-allow-origin'), null);
   assert.ok(!JSON.stringify(r.data).match(/BUDI|B 9123|customer/i));
   // tautan sebelum Ready: tidak bisa verifikasi
@@ -109,4 +110,25 @@ test('Tracking surat jalan (driver tanpa login): token, verifikasi nopol, sesi, 
   assert.equal(big.status, 413); assert.ok(!(await big.text()).includes('node_modules'));
   // API operasional tetap butuh login; halaman /d/:token disajikan tanpa login dengan header aman
   assert.equal((await fetch(root + `/api/ho/sj/${sjA.id}/tracking`)).status, 401); const page = await fetch(root + `/d/${tC2}`); assert.equal(page.status, 200); assert.equal(page.headers.get('referrer-policy'), 'no-referrer');
+});
+
+test('Tracking surat jalan (driver): verifikasi nopol dimatikan (default) — tautan rahasia cukup', async t => {
+  if (!(await dbAvailable())) return t.skip('MySQL tidak tersedia');
+  assert.equal(TRACKING.VERIFY_NOPOL, false);
+  const app = await startApp('lesat_test_trkpub_off'), root = app.base.replace(/\/api$/, '');
+  t.after(() => app.close());
+  const pub = async (method, path, body, sess) => { const r = await fetch(root + '/api/pub/d/' + path, { method, headers: { 'Content-Type': 'application/json', ...(sess ? { Authorization: 'Bearer ' + sess } : {}) }, body: body === undefined ? undefined : JSON.stringify(body) }); return { status: r.status, data: await r.json().catch(() => null) }; };
+  const jo = (await app.post('/job-orders', joBody())).data.id, tk = (await app.post('/ho/tickets', { jo_ids: [jo] })).data.id;
+  await app.post(`/ho/tickets/${tk}/materials`, { rows: [{ jo_id: jo, product_no: 'P-1', description: 'COIL', net_weight: 1000, gross_weight: 1010, qty: 1, unit: 'COIL', origin: 'PRIOK', destination: 'CIBITUNG' }] });
+  const rows = (await app.get(`/ho/tickets/${tk}/materials`)).data.rows;
+  const sj = (await app.post(`/ho/tickets/${tk}/sj`, { nopol: 'DFA', driver: 'BUDI', items: [{ material_id: rows[0].id, qty: 1, weight: 1000 }] })).data;   // nopol tanpa angka tidak lagi menghalangi Ready
+  assert.equal((await app.get(`/ho/sj/${sj.id}/tracking`)).data.can.ready, true); assert.equal((await app.post(`/ho/sj/${sj.id}/ready`)).status, 200);
+  const token = (await app.get(`/ho/sj/${sj.id}/tracking`)).data.link.url.split('/d/')[1];
+  assert.equal((await pub('GET', token)).data.verify, false);
+  const v = await pub('POST', `${token}/verify`, {}); assert.equal(v.status, 200); assert.ok(v.data.session);                  // tanpa angka
+  assert.equal((await pub('POST', `${token}/verify`, { digits: '0000' })).status, 200);                                       // angka apa pun diabaikan; tidak ada penguncian
+  assert.equal((await pub('GET', `${token}/sj`, undefined, v.data.session)).status, 200);
+  assert.equal((await pub('POST', `${token}/step`, { status: 'STARTED' }, v.data.session)).status, 200);
+  assert.equal((await pub('GET', 'bukan-token')).status, 404); assert.equal((await pub('GET', `${token}/sj`)).status, 401);   // token tetap wajib; sesi tetap wajib
+  assert.ok((await app.pool.query('SELECT link_opened_at o FROM delivery_notes WHERE id=?', [sj.id]))[0][0].o);
 });
