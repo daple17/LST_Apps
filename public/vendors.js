@@ -16,7 +16,7 @@ async function vnList() {
     <button class="btn sec" onclick="vnReset()">Reset</button><span style="flex:1"></span><button class="btn sec out" onclick="vnExport()">Download Excel</button><button class="btn" onclick="vnForm()">+ Tambah Vendor</button></div>
     <div class="card tw"><table><tr><th>Kode</th><th>Nama</th><th>Kota</th><th>Negara</th><th>PIC</th><th>NPWP</th><th class="num">Surat Jalan</th><th>Status</th><th>Aksi</th></tr>
     ${d.rows.map(c => `<tr class="${c.is_active ? '' : 'dim'}"><td><b class="cnum">${esc(c.code)}</b>${c.needs_code_review ? ' <span class="lgc inc" title="Kode dibuat otomatis saat migrasi (kode lama kosong, ganda, atau tidak bermakna)">Tinjau</span>' : ''}</td><td class="wrap">${esc(c.name)}</td><td>${esc(c.city || '—')}</td><td>${esc(c.country_name || '—')}</td><td>${esc(c.pic || '—')}</td><td>${esc(c.npwp || '—')}</td>
-      <td class="num">${fmtN(c.sj_count)}</td><td>${vnStatus(c)}</td><td>${rowMenu(c.code + ' ' + c.name, [{ t: 'Edit', js: `vnForm(${c.id})` }, { t: c.is_active ? 'Nonaktifkan' : 'Aktifkan', js: `vnToggle(${c.id},${!c.is_active})`, danger: c.is_active },
+      <td class="num">${fmtN(c.sj_count)}</td><td>${vnStatus(c)}</td><td>${rowMenu(c.code + ' ' + c.name, [{ t: 'Edit', js: `vnForm(${c.id})` }, { t: `Tarif (${c.rate_count})`, js: `vnRates(${c.id})` }, { t: c.is_active ? 'Nonaktifkan' : 'Aktifkan', js: `vnToggle(${c.id},${!c.is_active})`, danger: c.is_active },
         { t: 'Hapus', js: `vnDelete(${c.id},'${c.name.replace(/['"]/g, '')}')`, danger: true, disabled: c.sj_count > 0, title: c.sj_count > 0 ? `Dipakai ${c.sj_count} surat jalan: nonaktifkan saja` : '' }])}</td></tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--mut)">Tidak ada vendor yang cocok.</td></tr>'}</table>
     ${pagerNum(d.page, d.pages, d.total, 'vnGoto')}</div>`;
   const q = $('#vnq'); let tm;
@@ -57,3 +57,24 @@ async function vnForm(id) {
   };
 }
 const vnDelete = run(async (id, name) => { if (!confirm(`Hapus vendor ${name}? Tindakan ini tidak bisa dibatalkan.`)) return; await api('/vendors/' + id, 'DELETE'); toast('Vendor dihapus'); vnList(); });
+
+// Tarif per rute (asal → tujuan), per ritase atau per ton; dipakai pengajuan PO nanti.
+async function vnRates(id, editId) {
+  const v = vnRows.find(x => x.id === id) || {}, rows = await api(`/vendors/${id}/rates`), e = rows.find(x => x.id === editId) || { origin: '', destination: '', basis: 'RITASE', price: '' }, w = can('vendor.update');
+  const fi = (k, l, x = '') => `<div><label for="vr-${k}">${l}</label><input id="vr-${k}" name="${k}" value="${esc(e[k])}" ${x}><div class="ferr" id="fe-${k}" role="alert"></div></div>`;
+  $('#md').innerHTML = `<div class="modal"><div class="card" style="width:min(760px,100%)"><h3 style="margin-top:0">Tarif ${esc(v.name || '')}</h3>
+    <div class="tw"><table><tr><th>Asal</th><th>Tujuan</th><th>Per</th><th class="num">Harga (Rp)</th><th>Aksi</th></tr>
+    ${rows.map(t => `<tr><td>${esc(t.origin)}</td><td>${esc(t.destination)}</td><td>${t.basis === 'TON' ? 'Ton' : 'Ritase'}</td><td class="num">${fmtN(t.price)}</td><td>${rowMenu(t.origin + ' ' + t.destination, [{ t: 'Edit', js: `vnRates(${id},${t.id})` }, { t: 'Hapus', js: `vnRateDel(${id},${t.id})`, danger: true }])}</td></tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--mut)">Belum ada tarif.</td></tr>'}</table></div>
+    ${w ? `<form id="vrform" novalidate><h4>${editId ? 'Edit tarif' : 'Tambah tarif'}</h4><div class="g">${fi('origin', 'Asal', 'maxlength="100" required')}${fi('destination', 'Tujuan', 'maxlength="100" required')}
+      <div><label for="vr-basis">Dihitung per</label><select id="vr-basis" name="basis"><option value="RITASE" ${e.basis === 'RITASE' ? 'selected' : ''}>Ritase</option><option value="TON" ${e.basis === 'TON' ? 'selected' : ''}>Ton</option></select><div class="ferr" id="fe-basis" role="alert"></div></div>
+      ${fi('price', 'Harga (Rp)', 'inputmode="decimal" required')}</div><div class="err" role="alert"></div>
+      <div class="acts"><button type="button" class="btn sec" onclick="closeMd()">Tutup</button>${editId ? `<button type="button" class="btn sec" onclick="vnRates(${id})">Batal edit</button>` : ''}<button class="btn" id="vrsave">${editId ? 'Simpan tarif' : 'Tambah tarif'}</button></div></form>` : '<div class="acts"><button type="button" class="btn sec" onclick="closeMd()">Tutup</button></div>'}</div></div>`;
+  const f = $('#vrform'); if (!f) return;
+  f.price.value = e.price === '' ? '' : String(e.price); f.origin.focus();
+  f.onsubmit = async ev => {
+    ev.preventDefault(); $('#vrsave').disabled = true;
+    try { await api(`/vendors/${id}/rates${editId ? '/' + editId : ''}`, editId ? 'PUT' : 'POST', { origin: f.origin.value, destination: f.destination.value, basis: f.basis.value, price: /^\d{1,3}(\.\d{3})+(,\d+)?$/.test(f.price.value.trim()) || f.price.value.includes(',') ? f.price.value.trim().replace(/\./g, '').replace(',', '.') : f.price.value.trim() }); toast('Tarif disimpan'); vnList(); vnRates(id); }
+    catch (er) { $('#vrsave').disabled = false; coaFieldErrors(er, f); }
+  };
+}
+const vnRateDel = run(async (id, rid) => { if (!confirm('Hapus tarif ini?')) return; await api(`/vendors/${id}/rates/${rid}`, 'DELETE'); toast('Tarif dihapus'); vnList(); vnRates(id); });

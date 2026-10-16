@@ -41,15 +41,28 @@ test('API vendor: daftar, kode otomatis, kunci kode, nonaktif, hapus, ekspor, iz
   assert.equal((await app.get('/vendors?status=inactive')).data.total, 1); assert.equal((await app.post(`/vendors/${a.data.id}/activate`)).status, 200);
   assert.equal((await app.del(`/vendors/${b2.data.id}`)).status, 200); assert.equal((await app.get(`/vendors/${b2.data.id}`)).status, 404); assert.equal((await app.del('/vendors/999999')).status, 404);
 
-  const acts = (await q("SELECT action FROM audit_log WHERE entity_type='vendor'")).map(x => x.action); for (const x of ['Dibuat', 'Diubah', 'Dinonaktifkan', 'Diaktifkan', 'Dihapus']) assert.ok(acts.includes(x), x);
+  // tarif per rute
+  const rt = `/vendors/${a.data.id}/rates`;
+  for (const [b, f] of [[{ destination: 'B', basis: 'TON', price: 1 }, 'origin'], [{ origin: 'A', basis: 'TON', price: 1 }, 'destination'], [{ origin: 'A', destination: 'B', basis: 'KG', price: 1 }, 'basis'], [{ origin: 'A', destination: 'B', basis: 'TON', price: 0 }, 'price'], [{ origin: 'A', destination: 'B', basis: 'TON', price: 'x' }, 'price']]) { const x = await app.post(rt, b); assert.equal(x.status, 400); assert.ok(x.data.fields[f], f); }
+  const t1 = await app.post(rt, { origin: 'Tj. Priok', destination: 'Cikarang', basis: 'ritase', price: 1500000 }); assert.equal(t1.status, 200);
+  const t2 = await app.post(rt, { origin: 'Tj. Priok', destination: 'Cikarang', basis: 'TON', price: 85000.5 }); assert.equal(t2.status, 200);
+  assert.equal((await app.post(rt, { origin: 'Tj.  Priok', destination: 'Cikarang', basis: 'TON', price: 9 })).status, 400);       // duplikat rute+satuan
+  assert.deepEqual((await app.get(rt)).data.map(x => [x.basis, x.price]), [['RITASE', 1500000], ['TON', 85000.5]]); assert.equal((await app.get(`/vendors/${a.data.id}`)).data.rate_count, 2);
+  assert.equal((await app.put(`${rt}/${t1.data.id}`, { origin: 'Tj. Priok', destination: 'Cikarang', basis: 'RITASE', price: 1600000 })).status, 200); assert.equal((await app.get(rt)).data[0].price, 1600000);
+  assert.equal((await app.put(`${rt}/${t1.data.id}`, { origin: 'Tj. Priok', destination: 'Cikarang', basis: 'TON', price: 5 })).status, 400);
+  assert.equal((await app.put(`${rt}/999999`, { origin: 'A', destination: 'B', basis: 'TON', price: 5 })).status, 404); assert.equal((await app.get('/vendors/999999/rates')).status, 404);
+  assert.equal((await app.del(`${rt}/${t2.data.id}`)).status, 200); assert.equal((await app.get(rt)).data.length, 1);
+
+  const acts = (await q("SELECT action FROM audit_log WHERE entity_type='vendor'")).map(x => x.action); for (const x of ['Dibuat', 'Diubah', 'Dinonaktifkan', 'Diaktifkan', 'Dihapus', 'Tarif ditambah', 'Tarif diubah', 'Tarif dihapus']) assert.ok(acts.includes(x), x);
 
   const ex = await app.raw('/vendors/export?q=angkut'); assert.equal(ex.status, 200); const wb = new ExcelJS.Workbook(); await wb.xlsx.load(ex.buf); const ws = wb.worksheets[0];
   assert.deepEqual(ws.getRow(1).values.slice(1), ['Kode', 'Nama', 'Kota', 'Negara', 'PIC', 'NPWP', 'Surat Jalan', 'Status']); assert.equal(ws.rowCount, 2); assert.equal(ws.getRow(2).getCell(1).value, a.data.code);
 
   const mk = async (name, perms) => { const rl = (await q('INSERT INTO roles (name) VALUES (?)', [name])).insertId; if (perms.length) await q('INSERT INTO role_permissions (role_id, permission) VALUES ?', [perms.map(p => [rl, p])]); return (await q('INSERT INTO users (username,password,name,role_id,email) VALUES (?,?,?,?,?)', [name, 'x', name, rl, name + '@x.id'])).insertId; };
   const as = id => (m, u, bd) => app.callAs(jwt.sign({ id }, cfg.secret), m, u, bd), none = as(await mk('tanpa', ['jo.view'])), view = as(await mk('lihat', ['vendor.view']));
-  const all = [['GET', '/vendors'], ['GET', '/vendors/1'], ['GET', '/vendors/export'], ['GET', '/vendors/suggest-code?name=x'], ['POST', '/vendors'], ['PUT', '/vendors/1'], ['POST', '/vendors/1/deactivate'], ['DELETE', '/vendors/1']];
+  const all = [['GET', '/vendors'], ['GET', '/vendors/1'], ['GET', '/vendors/export'], ['GET', '/vendors/suggest-code?name=x'], ['POST', '/vendors'], ['PUT', '/vendors/1'], ['POST', '/vendors/1/deactivate'], ['DELETE', '/vendors/1'], ['GET', '/vendors/1/rates'], ['POST', '/vendors/1/rates'], ['PUT', '/vendors/1/rates/1'], ['DELETE', '/vendors/1/rates/1']];
   for (const [m, u] of all) assert.equal((await none(m, u, {})).status, 403, 'tanpa ' + m + u);
   assert.equal((await view('GET', '/vendors')).status, 200);
-  for (const [m, u] of all.slice(2)) assert.equal((await view(m, u, {})).status, 403, 'lihat ' + m + u);
+  assert.equal((await view('GET', rt)).status, 200);
+  for (const [m, u] of all.filter(x => !(x[0] === 'GET' && /^\/vendors(\/1(\/rates)?)?$/.test(x[1])))) assert.equal((await view(m, u, {})).status, 403, 'lihat ' + m + u);
 });

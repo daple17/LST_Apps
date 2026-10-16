@@ -9,6 +9,9 @@ Pola sama dengan Customer (`docs/spec-customer.md`, `docs/ui-aksi.md`).
 - Izin: `vendor.view/create/update/delete/export`. Audit entity `vendor`. Excel mengikuti filter.
 - Migrasi `014-vendor-active.js` menambah `vendors.is_active`.
 
+## Tarif per rute (permintaan client)
+Tabel `vendor_rates` (migrasi 015): per vendor, banyak baris asal → tujuan, satuan `RITASE` atau `TON`, harga (Rp). Unik per vendor+asal+tujuan+satuan. API `/api/vendors/:id/rates` (GET → `vendor.view`; POST/PUT/DELETE → `vendor.update`), diaudit. UI: ⋯ › Tarif. Biaya PO nanti = harga × jumlah ritase atau ton sesuai satuan tarif; PO sebaiknya menyalin (snapshot) harga saat dibuat. Tarif tanpa tanggal berlaku; riwayat harga hanya lewat audit log.
+
 ## Belum / perlu konfirmasi
 - `vendor.jenis` di sistem lama belum jelas artinya, jadi tidak diimpor.
 - Tabel `countries` hanya terisi dari impor data lama; di database tanpa impor, pilihan Negara kosong.
