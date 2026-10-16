@@ -61,22 +61,13 @@ function createApp(pool, opts = {}) {   // opts.now: jam server yang bisa digant
   }));
 
   app.get('/api/lookups', wrap(async (req, res) => {
-    const [customers] = await pool.query('SELECT id,code,name FROM customers ORDER BY name');
+    const customers = (await pool.query('SELECT id,code,name,is_active FROM customers ORDER BY name'))[0].map(c => ({ ...c, is_active: !!c.is_active }));
     const [shippers] = await pool.query('SELECT id,name FROM shippers ORDER BY name');
     const [vendors] = await pool.query('SELECT id,code,name FROM vendors ORDER BY code');
     const [[me]] = await pool.query('SELECT name,employee_no FROM users WHERE id=?', [req.user.id]);
     res.json({ customers, shippers, vendors, me, rules: rules.client, permissions: permissions.client });
   }));
 
-  app.post('/api/customers', requirePerm('customer.create'), wrap(async (req, res) => {
-    const code = String(req.body.code || '').trim().toUpperCase(), name = String(req.body.name || '').trim();
-    if (!/^[A-Z]{3}$/.test(code)) return bad(res, 'Kode customer harus 3 huruf');
-    if (!name) return bad(res, 'Nama wajib diisi');
-    const [[dup]] = await pool.query('SELECT id FROM customers WHERE code=?', [code]);
-    if (dup) return bad(res, 'Kode sudah dipakai');
-    const [r] = await pool.query('INSERT INTO customers (code,name) VALUES (?,?)', [code, name]);
-    res.json({ id: r.insertId });
-  }));
   app.post('/api/shippers', requirePerm('shipper.create'), wrap(async (req, res) => {
     const name = String(req.body.name || '').trim();
     if (!name) return bad(res, 'Nama wajib diisi');
@@ -105,6 +96,7 @@ function createApp(pool, opts = {}) {   // opts.now: jam server yang bisa digant
   app.use('/api/users', guard('user', [['POST', /^\/\d+\/(de)?activate$/, 'update']]), require('./routes/users')(pool));
   app.use('/api/checkin', guard('checkin'), require('./routes/checkin').router(pool, opts));
   app.use('/api/checkin-rekap', guard('checkin_rekap', [['GET', /^\/export$/, 'export']]), require('./routes/checkin-rekap')(pool, opts));
+  app.use('/api/customers', guard('customer', [['GET', /^\/export$/, 'export'], ['GET', /^\/suggest-code$/, 'create'], ['POST', /^\/\d+\/(de)?activate$/, 'update']]), require('./routes/customers')(pool));
   app.use('/api/coa', guard('coa', [['GET', /^\/export$/, 'export']]), require('./routes/coa')(pool));
   app.use('/api/roles', guard('role'), require('./routes/roles')(pool));
   app.use('/api/job-orders', require('./routes/jo-materials')(pool, { refreshTickets: handling.refreshForJo }));

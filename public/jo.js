@@ -103,7 +103,7 @@ function joFormDraw() {
       <div><label>Jenis muatan${jfStar('jenis_muatan')}</label><select name="jenis_muatan" onchange="joLcl()"><option value="">Pilih…</option>${opt(R().JENIS_MUATAN, v.jenis_muatan)}</select></div>
       <div><label>Nama customer${jfStar('customer')} ${id ? '(tidak bisa diubah)' : `<a href="#" onclick="quickAdd('customer');return false">+ baru</a>`}</label>
         <input name="customer_text" list="dl-cust" autocomplete="off" placeholder="Cari nama atau kode customer…" value="${esc(jf.custText ?? (cust ? custLabel(cust) : ''))}" oninput="joCust(this)" ${id ? 'disabled' : ''}>
-        <datalist id="dl-cust">${look.customers.map(c => `<option value="${esc(custLabel(c))}"></option>`).join('')}</datalist></div>
+        <datalist id="dl-cust">${look.customers.filter(c => c.is_active !== false).map(c => `<option value="${esc(custLabel(c))}"></option>`).join('')}</datalist></div>
       <div><label>Shipper / Ship To <a href="#" onclick="quickAdd('shipper');return false">+ baru</a></label><select name="shipper_id" id="ss"><option value="">-</option>${opt(look.shippers, v.shipper_id, x => x.id, x => x.name)}</select></div>
       <div><label>Type BC${jfStar('type_bc')}</label><select name="type_bc"><option value="">-</option>${opt(R().TYPE_BC, v.type_bc, x => x, x => x)}${legacyOpt(R().TYPE_BC, v.type_bc, x => x)}</select></div>
     </div>
@@ -220,7 +220,7 @@ async function joSubmit(e) {
 function quickAdd(kind) {
   const cust = kind === 'customer';
   $('#qa').innerHTML = `<div class="modal" style="z-index:9"><form class="card" id="qf" style="max-width:420px"><h3 style="margin-top:0">${cust ? 'Customer' : 'Shipper'} Baru</h3>
-    ${cust ? '<div><label>Kode (3 huruf, dipakai di nomor JO)</label><input name="code" maxlength="3" pattern="[A-Za-z]{3}" style="text-transform:uppercase" required></div>' : ''}
+    ${cust ? '<p class="muted2" style="margin:0 0 4px">Kode customer (3 huruf, dipakai di nomor JO) dibuat otomatis.</p>' : ''}
     <div style="margin-top:10px"><label>Nama</label><input name="name" required></div><div class="err" id="qe"></div>
     <div class="acts"><button type="button" class="btn sec" onclick="$('#qa').innerHTML=''">Batal</button><button class="btn">Simpan</button></div></form></div>`;
   $('#qf').onsubmit = async e => {
@@ -229,7 +229,7 @@ function quickAdd(kind) {
       const r = await api(cust ? '/customers' : '/shippers', 'POST', Object.fromEntries(new FormData(e.target)));
       const keep = $('#jf') ? { custText: jf.custText } : {};
       look = { ...(await api('/lookups')) }; void keep;
-      if (cust) { const c = look.customers.find(x => x.id === r.id); jf.custId = c.id; jf.custText = custLabel(c); $('#dl-cust').innerHTML = look.customers.map(x => `<option value="${esc(custLabel(x))}"></option>`).join(''); $('#jf').elements.customer_text.value = jf.custText; }
+      if (cust) { const c = look.customers.find(x => x.id === r.id); jf.custId = c.id; jf.custText = custLabel(c); $('#dl-cust').innerHTML = look.customers.filter(x => x.is_active !== false).map(x => `<option value="${esc(custLabel(x))}"></option>`).join(''); $('#jf').elements.customer_text.value = jf.custText; }
       else { $('#ss').innerHTML = '<option value="">-</option>' + look.shippers.map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join(''); $('#ss').value = r.id; jf.vals.shipper_id = r.id; }
       $('#qa').innerHTML = '';
     } catch (x) { $('#qe').textContent = x.message; }

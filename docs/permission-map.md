@@ -28,9 +28,10 @@ Aturan dasar (`guard()` di `lib/authz.js`): **GET = view, POST = create, PUT/PAT
 Seluruh router: `GET /upcoming`, `/plan`, `/tickets`.
 
 ## Data master
+**Customer (`customer.*`) — `/api/customers/*`:** GET `/`, `/:id` → `customer.view`; GET `/export` → `customer.export`; GET `/suggest-code`, POST `/` → `customer.create`; PUT `/:id`, POST `/:id/activate|deactivate` → `customer.update`; DELETE `/:id` → `customer.delete`.
+
 | Route | Izin |
 |---|---|
-| POST `/api/customers` | `customer.create` |
 | POST `/api/shippers` | `shipper.create` |
 | POST `/api/vendors` | `vendor.create` |
 | GET `/api/vendors` | cukup login |

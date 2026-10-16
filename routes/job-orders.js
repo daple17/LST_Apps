@@ -240,8 +240,9 @@ module.exports = pool => {
     const f = fields(b);
     failIfInvalid(b);
     const out = await tx(pool, async conn => {
-      const [[c]] = await conn.query('SELECT code FROM customers WHERE id=?', [b.customer_id]);
+      const [[c]] = await conn.query('SELECT code, is_active FROM customers WHERE id=?', [b.customer_id]);
       if (!c) throw httpError(400, 'Customer tidak ditemukan');
+      if (!c.is_active) throw httpError(400, 'Customer nonaktif tidak bisa dipakai untuk JO baru');
       const no_jo = await numbering.joNumber(conn, c.code);
       const cols = ['no_jo', 'customer_id', 'created_by', ...Object.keys(f)];
       const [ins] = await conn.query(`INSERT INTO job_orders (${cols.join(',')}) VALUES (${cols.map(() => '?').join(',')})`, [no_jo, b.customer_id, req.user.id, ...Object.values(f)]);
