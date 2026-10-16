@@ -9,7 +9,7 @@ function customerRoute() {
 async function cuList() {
   const d = await api('/customers?' + new URLSearchParams(cuSt)), s = d.summary; cuRows = d.rows;
   $('#cu-sum').innerHTML = `<div class="cards">${[['Total customer', s.total, '', 's-total'], ['Aktif', s.active, 'active', 's-done'], ['Nonaktif', s.inactive, 'inactive', 's-eta'], ['Kode perlu ditinjau', s.review, 'review', 's-open']]
-    .map(([l, v, f, c]) => `<div class="card stat ${c}" ${f ? clickAttr(`cuSet('status','${f}')`) : clickAttr('cuReset()')}><b>${fmtN(v)}</b><span>${l}</span></div>`).join('')}</div>`;
+    .map(([l, v, f, c]) => `<div class="card stat ${c}${(f ? cuSt.status === f : !cuSt.status) ? ' on' : ''}" aria-pressed="${f ? cuSt.status === f : !cuSt.status}" ${f ? clickAttr(`cuSet('status','${cuSt.status === f ? '' : f}')`) : clickAttr('cuReset()')}><b>${fmtN(v)}</b><span>${l}</span></div>`).join('')}</div>`;
   $('#cu-list').innerHTML = `<div class="bar fbar"><input id="cuq" type="search" aria-label="Cari customer" placeholder="Cari kode, nama, kota, email, telepon, NPWP" value="${esc(cuSt.q)}">
     <select id="cus" aria-label="Filter status">${[['', 'Semua status'], ['active', 'Aktif'], ['inactive', 'Nonaktif'], ['review', 'Kode perlu ditinjau']].map(([v, l]) => `<option value="${v}" ${cuSt.status === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
     <button class="btn sec" onclick="cuReset()">Reset</button><span style="flex:1"></span><button class="btn sec out" onclick="cuExport()">Download Excel</button><button class="btn" onclick="cuForm()">+ Tambah Customer</button></div>

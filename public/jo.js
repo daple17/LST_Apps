@@ -13,8 +13,9 @@ function joRoute(rest) {
 
 async function joList() {
   const [d, s] = await Promise.all([api('/job-orders?' + joQs()), api('/job-orders/summary')]);
+  const on = (c, f) => (c === 's-total' ? !joSt.status : !!f && f !== 'late' && joSt.status === f);   // kartu yang sedang terpilih (filter status) berwarna biru
   $('#sum').innerHTML = `<div class="cards">${[['Total JO', s.total, '', 's-total'], ['Not Complete', s.open_jo, 'NOT_COMP', 's-open'], ['Complete', s.done, 'COMPLETE', 's-done'], ['ETA 7 hari ke depan', s.eta_week, '', 's-eta'], ['Lewat rencana delivery', s.late, 'late', 's-late']]
-    .map(([l, v, f, c]) => `<div class="card stat ${c} ${f === 'late' && v ? 'warn' : ''}" ${c === 's-total' ? clickAttr('joReset()') : f && f !== 'late' ? clickAttr(`joSetF('status','${f}')`) : ''}><b>${v}</b><span>${l}</span></div>`).join('')}</div>`;
+    .map(([l, v, f, c]) => `<div class="card stat ${c} ${f === 'late' && v ? 'warn' : ''}${on(c, f) ? ' on' : ''}" ${c === 's-total' || (f && f !== 'late') ? `aria-pressed="${on(c, f)}"` : ''} ${c === 's-total' ? clickAttr('joReset()') : f && f !== 'late' ? clickAttr(`joSetF('status','${joSt.status === f ? '' : f}')`) : ''}><b>${v}</b><span>${l}</span></div>`).join('')}</div>`;
   const th = (k, n) => `<th style="cursor:pointer" onclick="joSort('${k}')">${n}${joSt.sort === k ? (joSt.dir === 'asc' ? ' ▲' : ' ▼') : ''}</th>`;
   const late = r => r.status === 'NOT_COMP' && r.delivery_plan && r.delivery_plan < today();
   const tabs = [{ code: '', label: 'All', n: d.counts.ALL }, ...R().JO_TYPES.map(t => ({ code: t.code, label: t.label, n: d.counts[t.code] }))];

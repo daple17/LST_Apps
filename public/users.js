@@ -39,7 +39,7 @@ function usersRoute() {
 async function usersList() {
   const d = await api('/users?' + new URLSearchParams(usrSt)), s = d.summary, canU = can('user.update'), canC = can('user.create');
   $('#usum').innerHTML = `<div class="cards">${[['Total user', s.total, '', 's-total'], ['Aktif', s.active, 'active', 's-done'], ['Nonaktif', s.inactive, 'inactive', 's-eta'], ['Belum pernah login', s.never, 'pending', 's-open']]
-    .map(([l, v, f, c]) => `<div class="card stat ${c}" ${f ? clickAttr(`usrSet('status','${f}')`) : clickAttr('usrReset()')}><b>${fmtN(v)}</b><span>${l}</span></div>`).join('')}</div>`;
+    .map(([l, v, f, c]) => `<div class="card stat ${c}${(f ? usrSt.status === f : !usrSt.status) ? ' on' : ''}" aria-pressed="${f ? usrSt.status === f : !usrSt.status}" ${f ? clickAttr(`usrSet('status','${usrSt.status === f ? '' : f}')`) : clickAttr('usrReset()')}><b>${fmtN(v)}</b><span>${l}</span></div>`).join('')}</div>`;
   $('#ulist').innerHTML = `<div class="bar fbar"><input id="uq" type="search" aria-label="Cari user" placeholder="Cari nama, email, atau kode PIC" value="${esc(usrSt.q)}">
     <select id="ur" aria-label="Filter role"><option value="">Semua role</option>${usrRoles.map(r => `<option value="${r.id}" ${+usrSt.role_id === r.id ? 'selected' : ''}>${esc(r.name)}</option>`).join('')}</select>
     <select id="us" aria-label="Filter status">${[['', 'Semua status'], ['active', 'Aktif'], ['inactive', 'Nonaktif'], ['pending', 'Menunggu login']].map(([v, l]) => `<option value="${v}" ${usrSt.status === v ? 'selected' : ''}>${l}</option>`).join('')}</select>

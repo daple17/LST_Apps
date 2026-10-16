@@ -161,8 +161,8 @@ aside ::selection{background:rgba(255,255,255,.25)}
 .stat span::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;background:var(--dot);box-shadow:0 0 0 3px color-mix(in srgb,var(--dot) 25%,transparent)}
 .stat b{font:italic 800 34px/1.05 var(--f-hd);font-variant-numeric:tabular-nums;color:var(--n)}
 .stat b.p-ok{color:var(--ok)}.stat b.p-warn{color:var(--warn)}.stat b.p-bad{color:var(--bad)}
-.stat.s-total{--dot:var(--or);background:var(--grad-kpi) border-box;border-color:transparent;box-shadow:0 18px 32px -14px rgba(15,90,140,.55)}
-.stat.s-total b,.stat.s-total span{color:#fff}
+.stat.on{--dot:var(--or);background:var(--grad-kpi) border-box;border-color:transparent;box-shadow:0 18px 32px -14px rgba(15,90,140,.55)}   /* kartu yang sedang terpilih sebagai filter */
+.stat.on b,.stat.on span{color:#fff}.stat[role=button]:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
 .stat.s-open{--dot:var(--or);--n:var(--or-d)}
 .stat.s-done{--dot:var(--cy);--n:var(--cy-d)}
 .stat.s-eta{--dot:#9aa8b6;--n:var(--ink)}

@@ -16,8 +16,8 @@ function coaRoute(rest) {
 /* ---------- tab Account Code ---------- */
 async function coaList() {
   const d = await api('/coa?' + new URLSearchParams(coaSt)), s = d.summary; coaRows = d.rows;
-  $('#coa-body').innerHTML = `<div class="cards"><div class="card stat s-total" ${clickAttr("coaSet('jenis','')")}><b>${fmtN(s.total)}</b><span>Total akun</span></div>
-    ${COA_JENIS.map(([c, l, k]) => `<div class="card stat ${k}" ${clickAttr(`coaSet('jenis','${c}')`)}><b>${fmtN(s.per_jenis[c])}</b><span>${l}</span></div>`).join('')}</div>
+  $('#coa-body').innerHTML = `<div class="cards"><div class="card stat s-total${coaSt.jenis ? '' : ' on'}" aria-pressed="${!coaSt.jenis}" ${clickAttr("coaSet('jenis','')")}><b>${fmtN(s.total)}</b><span>Total akun</span></div>
+    ${COA_JENIS.map(([c, l, k]) => `<div class="card stat ${k}${coaSt.jenis === c ? ' on' : ''}" aria-pressed="${coaSt.jenis === c}" ${clickAttr(`coaSet('jenis','${coaSt.jenis === c ? '' : c}')`)}><b>${fmtN(s.per_jenis[c])}</b><span>${l}</span></div>`).join('')}</div>
     <div class="bar fbar"><input id="cq" type="search" aria-label="Cari akun" placeholder="Cari kode atau nama akun" value="${esc(coaSt.q)}">
       <select id="cj" aria-label="Filter jenis"><option value="">Semua jenis</option>${COA_JENIS.map(([c, l]) => `<option value="${c}" ${coaSt.jenis === c ? 'selected' : ''}>${l}</option>`).join('')}</select>
       <select id="cjt" aria-label="Filter type Job Order"><option value="">Semua type JO</option>${R().JO_TYPES.map(t => `<option value="${t.code}" ${coaSt.job_type === t.code ? 'selected' : ''}>${esc(t.label)}</option>`).join('')}</select>
