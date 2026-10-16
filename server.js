@@ -14,6 +14,14 @@ function createApp(pool, opts = {}) {   // opts.now: jam server yang bisa digant
   app.use(express.json({ limit: '25mb' }));
   for (const f of ['code128', 'idfmt']) app.get(`/shared/${f}.js`, (req, res) => res.sendFile(path.join(__dirname, 'lib', `${f}.js`))); // satu berkas untuk server & browser
   app.use(express.static(path.join(__dirname, 'public')));
+  // surat jalan digital via QR: tanpa login, link rahasia (lib/sj-link.js), hanya-baca
+  app.get('/s/:id(\\d+)/:sig', async (req, res, next) => {
+    try {
+      if (!require('./lib/sj-link').verify(req.params.id, req.params.sig)) return res.status(404).type('text').send('Surat jalan tidak ditemukan');
+      const buf = await handling.sjPdfBuffer(req.params.id); if (!buf) return res.status(404).type('text').send('Surat jalan tidak ditemukan');
+      res.set('Cache-Control', 'no-store').type('application/pdf').set('Content-Disposition', 'inline; filename="surat-jalan.pdf"').send(buf);
+    } catch (e) { next(e); }
+  });
 
   const limiter = loginLimiter();
   app.post('/api/login', wrap(async (req, res) => {

@@ -323,3 +323,7 @@ Cara kerja:
 
 Selesai jika semua poin di "Selesai jika" terpenuhi. Di akhir, tulis ringkasan: file yang diubah, keputusan yang kamu ambil sendiri, dan hal yang masih menunggu konfirmasi.
 ```
+
+
+## Surat jalan digital (QR)
+PDF dan layar Surat Jalan memuat QR berisi link `/s/<id>/<tanda tangan>`. Link dibuka tanpa login dan menampilkan PDF surat jalan terkini (hanya-baca). Tanda tangan = HMAC id dengan `JWT_SECRET` (`lib/sj-link.js`); mengganti `JWT_SECRET` mencabut semua link lama. Siapa pun yang memegang QR bisa melihat isi surat jalan (nopol, driver, material). Domain link mengikuti alamat yang dipakai saat membuka, atau env `PUBLIC_URL` bila diisi. Barcode garis (Code 128) tetap ada untuk scanner khusus.

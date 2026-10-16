@@ -39,3 +39,9 @@ test('svg: latar putih (zona tenang) dan lebar piksel bulat per modul', () => {
   const s = C.svg('SJ-20261001-01'), m = C.bars('SJ-20261001-01').modules;
   assert.match(s, /<rect width="\d+" height="32" fill="#fff"\/>/); assert.match(s, new RegExp(`viewBox="0 0 ${m} 32" width="${m * 2}" height="64"`));   // proporsi viewBox = ukuran gambar: tepat 2 px per modul
 });
+
+test('QR surat jalan terbaca ZXing', () => {
+  const Z = require('../public/vendor/zxing-library.min.js'), { matrix } = require('../lib/qr'), url = 'https://lesat.example.com/s/12/0123456789abcdef01234567', m = matrix(url), px = 6, q = 4, n = m.size + 2 * q, W = n * px, lum = new Uint8ClampedArray(W * W).fill(255);
+  for (let r = 0; r < m.size; r++) for (let c = 0; c < m.size; c++) if (m.get(r, c)) for (let y = 0; y < px; y++) for (let x = 0; x < px; x++) lum[((r + q) * px + y) * W + (c + q) * px + x] = 0;
+  assert.equal(new Z.MultiFormatReader().decode(new Z.BinaryBitmap(new Z.HybridBinarizer(new Z.RGBLuminanceSource(lum, W, W))), new Map([[Z.DecodeHintType.POSSIBLE_FORMATS, [Z.BarcodeFormat.QR_CODE]]])).getText(), url);
+});

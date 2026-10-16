@@ -68,6 +68,14 @@ test('Handling Ops: aturan tiket, progres, penomoran, material', async t => {
     const rows = (await app.get(`/ho/tickets/${tk}/materials`)).data.rows;
     const sj = await app.post(`/ho/tickets/${tk}/sj`, { nopol: 'b 7 pdf', driver: 'SITI', phone: '0811', items: rows.map(r => ({ material_id: r.id, qty: 1, weight: 1000 })) });
     assert.equal(sj.status, 200);
+    { // surat jalan digital lewat QR: link rahasia tanpa login, hanya-baca
+      const d = (await app.get(`/ho/sj/${sj.data.id}`)).data, root = app.base.replace(/\/api$/, '');
+      assert.match(d.public_url, /\/s\/\d+\/[0-9a-f]{24}$/); assert.match(d.qr_svg, /^<svg /);
+      const path = new URL(d.public_url).pathname, ok = await fetch(root + path); assert.equal(ok.status, 200); assert.equal(ok.headers.get('content-type'), 'application/pdf'); assert.equal((await ok.arrayBuffer()).byteLength > 1000, true);
+      assert.equal((await fetch(root + path.slice(0, -1) + (path.endsWith('0') ? '1' : '0'))).status, 404);           // tanda tangan salah
+      assert.equal((await fetch(root + `/s/${sj.data.id + 999}/${path.split('/').pop()}`)).status, 404);               // id lain dengan tanda tangan ini
+      assert.equal((await fetch(root + `/api/ho/sj/${sj.data.id}`)).status, 401);                                      // API tetap wajib login
+    }
     const row = async () => (await app.get(`/ho/tickets/${tk}/sj`)).data.rows[0];
     let r = await row(); assert.equal(r.finish_at, null); assert.equal(r.load_min, null);               // Finish Loading belum dicatat otomatis
     assert.equal((await app.post(`/ho/sj/${sj.data.id}/finish`)).status, 200);
