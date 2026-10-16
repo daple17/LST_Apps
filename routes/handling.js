@@ -4,7 +4,7 @@ const rules = require('../lib/rules'), calc = require('../lib/calc'), fmt = requ
 const numbering = require('../lib/numbering'), audit = require('../lib/audit'), files = require('../lib/files');
 const { wrap, bad, httpError, tx } = require('../lib/http');
 const { sjPdf, damagePdf } = require('../lib/pdf'), { ticketReportText } = require('../lib/report-text');
-const sjLink = require('../lib/sj-link');
+const sjLink = require('../lib/sj-link'), qr = require('../lib/qr');
 const excel = require('../lib/excel'), exportsLib = require('../lib/exports'), { ZipArchive } = require('archiver');
 
 const nul = v => (v === '' || v === undefined ? null : v);
@@ -405,7 +405,7 @@ module.exports = pool => {
     return s;
   }
   const fmtDate = d => String(d).slice(0, 10).split('-').reverse().join('-');
-  r.get('/sj/:id', wrap(async (req, res) => { const s = await sjFull(req.params.id); if (!s) return res.sendStatus(404); const link = sjLink.url(req, s.id); res.json({ ...s, public_url: link }); }));
+  r.get('/sj/:id', wrap(async (req, res) => { const s = await sjFull(req.params.id); if (!s) return res.sendStatus(404); const link = sjLink.url(req, s.id); res.json({ ...s, public_url: link, qr_svg: qr.svg(link, 4) }); }));
 
   // Finish Loading: catat waktu selesai (bisa dikoreksi lewat Edit)
   r.post('/sj/:id/finish', wrap(async (req, res) => {

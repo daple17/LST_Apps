@@ -70,7 +70,7 @@ test('Handling Ops: aturan tiket, progres, penomoran, material', async t => {
     assert.equal(sj.status, 200);
     { // surat jalan digital lewat scan barcode: link rahasia tanpa login, hanya-baca
       const d = (await app.get(`/ho/sj/${sj.data.id}`)).data, root = app.base.replace(/\/api$/, '');
-      assert.match(d.public_url, /\/s\/\d+$/); const code = d.public_url.split('/').pop(), path = new URL(d.public_url).pathname;
+      assert.match(d.public_url, /\/s\/\d+$/); assert.match(d.qr_svg, /^<svg /); const code = d.public_url.split('/').pop(), path = new URL(d.public_url).pathname;
       const ok = await fetch(root + path); assert.equal(ok.status, 200); assert.equal(ok.headers.get('content-type'), 'application/pdf'); assert.equal((await ok.arrayBuffer()).byteLength > 1000, true);
       assert.equal((await fetch(root + '/s/' + code.slice(0, -1) + (code.endsWith('0') ? '1' : '0'))).status, 404);          // tanda tangan salah
       assert.equal((await fetch(root + `/s/${sj.data.id + 999}${code.slice(-12)}`)).status, 404);                              // id lain dengan tanda tangan ini

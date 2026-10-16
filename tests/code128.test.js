@@ -54,3 +54,9 @@ test('svg dengan maxWidth memilih lebar modul bulat yang muat', () => {
   const t = 'https://lesat-production.up.railway.app/s/180123456789012', m = C.bars(t).modules, s = C.svg(t, { maxWidth: 840 });
   assert.match(s, new RegExp(`width="${m * Math.max(1, Math.min(2, Math.floor(840 / m)))}"`)); assert.ok(m < 840);
 });
+
+test('QR surat jalan terbaca ZXing', () => {
+  const Z = require('../public/vendor/zxing-library.min.js'), { matrix } = require('../lib/qr'), url = 'https://lesat.example.com/s/180737606424072', m = matrix(url), px = 6, q = 4, n = m.size + 2 * q, W = n * px, lum = new Uint8ClampedArray(W * W).fill(255);
+  for (let r = 0; r < m.size; r++) for (let c = 0; c < m.size; c++) if (m.get(r, c)) for (let y = 0; y < px; y++) for (let x = 0; x < px; x++) lum[((r + q) * px + y) * W + (c + q) * px + x] = 0;
+  assert.equal(new Z.MultiFormatReader().decode(new Z.BinaryBitmap(new Z.HybridBinarizer(new Z.RGBLuminanceSource(lum, W, W))), new Map([[Z.DecodeHintType.POSSIBLE_FORMATS, [Z.BarcodeFormat.QR_CODE]]])).getText(), url);
+});
