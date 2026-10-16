@@ -29,7 +29,7 @@ test('migrasi data demo lama ke struktur baru', async t => {
   await q("INSERT INTO sj_photos (sj_id,path) VALUES (1,'s1.jpg')");
 
   // 2. migrasi (dua kali: yang kedua tidak boleh melakukan apa pun)
-  assert.deepEqual((await migrate(pool)).sort(), ['000-legacy-baseline.js', '001-job-orders.js', '002-handling.js', '003-nopen.js', '004-home-indexes.js', '005-users-roles.js', '006-audit-note-text.js', '007-coa.js', '008-checkin.js', '009-checkin-photo.js', '010-legacy-compat.js', '011-legacy-material-origin.js', '012-coa-job-types.js', '013-customer-active.js', '014-vendor-active.js', '015-vendor-rates.js', '016-vendor-rates-city.js', '017-vendor-flat-rates.js', '018-cities.js']); // baseline dipanggil manual di atas, jadi belum tercatat (idempotent)
+  assert.deepEqual((await migrate(pool)).sort(), ['000-legacy-baseline.js', '001-job-orders.js', '002-handling.js', '003-nopen.js', '004-home-indexes.js', '005-users-roles.js', '006-audit-note-text.js', '007-coa.js', '008-checkin.js', '009-checkin-photo.js', '010-legacy-compat.js', '011-legacy-material-origin.js', '012-coa-job-types.js', '013-customer-active.js', '014-vendor-active.js', '015-vendor-rates.js', '016-vendor-rates-city.js', '017-vendor-flat-rates.js', '018-cities.js', '019-tracking.js']); // baseline dipanggil manual di atas, jadi belum tercatat (idempotent)
   assert.deepEqual(await migrate(pool), []);
 
   // 3. JO: nomor, tipe, berat, party, referensi

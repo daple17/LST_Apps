@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Driver langkah berikutnya</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 844px; box-sizing: border-box; background: #F4F5F7; color: #172033; font-family: 'IBM Plex Sans', sans-serif; font-size: 16px; line-height: 1.5; padding: 24px 16px; display: flex; flex-direction: column">
+  <div style="display: flex; align-items: center; margin-bottom: 16px">
+    <span style="font-weight: 600; letter-spacing: 0.04em">LESAT</span>
+    <span style="flex-grow: 1"></span>
+    <span style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: #5B6577">2026100301</span>
+  </div>
+
+  <div style="background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 12px; padding: 16px; margin-bottom: 16px">
+    <div style="display: flex; align-items: center; gap: 12px">
+      <div style="flex: 1"><div style="color: #5B6577; font-size: 12px">Muat di</div><div style="font-weight: 600">PRIOK</div></div>
+      <div style="color: #5B6577" aria-hidden="true">&rarr;</div>
+      <div style="flex: 1"><div style="color: #5B6577; font-size: 12px">Tujuan</div><div style="font-weight: 600">WAREHOUSE 3</div></div>
+    </div>
+    <div style="border-top: 1px solid #E3E6EB; margin-top: 12px; padding-top: 12px; color: #5B6577; font-size: 14px">3 coil · 42,8 ton · B 9123 ABC</div>
+  </div>
+
+  <div style="display: flex; gap: 4px; margin-bottom: 8px">
+    <div style="flex: 1; height: 6px; border-radius: 3px; background: #0E7C66"></div>
+    <div style="flex: 1; height: 6px; border-radius: 3px; background: #0E7C66"></div>
+    <div style="flex: 1; height: 6px; border-radius: 3px; background: #0E7C66"></div>
+    <div style="flex: 1; height: 6px; border-radius: 3px; background: #0E7C66"></div>
+    <div style="flex: 1; height: 6px; border-radius: 3px; background: #0E7C66"></div>
+    <div style="flex: 1; height: 6px; border-radius: 3px; background: #0E7C66"></div>
+    <div style="flex: 1; height: 6px; border-radius: 3px; background: #E3E6EB"></div>
+    <div style="flex: 1; height: 6px; border-radius: 3px; background: #E3E6EB"></div>
+  </div>
+  <div style="color: #5B6577; font-size: 13px; margin-bottom: 24px">Langkah 6 dari 8 selesai</div>
+
+  <div style="color: #5B6577; font-size: 13px">Status sekarang</div>
+  <div style="font-size: 22px; font-weight: 600; margin-bottom: 4px">Dalam perjalanan</div>
+  <div style="color: #5B6577; margin-bottom: 24px">Sejak 09.24. Jika sudah sampai, tekan tombol di bawah.</div>
+
+  <div style="background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 12px; padding: 12px 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px">
+    <div style="width: 20px; height: 20px; border-radius: 50%; background: #0E7C66; display: flex; align-items: center; justify-content: center"><svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6.5L5 9.5L10 3" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div style="flex: 1; color: #5B6577">Selesai muat</div>
+    <div style="font-size: 13px; color: #5B6577">09.10</div>
+  </div>
+  <div style="background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 12px; padding: 12px 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px">
+    <div style="width: 20px; height: 20px; border-radius: 50%; background: #0E7C66; display: flex; align-items: center; justify-content: center"><svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6.5L5 9.5L10 3" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div style="flex: 1; color: #5B6577">Dalam perjalanan</div>
+    <div style="font-size: 13px; color: #5B6577">09.24</div>
+  </div>
+
+  <div style="flex-grow: 1"></div>
+
+  <label style="display: flex; align-items: center; gap: 12px; color: #5B6577; font-size: 14px; margin-bottom: 12px">
+    <span style="width: 20px; height: 20px; border: 1.5px solid #C4CAD4; border-radius: 4px; background: #FFFFFF; display: inline-block"></span>
+    Sertakan lokasi saat ini (boleh dilewati)
+  </label>
+  <button style="height: 64px; width: 100%; border: 0; background: #0E7C66; color: #FFFFFF; border-radius: 12px; font-size: 20px; font-weight: 600; cursor: pointer">Saya sudah tiba di tujuan</button>
+  <div style="text-align: center; color: #5B6577; font-size: 13px; margin-top: 12px">Salah tekan? Hubungi operasional untuk koreksi.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

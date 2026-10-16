@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Trucking Delivery dengan tracking</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,800&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+button{font-family:inherit}
+.nav{display:flex;align-items:center;gap:12px;padding:9px 14px;border-radius:12px;color:#C9D6EA;font-size:14px}
+.sub{display:flex;align-items:center;gap:12px;padding:9px 14px 9px 28px;border-radius:12px;color:#C9D6EA;font-size:14px}
+.sub i{width:5px;height:5px;border-radius:50%;background:#8FA6C8;display:inline-block}
+.soon{margin-left:auto;font-size:11px;background:#274775;color:#C9D6EA;padding:1px 10px;border-radius:999px}
+.th{padding:12px 10px;font-size:11px;font-weight:600;letter-spacing:.06em;color:#5B6B85;text-transform:uppercase;text-align:left;white-space:nowrap}
+.td{padding:14px 10px;font-size:13px;white-space:nowrap}
+.seg{display:flex;gap:2px;width:90px}
+.seg b{flex:1;height:5px;border-radius:3px;background:#DCE3EE;display:block}
+.seg b.on{background:#2D6AA8}
+.seg b.ok{background:#1E9E6A}
+.chip{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600}
+.dots{width:34px;height:34px;border:1px solid #DCE3EE;border-radius:10px;background:#fff;display:inline-flex;align-items:center;justify-content:center;color:#5B6B85}
+</style>
+</helmet>
+<div style="width:100%;min-height:900px;box-sizing:border-box;display:flex;background:linear-gradient(160deg,#EEF3FA 0%,#F7F4EE 100%);font-family:'Plus Jakarta Sans',sans-serif;color:#14243F;font-size:14px;line-height:1.5">
+
+  <div style="width:250px;flex:none;margin:12px;border-radius:24px;background:linear-gradient(180deg,#14305A,#0E2442);padding:20px 12px;box-sizing:border-box;display:flex;flex-direction:column;gap:4px;color:#fff">
+    <div style="padding:0 8px 16px"><div style="font-weight:800;font-style:italic;font-size:24px">LESAT</div><div style="font-size:12px;color:#8FA6C8">By Lima Sarana</div></div>
+    <div class="nav">HOME</div>
+    <div class="sub"><i></i>Dashboard</div>
+    <div class="nav">OPERASIONAL</div>
+    <div class="sub"><i></i>Job Order &amp; Doc</div>
+    <div class="sub" style="background:#3B6CA8;color:#fff"><i style="background:#fff"></i>Handling Ops</div>
+    <div class="sub"><i></i>Trucking<span class="soon">segera</span></div>
+    <div class="sub"><i></i>Submission<span class="soon">segera</span></div>
+    <div class="sub"><i></i>Settlement<span class="soon">segera</span></div>
+    <div class="sub"><i></i>Job Complete<span class="soon">segera</span></div>
+    <div class="nav">FAT</div>
+    <div class="nav">APPROVAL</div>
+    <div class="nav">HR (SDM)</div>
+    <div class="nav">DATA MASTER</div>
+  </div>
+
+  <div style="flex:1;min-width:0;padding:24px 24px 24px 12px;box-sizing:border-box">
+    <h1 style="margin:0 0 16px;font-size:34px;font-weight:800;font-style:italic">Trucking Delivery</h1>
+
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      <span style="padding:8px 14px;border:1px solid #DCE3EE;background:#fff;border-radius:999px">&lsaquo; Back</span>
+      <span style="padding:8px 14px;border:1px solid #DCE3EE;background:#fff;border-radius:999px">Report Material</span>
+      <span style="padding:8px 14px;background:#2D6AA8;color:#fff;border-radius:999px;font-weight:600">Trucking Delivery</span>
+    </div>
+
+    <div style="background:#fff;border-radius:20px;padding:18px 24px;margin-bottom:16px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px 24px;font-size:14px">
+      <div>Ticket: 2026101201TP</div><div>PIC: Tejo Purnomo</div><div>Job Order: <u style="color:#2D6AA8">0023USC</u>, <u style="color:#2D6AA8">0024USC</u></div>
+      <div>Party: 280 CL, 180 CL</div><div>Customer: PT UNITED STEEL SERVICE INDONESIA</div><div>Weight: 140,24 Ton</div>
+      <div>Vessel: SHINLINE 12</div><div>No. Aju: 000332, 000359</div><div>No. BL: ASANKWJK293, ASANKWJK159</div>
+    </div>
+
+    <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">
+      <div style="flex:1 1 200px;background:#fff;border-radius:20px;padding:16px 22px"><div style="color:#5B6B85">Trucking Delivery (14/20 qty)</div><div style="font-size:34px;font-weight:800;font-style:italic;color:#B8601A">70,00%</div></div>
+      <div style="flex:1 1 200px;background:#fff;border-radius:20px;padding:16px 22px"><div style="color:#5B6B85">Dwelling time</div><div style="font-size:30px;font-weight:800;font-style:italic;margin-top:4px">3 D : 23 H : 40 M</div></div>
+      <div style="flex:2 1 380px;background:#fff;border-radius:20px;padding:16px 22px;border:2px solid #CFE0F3">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="color:#5B6B85">Status pengiriman (4 surat jalan)</span><span class="chip" style="background:#E6F0FA;color:#2D6AA8">Baru</span></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <span class="chip" style="background:#EEF1F6;color:#5B6B85">Planning 0</span>
+          <span class="chip" style="background:#E6F0FA;color:#2D6AA8">Ready 1</span>
+          <span class="chip" style="background:#DDF3EA;color:#157A52">Di jalan 1</span>
+          <span class="chip" style="background:#FFF1D6;color:#8A5200">Diterima 1</span>
+          <span class="chip" style="background:#14243F;color:#fff">Completed 1</span>
+        </div>
+        <div style="display:flex;gap:2px;margin-top:12px"><b style="flex:1;height:8px;background:#2D6AA8;border-radius:4px 0 0 4px;display:block"></b><b style="flex:1;height:8px;background:#1E9E6A;display:block"></b><b style="flex:1;height:8px;background:#E8A317;display:block"></b><b style="flex:1;height:8px;background:#14243F;border-radius:0 4px 4px 0;display:block"></b></div>
+      </div>
+    </div>
+
+    <div style="background:#fff;border-radius:20px;padding:12px 16px;margin-bottom:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <div style="height:42px;min-width:260px;box-sizing:border-box;border:1px solid #DCE3EE;border-radius:12px;display:flex;align-items:center;padding:0 14px;color:#8A97AD">Search by nopol, driver, no. surat jalan</div>
+      <div style="height:42px;box-sizing:border-box;border:1px solid #DCE3EE;border-radius:12px;display:flex;align-items:center;padding:0 14px">Semua status &#9662;</div>
+      <span class="chip" style="background:#EEF1F6;color:#14243F">Net 97.333</span><span class="chip" style="background:#EEF1F6;color:#14243F">Gross 98.207</span><span class="chip" style="background:#EEF1F6;color:#14243F">Qty 14</span><span class="chip" style="background:#EEF1F6;color:#14243F">4 RIT</span>
+      <span style="flex:1"></span>
+      <button style="height:42px;padding:0 18px;border:1px solid #DCE3EE;background:#fff;border-radius:12px;font-size:14px">Copy Report</button>
+      <button style="height:42px;padding:0 18px;border:0;background:#2D6AA8;color:#fff;border-radius:12px;font-size:14px;font-weight:600">Buat Surat Jalan</button>
+    </div>
+
+    <div style="background:#fff;border-radius:20px;padding:4px 8px 16px;overflow-x:auto;position:relative">
+      <table style="width:100%;border-collapse:collapse;min-width:980px">
+        <thead><tr>
+          <th class="th">No.</th><th class="th">Nomor polisi</th><th class="th">Driver</th><th class="th">Vendor</th><th class="th">No. surat jalan</th><th class="th">Load time</th><th class="th" style="text-align:right">Net</th><th class="th" style="text-align:right">Qty</th><th class="th">Rute</th><th class="th">Status</th><th class="th">Aksi</th>
+        </tr></thead>
+        <tbody>
+          <tr style="border-top:1px solid #EEF1F6;background:#F4F7FB">
+            <td class="td">1</td><td class="td">B 9077 TEK</td><td class="td">MAMAN</td><td class="td">LST</td><td class="td">2026100044</td><td class="td">2 H 47 M</td><td class="td" style="text-align:right">7.107</td><td class="td" style="text-align:right">1</td><td class="td">PRIOK &rarr; CIKARANG</td>
+            <td class="td"><span class="chip" style="background:#E6F0FA;color:#2D6AA8">Ready</span><div class="seg" style="margin-top:6px"><b class="on"></b><b class="on"></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b></div><div style="font-size:11px;color:#8A97AD;margin-top:2px">Tautan belum dibuka</div></td>
+            <td class="td"><span class="dots">&middot;&middot;&middot;</span></td>
+          </tr>
+          <tr style="border-top:1px solid #EEF1F6">
+            <td class="td">2</td><td class="td">B 9076 TEK</td><td class="td">SUPRIADI</td><td class="td">HAJ S</td><td class="td">2026100043</td><td class="td">2 H 42 M</td><td class="td" style="text-align:right">23.230</td><td class="td" style="text-align:right">3</td><td class="td">PRIOK &rarr; CIKARANG</td>
+            <td class="td"><span class="chip" style="background:#DDF3EA;color:#157A52">Dalam perjalanan</span><div class="seg" style="margin-top:6px"><b class="ok"></b><b class="ok"></b><b class="ok"></b><b class="ok"></b><b class="ok"></b><b class="ok"></b><b></b><b></b><b></b></div><div style="font-size:11px;color:#8A97AD;margin-top:2px">Sejak 09.24 · 1 j 52 m</div></td>
+            <td class="td"><span class="dots">&middot;&middot;&middot;</span></td>
+          </tr>
+          <tr style="border-top:1px solid #EEF1F6">
+            <td class="td">3</td><td class="td">B 9198 TEK</td><td class="td">KOMAR</td><td class="td">HAJ W</td><td class="td">2026100042</td><td class="td">0 H 51 M</td><td class="td" style="text-align:right">25.467</td><td class="td" style="text-align:right">4</td><td class="td">PRIOK &rarr; CIKARANG</td>
+            <td class="td"><span class="chip" style="background:#FFF1D6;color:#8A5200">Diterima</span><div class="seg" style="margin-top:6px"><b class="ok"></b><b class="ok"></b><b class="ok"></b><b class="ok"></b><b class="ok"></b><b class="ok"></b><b class="ok"></b><b class="ok"></b><b></b></div><div style="font-size:11px;color:#8A5200;margin-top:2px">Foto diterima, tunggu Completed</div></td>
+            <td class="td"><button style="height:32px;padding:0 12px;border:0;background:#2D6AA8;color:#fff;border-radius:10px;font-size:12px;font-weight:600">Tandai Completed</button> <span class="dots" style="margin-left:4px">&middot;&middot;&middot;</span></td>
+          </tr>
+          <tr style="border-top:1px solid #EEF1F6">
+            <td class="td">4</td><td class="td">B 9195 TEK</td><td class="td">WAWAN</td><td class="td">DMS</td><td class="td">2026100041</td><td class="td">2 H 57 M</td><td class="td" style="text-align:right">41.529</td><td class="td" style="text-align:right">6</td><td class="td">PRIOK &rarr; CIKARANG</td>
+            <td class="td"><span class="chip" style="background:#14243F;color:#fff">Completed</span><div class="seg" style="margin-top:6px"><b class="ok"></b><b class="ok"></b><b class="ok"></b><b class="ok"></b><b class="ok"></b><b class="ok"></b><b class="ok"></b><b class="ok"></b><b class="ok"></b></div><div style="font-size:11px;color:#8A97AD;margin-top:2px">15 Okt, 16.30 · Rina</div></td>
+            <td class="td"><span class="dots">&middot;&middot;&middot;</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div style="position:absolute;right:20px;top:170px;width:260px;background:#fff;border:1px solid #DCE3EE;border-radius:14px;box-shadow:0 12px 32px rgba(20,36,63,.18);padding:6px">
+        <div style="padding:8px 12px;border-radius:8px">Lihat progress</div>
+        <div style="padding:8px 12px;border-radius:8px;background:#E6F0FA;color:#2D6AA8;font-weight:600">Bagikan tautan driver</div>
+        <div style="padding:8px 12px;border-radius:8px">Salin tautan</div>
+        <div style="padding:8px 12px;border-radius:8px">Tampilkan QR</div>
+        <div style="border-top:1px solid #EEF1F6;margin:4px 0"></div>
+        <div style="padding:8px 12px;border-radius:8px">Edit surat jalan</div>
+        <div style="padding:8px 12px;border-radius:8px">Cetak surat jalan</div>
+        <div style="padding:8px 12px;border-radius:8px;color:#B42318">Cabut tautan</div>
+      </div>
+
+      <div style="text-align:right;color:#5B6B85;margin-top:12px;padding-right:12px">4 data</div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

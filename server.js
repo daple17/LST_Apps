@@ -87,7 +87,7 @@ function createApp(pool, opts = {}) {   // opts.now: jam server yang bisa digant
   app.use('/api/job-orders', guard('jo', JO_EXPORT));
   app.use('/api/documents', guard('jo'));
   const HO_EXPORT = [['GET', /^\/tickets\/export$/, 'export'], ['GET', /^\/tickets\/\d+\/(export|zip)$/, 'export'], ['GET', /^\/sj\/\d+\/pdf$/, 'export'], ['GET', /^\/tickets\/\d+\/materials\/\d+\/pdf$/, 'export'],
-    ['POST', /^\/sj\/\d+\/finish$/, 'update'], ['POST', /^\/(tickets\/\d+\/materials\/\d+|sj\/\d+)\/photos$/, 'update']];
+    ['POST', /^\/sj\/\d+\/finish$/, 'update'], ['POST', /^\/sj\/\d+\/(ready|complete|reopen|tracking\/(step|undo|link\/(revoke|regenerate|unlock)))$/, 'update'], ['POST', /^\/(tickets\/\d+\/materials\/\d+|sj\/\d+)\/photos$/, 'update']];
   app.use('/api/ho', guard('ho', HO_EXPORT));
   app.use('/api/home', requirePerm('home.view'));
   app.use('/api/users', guard('user', [['POST', /^\/\d+\/(de)?activate$/, 'update']]), require('./routes/users')(pool));
@@ -119,6 +119,7 @@ async function seedMaster(pool) {
   }
   const [[{ nv }]] = await pool.query('SELECT COUNT(*) nv FROM vendors');
   if (!nv) await pool.query('INSERT INTO vendors (code,name) VALUES ?', [[['LST', 'PT LIMA SARANA TRANS'], ['MJL', 'MJL TRANS'], ['DMS', 'DMS LOGISTIK'], ['HAJ W', 'HAJ WIJAYA'], ['HAJ S', 'HAJ SENTOSA']]]);
+  await pool.query("UPDATE vendors SET is_own_fleet=1 WHERE code='LST'");
   await pool.query("UPDATE users SET pic_code='AD', employee_no='2022010001' WHERE username='admin' AND pic_code IS NULL");
   await require('./lib/roles-seed').syncSystemRoles(pool); // admin -> Super Admin; Super Admin selalu memegang semua izin
 }

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Driver bukti diterima</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 844px; box-sizing: border-box; background: #F4F5F7; color: #172033; font-family: 'IBM Plex Sans', sans-serif; font-size: 16px; line-height: 1.5; padding: 24px 16px; display: flex; flex-direction: column">
+  <div style="display: flex; align-items: center; margin-bottom: 16px">
+    <span style="font-weight: 600; letter-spacing: 0.04em">LESAT</span>
+    <span style="flex-grow: 1"></span>
+    <span style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: #5B6577">2026100301</span>
+  </div>
+
+  <h1 style="margin: 0 0 8px; font-size: 22px; font-weight: 600">Barang sudah diterima</h1>
+  <p style="margin: 0 0 20px; color: #5B6577">Foto surat jalan yang sudah ditandatangani penerima. Foto ini wajib sebagai bukti.</p>
+
+  <div style="height: 240px; border: 2px dashed #C4CAD4; border-radius: 12px; background: #FFFFFF; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px">
+    <svg width="40" height="40" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-2h6l2 2h3v11H4z" fill="none" stroke="#5B6577" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.5" fill="none" stroke="#5B6577" stroke-width="1.6"/></svg>
+    <div style="font-weight: 500">Ketuk untuk mengambil foto</div>
+    <div style="color: #5B6577; font-size: 13px">Pastikan tanda tangan dan stempel terbaca</div>
+  </div>
+
+  <div style="color: #5B6577; font-size: 13px; margin-bottom: 16px">Nama penerima (boleh dikosongkan)</div>
+  <div style="height: 48px; box-sizing: border-box; border: 1px solid #C4CAD4; border-radius: 8px; background: #FFFFFF; display: flex; align-items: center; padding: 0 12px; color: #5B6577; margin-top: -8px; margin-bottom: 16px">Contoh: Pak Dedi</div>
+
+  <div style="background: #E3F4EF; border-radius: 12px; padding: 12px 16px; color: #0A5C4C; font-size: 14px">
+    Setelah dikirim, operasional akan memeriksa foto lalu menutup pengiriman ini.
+  </div>
+
+  <div style="flex-grow: 1"></div>
+
+  <button style="height: 64px; width: 100%; border: 0; background: #C4CAD4; color: #FFFFFF; border-radius: 12px; font-size: 20px; font-weight: 600; cursor: not-allowed">Kirim bukti terima</button>
+  <div style="text-align: center; color: #5B6577; font-size: 13px; margin-top: 12px">Tombol aktif setelah foto diambil.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

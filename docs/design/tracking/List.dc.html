@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Daftar surat jalan</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0E7C66}
+button{font-family:inherit}
+.row:hover{background:#F4F5F7}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 920px; box-sizing: border-box; background: #F4F5F7; color: #172033; font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; line-height: 1.5">
+  <div style="height: 56px; background: #FFFFFF; border-bottom: 1px solid #E3E6EB; display: flex; align-items: center; padding: 0 24px; gap: 24px">
+    <span style="font-weight: 600; font-size: 18px; letter-spacing: 0.04em">LESAT</span>
+    <span style="color: #5B6577">Handling Ops</span>
+    <span style="flex-grow: 1"></span>
+    <span style="color: #5B6577">Rina (Operasional)</span>
+  </div>
+  <div style="max-width: 1240px; margin: 0 auto; padding: 24px; box-sizing: border-box">
+    <h1 style="margin: 0 0 16px; font-size: 24px; font-weight: 600">Surat jalan</h1>
+
+    <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px">
+      <div style="background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 12px; padding: 12px 20px; min-width: 140px"><div style="color: #5B6577; font-size: 12px">Planning</div><div style="font-size: 24px; font-weight: 600">4</div></div>
+      <div style="background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 12px; padding: 12px 20px; min-width: 140px"><div style="color: #5B6577; font-size: 12px">Ready, belum jalan</div><div style="font-size: 24px; font-weight: 600">3</div></div>
+      <div style="background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 12px; padding: 12px 20px; min-width: 140px"><div style="color: #5B6577; font-size: 12px">Di jalan</div><div style="font-size: 24px; font-weight: 600">6</div></div>
+      <div style="background: #FFF1D6; border: 1px solid #F2D9A0; border-radius: 12px; padding: 12px 20px; min-width: 140px"><div style="color: #8A5200; font-size: 12px">Diterima, tunggu Completed</div><div style="font-size: 24px; font-weight: 600; color: #8A5200">2</div></div>
+      <div style="background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 12px; padding: 12px 20px; min-width: 140px"><div style="color: #5B6577; font-size: 12px">Completed hari ini</div><div style="font-size: 24px; font-weight: 600">5</div></div>
+    </div>
+
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px">
+      <div style="height: 40px; box-sizing: border-box; border: 1px solid #C4CAD4; border-radius: 8px; background: #FFFFFF; display: flex; align-items: center; padding: 0 12px; color: #5B6577; min-width: 260px">Cari no. surat jalan, tiket, nopol</div>
+      <div style="height: 40px; box-sizing: border-box; border: 1px solid #C4CAD4; border-radius: 8px; background: #FFFFFF; display: flex; align-items: center; padding: 0 12px">Semua status</div>
+      <div style="height: 40px; box-sizing: border-box; border: 1px solid #C4CAD4; border-radius: 8px; background: #FFFFFF; display: flex; align-items: center; padding: 0 12px">Semua vendor</div>
+      <div style="height: 40px; box-sizing: border-box; border: 1px solid #C4CAD4; border-radius: 8px; background: #FFFFFF; display: flex; align-items: center; padding: 0 12px">Data lama: semua</div>
+    </div>
+
+    <div style="background: #FFFFFF; border: 1px solid #E3E6EB; border-radius: 12px; overflow: hidden">
+      <div style="overflow-x: auto">
+      <table style="width: 100%; border-collapse: collapse; min-width: 900px">
+        <thead>
+          <tr style="background: #F4F5F7; text-align: left; color: #5B6577; font-size: 12px">
+            <th style="padding: 10px 16px; font-weight: 500">No. surat jalan</th>
+            <th style="padding: 10px 16px; font-weight: 500">Tiket</th>
+            <th style="padding: 10px 16px; font-weight: 500">Rute</th>
+            <th style="padding: 10px 16px; font-weight: 500">Driver / nopol</th>
+            <th style="padding: 10px 16px; font-weight: 500; width: 220px">Progress</th>
+            <th style="padding: 10px 16px; font-weight: 500">Status</th>
+            <th style="padding: 10px 16px; font-weight: 500">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="row" style="border-top: 1px solid #E3E6EB">
+            <td style="padding: 12px 16px; font-family: 'IBM Plex Mono', monospace"><a href="Main.dc.html">2026100301</a></td>
+            <td style="padding: 12px 16px; font-family: 'IBM Plex Mono', monospace">202610045</td>
+            <td style="padding: 12px 16px">PRIOK &rarr; WAREHOUSE 3</td>
+            <td style="padding: 12px 16px">Suryanto<br><span style="font-family: 'IBM Plex Mono', monospace; color: #5B6577; font-size: 12px">B 9123 ABC</span></td>
+            <td style="padding: 12px 16px"><div style="display: flex; gap: 3px"><div style="flex: 1; height: 6px; border-radius: 3px; background: #0E7C66"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #0E7C66"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #0E7C66"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #0E7C66"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #0E7C66"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #0E7C66"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #E3E6EB"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #E3E6EB"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #E3E6EB"></div></div><div style="color: #5B6577; font-size: 12px; margin-top: 4px">6 dari 9 langkah</div></td>
+            <td style="padding: 12px 16px"><span style="background: #E3F4EF; color: #0A5C4C; padding: 2px 10px; border-radius: 999px; font-size: 13px; font-weight: 500">Dalam perjalanan</span></td>
+            <td style="padding: 12px 16px"><a href="Main.dc.html">Lihat</a></td>
+          </tr>
+          <tr class="row" style="border-top: 1px solid #E3E6EB">
+            <td style="padding: 12px 16px; font-family: 'IBM Plex Mono', monospace">2026100302</td>
+            <td style="padding: 12px 16px; font-family: 'IBM Plex Mono', monospace">202610045</td>
+            <td style="padding: 12px 16px">PRIOK &rarr; WAREHOUSE 3</td>
+            <td style="padding: 12px 16px">Hendra<br><span style="font-family: 'IBM Plex Mono', monospace; color: #5B6577; font-size: 12px">B 9456 XYZ</span></td>
+            <td style="padding: 12px 16px"><div style="display: flex; gap: 3px"><div style="flex: 1; height: 6px; border-radius: 3px; background: #0E7C66"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #0E7C66"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #E3E6EB"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #E3E6EB"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #E3E6EB"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #E3E6EB"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #E3E6EB"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #E3E6EB"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #E3E6EB"></div></div><div style="color: #5B6577; font-size: 12px; margin-top: 4px">Ready, driver belum membuka tautan</div></td>
+            <td style="padding: 12px 16px"><span style="background: #EEF0F4; color: #172033; padding: 2px 10px; border-radius: 999px; font-size: 13px; font-weight: 500">Ready</span></td>
+            <td style="padding: 12px 16px"><a href="Main.dc.html">Kirim ulang tautan</a></td>
+          </tr>
+          <tr class="row" style="border-top: 1px solid #E3E6EB">
+            <td style="padding: 12px 16px; font-family: 'IBM Plex Mono', monospace">2026100298</td>
+            <td style="padding: 12px 16px; font-family: 'IBM Plex Mono', monospace">202610041</td>
+            <td style="padding: 12px 16px">DEPO MAYA &rarr; PT KRAKATAU</td>
+            <td style="padding: 12px 16px">Bambang<br><span style="font-family: 'IBM Plex Mono', monospace; color: #5B6577; font-size: 12px">B 9871 KLM</span></td>
+            <td style="padding: 12px 16px"><div style="display: flex; gap: 3px"><div style="flex: 1; height: 6px; border-radius: 3px; background: #0E7C66"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #0E7C66"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #0E7C66"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #0E7C66"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #0E7C66"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #0E7C66"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #0E7C66"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #0E7C66"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #E3E6EB"></div></div><div style="color: #8A5200; font-size: 12px; margin-top: 4px">Foto diterima 2 jam lalu</div></td>
+            <td style="padding: 12px 16px"><span style="background: #FFF1D6; color: #8A5200; padding: 2px 10px; border-radius: 999px; font-size: 13px; font-weight: 500">Diterima</span></td>
+            <td style="padding: 12px 16px"><button style="height: 32px; padding: 0 12px; border: 0; background: #0E7C66; color: #FFFFFF; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer">Tandai Completed</button></td>
+          </tr>
+          <tr class="row" style="border-top: 1px solid #E3E6EB">
+            <td style="padding: 12px 16px; font-family: 'IBM Plex Mono', monospace">2026100287</td>
+            <td style="padding: 12px 16px; font-family: 'IBM Plex Mono', monospace">202610038</td>
+            <td style="padding: 12px 16px">PRIOK &rarr; CIKARANG</td>
+            <td style="padding: 12px 16px">Rudi (vendor luar)<br><span style="font-family: 'IBM Plex Mono', monospace; color: #5B6577; font-size: 12px">B 9302 PQR</span></td>
+            <td style="padding: 12px 16px"><div style="display: flex; gap: 3px"><div style="flex: 1; height: 6px; border-radius: 3px; background: #0E7C66"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #0E7C66"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #0E7C66"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #0E7C66"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #E3E6EB"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #E3E6EB"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #E3E6EB"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #E3E6EB"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #E3E6EB"></div></div><div style="color: #B42318; font-size: 12px; margin-top: 4px">Tiba di lokasi muat, belum bergerak 4 jam</div></td>
+            <td style="padding: 12px 16px"><span style="background: #FDE7E4; color: #B42318; padding: 2px 10px; border-radius: 999px; font-size: 13px; font-weight: 500">Tertahan</span></td>
+            <td style="padding: 12px 16px"><a href="Main.dc.html">Lihat</a></td>
+          </tr>
+          <tr class="row" style="border-top: 1px solid #E3E6EB">
+            <td style="padding: 12px 16px; font-family: 'IBM Plex Mono', monospace">2026100301</td>
+            <td style="padding: 12px 16px; font-family: 'IBM Plex Mono', monospace">202610046</td>
+            <td style="padding: 12px 16px">PRIOK &rarr; WAREHOUSE 1</td>
+            <td style="padding: 12px 16px">Belum ditentukan</td>
+            <td style="padding: 12px 16px"><div style="display: flex; gap: 3px"><div style="flex: 1; height: 6px; border-radius: 3px; background: #0E7C66"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #E3E6EB"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #E3E6EB"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #E3E6EB"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #E3E6EB"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #E3E6EB"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #E3E6EB"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #E3E6EB"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #E3E6EB"></div></div><div style="color: #5B6577; font-size: 12px; margin-top: 4px">Menunggu driver dan nopol</div></td>
+            <td style="padding: 12px 16px"><span style="background: #EEF0F4; color: #5B6577; padding: 2px 10px; border-radius: 999px; font-size: 13px; font-weight: 500">Planning</span></td>
+            <td style="padding: 12px 16px"><button style="height: 32px; padding: 0 12px; border: 1px solid #C4CAD4; background: #FFFFFF; color: #172033; border-radius: 8px; font-size: 13px; cursor: pointer">Tandai Ready</button></td>
+          </tr>
+          <tr class="row" style="border-top: 1px solid #E3E6EB">
+            <td style="padding: 12px 16px; font-family: 'IBM Plex Mono', monospace">SJ-2024-0912</td>
+            <td style="padding: 12px 16px"><span style="font-family: 'IBM Plex Mono', monospace">MIG-202409</span><br><span style="background: #EEF0F4; color: #5B6577; font-size: 11px; padding: 0 8px; border-radius: 4px">Tiket sementara</span></td>
+            <td style="padding: 12px 16px">PRIOK &rarr; BEKASI</td>
+            <td style="padding: 12px 16px">Joko<br><span style="font-family: 'IBM Plex Mono', monospace; color: #5B6577; font-size: 12px">B 9011 DEF</span></td>
+            <td style="padding: 12px 16px"><span style="color: #5B6577; font-size: 12px">Status dari data lama: selesai</span></td>
+            <td style="padding: 12px 16px"><span style="background: #EEF0F4; color: #172033; padding: 2px 10px; border-radius: 999px; font-size: 13px; font-weight: 500">Completed</span> <span style="background: #FFF1D6; color: #8A5200; font-size: 11px; padding: 0 8px; border-radius: 4px">Data lama</span></td>
+            <td style="padding: 12px 16px"><a href="#">Tautkan ke tiket</a></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+    <div style="color: #5B6577; font-size: 13px; margin-top: 12px">Contoh tampilan. Angka dan nama hanya ilustrasi, bukan data nyata.</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":920}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

@@ -4,7 +4,7 @@ const rules = require('../lib/rules'), calc = require('../lib/calc'), fmt = requ
 const numbering = require('../lib/numbering'), audit = require('../lib/audit'), files = require('../lib/files');
 const { wrap, bad, httpError, tx } = require('../lib/http');
 const { sjPdf, damagePdf } = require('../lib/pdf'), { ticketReportText } = require('../lib/report-text');
-const sjLink = require('../lib/sj-link'), qr = require('../lib/qr');
+const sjLink = require('../lib/sj-link'), qr = require('../lib/qr'), T = require('../lib/tracking'), trackDb = require('../lib/tracking-db');
 const excel = require('../lib/excel'), exportsLib = require('../lib/exports'), { ZipArchive } = require('archiver');
 
 const nul = v => (v === '' || v === undefined ? null : v);
@@ -291,7 +291,8 @@ module.exports = pool => {
 
   // hapus foto (material report / surat jalan)
   r.delete('/files/:id', wrap(async (req, res) => {
-    const [[f]] = await pool.query('SELECT id, owner_type FROM files WHERE id=?', [req.params.id]);
+    const [[f]] = await pool.query('SELECT id, owner_type, kind FROM files WHERE id=?', [req.params.id]);
+    if (f && f.kind === 'pod') throw httpError(400, 'Bukti terima tidak bisa dihapus');
     if (f && ['material_report', 'delivery_note'].includes(f.owner_type)) await files.removeById(pool, f.id);
     res.json({ ok: true });
   }));
@@ -301,19 +302,21 @@ module.exports = pool => {
     v.code vendor_code, v.name vendor_name, COALESCE(SUM(i.qty),0) qty, COALESCE(SUM(i.weight),0) net_weight,
     COALESCE(SUM(m.gross_weight*i.qty/NULLIF(m.qty,0)),0) gross_weight, MIN(m.unit) unit,
     COALESCE(GROUP_CONCAT(DISTINCT m.origin SEPARATOR ', '), MAX(d.origin_address)) origin, COALESCE(GROUP_CONCAT(DISTINCT m.destination SEPARATOR ', '), MAX(d.destination)) destination,
-    d.origin data_origin, d.legacy_status
+    d.origin data_origin, d.legacy_status, d.track_status, UNIX_TIMESTAMP(d.track_status_at)*1000 status_at_ms, UNIX_TIMESTAMP(NOW())*1000 now_ms, d.link_revoked_at, d.link_opened_at, d.link_locked, d.received_by, COALESCE(v.is_own_fleet,0) is_own_fleet
     FROM delivery_notes d LEFT JOIN vendors v ON v.id=d.vendor_id LEFT JOIN delivery_note_items i ON i.dn_id=d.id LEFT JOIN jo_materials m ON m.id=i.material_id`;
   const dnOut = x => ({ ...x, is_legacy: x.data_origin === 'LEGACY', qty: +x.qty, net_weight: +x.net_weight, gross_weight: +x.gross_weight, load_min: calc.loadMinutes(x.start_at, x.finish_at) });
 
   r.get('/tickets/:id/sj', wrap(async (req, res) => {
     const size = rules.LIMITS.PAGE_SIZE, page = Math.max(1, +req.query.page || 1), w = ['d.ticket_id=?'], p = [req.params.id];
     if (req.query.q) { w.push('(d.nopol LIKE ? OR d.driver LIKE ? OR d.no_sj LIKE ? OR v.code LIKE ? OR EXISTS (SELECT 1 FROM delivery_note_items ii JOIN jo_materials mm ON mm.id=ii.material_id WHERE ii.dn_id=d.id AND mm.destination LIKE ?))'); p.push(...Array(5).fill(`%${req.query.q}%`)); }
+    if (req.query.status && T.STATUSES.includes(req.query.status)) { w.push('d.track_status=?'); p.push(req.query.status); }
     const cond = ' WHERE ' + w.join(' AND ');
     const [[{ n }]] = await pool.query(`SELECT COUNT(*) n FROM delivery_notes d LEFT JOIN vendors v ON v.id=d.vendor_id${cond}`, p);
     const [rows] = await pool.query(`${DNSEL}${cond} GROUP BY d.id ORDER BY d.id DESC LIMIT ? OFFSET ?`, [...p, size, (page - 1) * size]);
     const [[t]] = await pool.query(`SELECT COUNT(DISTINCT d.id) trips, COALESCE(SUM(i.qty),0) qty, COALESCE(SUM(i.weight),0) net, COALESCE(SUM(m.gross_weight*i.qty/NULLIF(m.qty,0)),0) gross
       FROM delivery_notes d LEFT JOIN delivery_note_items i ON i.dn_id=d.id LEFT JOIN jo_materials m ON m.id=i.material_id WHERE d.ticket_id=?`, [req.params.id]);
-    res.json({ rows: rows.map(dnOut), total: n, pages: Math.ceil(n / size), page, totals: { trips: t.trips, qty: +t.qty, net: +t.net, gross: +t.gross } });
+    const track = await trackDb.summarize(pool, rows.map(x => ({ ...x, origin: x.data_origin }))), counts = Object.fromEntries((await pool.query('SELECT track_status s, COUNT(*) n FROM delivery_notes WHERE ticket_id=? GROUP BY track_status', [req.params.id]))[0].map(x => [x.s, x.n]));
+    res.json({ rows: rows.map((x, i) => ({ ...dnOut(x), track: track[i] })), status_counts: counts, total: n, pages: Math.ceil(n / size), page, totals: { trips: t.trips, qty: +t.qty, net: +t.net, gross: +t.gross } });
   }));
 
   // material yang masih punya sisa qty (ex = surat jalan yang sedang diedit)
@@ -364,8 +367,9 @@ module.exports = pool => {
     const out = await tx(pool, async conn => {
       const head = dnHead(b), no_sj = await numbering.sjNumber(conn);
       const start = b.start_at && !isNaN(Date.parse(b.start_at)) ? new Date(b.start_at) : new Date();
-      const [ins] = await conn.query('INSERT INTO delivery_notes (no_sj, ticket_id, nopol, driver, phone, vendor_id, entry_at, exit_at, start_loading, finish_loading, created_by_name, created_by) VALUES (?,?,?,?,?,?,?,?,?,NULL,?,?)',
-        [no_sj, tid, ...head, start, req.user.name, req.user.id]);
+      const [ins] = await conn.query('INSERT INTO delivery_notes (no_sj, ticket_id, nopol, driver, phone, vendor_id, entry_at, exit_at, start_loading, finish_loading, created_by_name, created_by, track_nonce, track_status_at) VALUES (?,?,?,?,?,?,?,?,?,NULL,?,?,?,NOW())',
+        [no_sj, tid, ...head, start, req.user.name, req.user.id, T.newNonce()]);
+      await conn.query("INSERT INTO delivery_note_events (dn_id, status, source, by_user_id, by_label) VALUES (?, 'PLANNING', 'OPS', ?, ?)", [ins.insertId, req.user.id, req.user.name]);
       await dnItems(conn, ins.insertId, tid, b.items);
       await audit.log(conn, { entity: 'ticket', id: tid, action: 'Surat jalan dibuat', note: no_sj, user: req.user });
       return { id: ins.insertId, sj_no: no_sj };
@@ -394,7 +398,8 @@ module.exports = pool => {
     s.items = (await pool.query(`SELECT i.id, i.material_id, i.qty, i.weight, i.mark, m.product_no, m.description, m.spec, m.bl_no, m.unit, m.qty mat_qty, m.destination, m.origin, m.jo_id, j.no_jo jo_no,
       COALESCE(r.status,'NOT_CHECKED') check_status FROM delivery_note_items i JOIN jo_materials m ON m.id=i.material_id JOIN job_orders j ON j.id=m.jo_id
       LEFT JOIN material_reports r ON r.material_id=m.id AND r.ticket_id=? WHERE i.dn_id=? ORDER BY i.id`, [s.ticket_id, s.id]))[0];
-    s.photos = (await pool.query("SELECT id, path, filename FROM files WHERE owner_type='delivery_note' AND owner_id=? ORDER BY id", [s.id]))[0];
+    s.photos = (await pool.query("SELECT id, path, filename FROM files WHERE owner_type='delivery_note' AND (kind IS NULL OR kind<>'pod') AND owner_id=? ORDER BY id", [s.id]))[0];
+    s.pod = (await pool.query("SELECT id, path, filename FROM files WHERE owner_type='delivery_note' AND kind='pod' AND owner_id=? ORDER BY id DESC LIMIT 1", [s.id]))[0][0] || null;
     Object.assign(s, (await pool.query('SELECT t.ticket_no, u.name pic_name, u.employee_no FROM handling_tickets t JOIN users u ON u.id=t.pic_id WHERE t.id=?', [s.ticket_id]))[0][0]);
     const jids = uniq(s.items.map(i => i.jo_id));
     s.jos = jids.length ? (await pool.query(`SELECT j.id, j.no_jo jo_no, ${refStr('INVOICE')} invoice_no, ${refStr('BL')} bl_no, j.vessel, j.qty, j.unit, j.party_text, j.weight_kg, ${refStr('AJU')} aju_no, c.name customer_name
@@ -412,8 +417,13 @@ module.exports = pool => {
     const [[s]] = await pool.query('SELECT id, ticket_id, no_sj, finish_loading FROM delivery_notes WHERE id=?', [req.params.id]);
     if (!s) return res.sendStatus(404);
     if (!s.finish_loading) {
-      await pool.query('UPDATE delivery_notes SET finish_loading=NOW(), updated_by=? WHERE id=?', [req.user.id, s.id]);
-      await audit.log(pool, { entity: 'ticket', id: s.ticket_id, action: 'Finish loading', note: s.no_sj, user: req.user });
+      await tx(pool, async conn => {
+        await conn.query('UPDATE delivery_notes SET finish_loading=NOW(), updated_by=? WHERE id=?', [req.user.id, s.id]);
+        await audit.log(conn, { entity: 'ticket', id: s.ticket_id, action: 'Finish loading', note: s.no_sj, user: req.user });
+        // tracking: tulis event LOADED bila status sekarang tepat sebelumnya (atau langkah opsional vendor luar); selain itu Finish Loading tetap jalan tanpa event
+        const dn = await trackDb.loadDn(conn, s.id, true);
+        if (T.canTransition({ from: dn.track_status, to: 'LOADED', actor: 'OPS', ownFleet: !!dn.is_own_fleet, note: 'x' }).ok) await trackDb.applyStep(conn, dn, { to: 'LOADED', actor: 'OPS', user: req.user, label: req.user.name, note: 'Finish Loading oleh operasional' });
+      });
     }
     res.json({ ok: true });
   }));
@@ -470,7 +480,7 @@ module.exports = pool => {
   r.post('/sj/:id/photos', wrap(async (req, res) => {
     const id = +req.params.id;
     await tx(pool, async conn => {
-      const [[n]] = await conn.query("SELECT COUNT(*) n FROM files WHERE owner_type='delivery_note' AND owner_id=?", [id]);
+      const [[n]] = await conn.query("SELECT COUNT(*) n FROM files WHERE owner_type='delivery_note' AND (kind IS NULL OR kind<>'pod') AND owner_id=?", [id]);
       if (n.n >= rules.LIMITS.SJ_PHOTOS) throw httpError(400, `Maksimal ${rules.LIMITS.SJ_PHOTOS} foto`);
       await files.create(conn, { ownerType: 'delivery_note', ownerId: id, kind: 'photo', filename: req.body.filename || 'foto.jpg', buffer: files.fromBase64(req.body.data), user: req.user, imagesOnly: true });
     });
@@ -545,6 +555,7 @@ module.exports = pool => {
   }));
 
   // ringkasan beberapa tiket sekaligus (satu query agregat) — dipakai kartu Home; urutan mengikuti ids
+  require('./tracking')(r, pool);
   r.summariesByIds = async ids => {
     ids = ids.map(Number);
     if (!ids.length) return [];

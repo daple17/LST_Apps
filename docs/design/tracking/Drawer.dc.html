@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Drawer progress surat jalan</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,800&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+button{font-family:inherit}
+.chip{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600}
+.tag{background:#EEF1F6;color:#5B6B85;font-size:11px;padding:0 8px;border-radius:4px}
+.st{display:flex;gap:14px}
+.ln{display:flex;flex-direction:column;align-items:center;width:22px}
+.ln .d{width:22px;height:22px;border-radius:50%;background:#1E9E6A;display:flex;align-items:center;justify-content:center;flex:none}
+.ln .l{width:2px;flex:1;background:#1E9E6A;min-height:20px}
+.ln .l.g{background:#DCE3EE}
+.ln .o{width:22px;height:22px;border-radius:50%;border:2px solid #C4CCD9;box-sizing:border-box;flex:none}
+.bd{padding-bottom:14px;flex:1}
+</style>
+</helmet>
+<div style="width:100%;height:900px;box-sizing:border-box;position:relative;overflow:hidden;background:linear-gradient(160deg,#EEF3FA 0%,#F7F4EE 100%);font-family:'Plus Jakarta Sans',sans-serif;color:#14243F;font-size:14px;line-height:1.5">
+
+  <div style="position:absolute;inset:0;padding:24px 24px 24px 274px;box-sizing:border-box;opacity:.55">
+    <div style="font-size:34px;font-weight:800;font-style:italic;margin-bottom:16px">Trucking Delivery</div>
+    <div style="background:#fff;border-radius:20px;height:120px;margin-bottom:16px"></div>
+    <div style="background:#fff;border-radius:20px;height:110px;margin-bottom:16px"></div>
+    <div style="background:#fff;border-radius:20px;height:300px"></div>
+  </div>
+  <div style="position:absolute;left:12px;top:12px;bottom:12px;width:250px;border-radius:24px;background:linear-gradient(180deg,#14305A,#0E2442);opacity:.55"></div>
+  <div style="position:absolute;inset:0;background:rgba(14,36,66,.35)"></div>
+
+  <div style="position:absolute;top:0;right:0;bottom:0;width:540px;background:#fff;box-shadow:-16px 0 40px rgba(14,36,66,.25);display:flex;flex-direction:column">
+    <div style="padding:20px 28px;border-bottom:1px solid #EEF1F6;display:flex;align-items:flex-start;gap:12px">
+      <div style="flex:1">
+        <div style="font-size:12px;color:#5B6B85">Tiket 2026101201TP</div>
+        <div style="font-size:22px;font-weight:800;font-style:italic">SJ 2026100043</div>
+        <div style="color:#5B6B85">B 9076 TEK · SUPRIADI · HAJ S</div>
+      </div>
+      <span class="chip" style="background:#DDF3EA;color:#157A52;margin-top:6px">Dalam perjalanan</span>
+      <span style="width:34px;height:34px;border:1px solid #DCE3EE;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#5B6B85">&times;</span>
+    </div>
+
+    <div style="padding:20px 28px;overflow:auto;flex:1">
+      <div style="background:#F4F7FB;border-radius:16px;padding:16px;margin-bottom:20px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><b>Tautan driver</b><span class="chip" style="background:#DDF3EA;color:#157A52">Aktif</span></div>
+        <div style="color:#5B6B85;font-size:13px;margin-bottom:12px">Tanpa login. Hanya untuk surat jalan ini. Dibuka driver 08.05, nopol terverifikasi.</div>
+        <div style="height:38px;box-sizing:border-box;border:1px solid #DCE3EE;background:#fff;border-radius:10px;display:flex;align-items:center;padding:0 12px;font-size:13px;color:#5B6B85;margin-bottom:10px;overflow:hidden;white-space:nowrap">lesat.example/d/Xk3vQ9mT7pRw2bNc</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button style="height:38px;padding:0 14px;border:0;background:#1E9E6A;color:#fff;border-radius:10px;font-size:13px;font-weight:600">Bagikan lewat WhatsApp</button>
+          <button style="height:38px;padding:0 14px;border:1px solid #DCE3EE;background:#fff;border-radius:10px;font-size:13px">Salin</button>
+          <button style="height:38px;padding:0 14px;border:1px solid #DCE3EE;background:#fff;border-radius:10px;font-size:13px">QR</button>
+          <span style="flex:1"></span>
+          <button style="height:38px;padding:0 6px;border:0;background:none;color:#B42318;font-size:13px">Cabut</button>
+        </div>
+      </div>
+
+      <div style="font-weight:700;margin-bottom:12px">Progress</div>
+
+      <div class="st"><div class="ln"><div class="d"><svg width="11" height="11" viewBox="0 0 12 12"><path d="M2 6.5L5 9.5L10 3" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="l"></div></div><div class="bd"><b style="font-weight:600">Planning</b> <span class="tag">Operasional</span><div style="color:#5B6B85;font-size:12px">16 Okt, 07.40 · Rina</div></div></div>
+      <div class="st"><div class="ln"><div class="d"><svg width="11" height="11" viewBox="0 0 12 12"><path d="M2 6.5L5 9.5L10 3" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="l"></div></div><div class="bd"><b style="font-weight:600">Ready</b> <span class="tag">Operasional</span><div style="color:#5B6B85;font-size:12px">16 Okt, 07.52 · Rina · tautan dikirim</div></div></div>
+      <div class="st"><div class="ln"><div class="d"><svg width="11" height="11" viewBox="0 0 12 12"><path d="M2 6.5L5 9.5L10 3" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="l"></div></div><div class="bd"><b style="font-weight:600">Berangkat ke lokasi muat</b> <span class="tag">Driver</span><div style="color:#5B6B85;font-size:12px">16 Okt, 08.06 · SUPRIADI</div></div></div>
+      <div class="st"><div class="ln"><div class="d"><svg width="11" height="11" viewBox="0 0 12 12"><path d="M2 6.5L5 9.5L10 3" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="l"></div></div><div class="bd"><b style="font-weight:600">Tiba di lokasi muat</b> <span class="tag">Driver</span><div style="color:#5B6B85;font-size:12px">16 Okt, 08.07 · SUPRIADI</div><div style="margin-top:4px;background:#FFF1D6;color:#8A5200;font-size:12px;padding:2px 8px;border-radius:4px;display:inline-block">Dicatat 1 menit setelah langkah sebelumnya. Perlu dicek.</div></div></div>
+      <div class="st"><div class="ln"><div class="d"><svg width="11" height="11" viewBox="0 0 12 12"><path d="M2 6.5L5 9.5L10 3" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="l"></div></div><div class="bd"><b style="font-weight:600">Selesai muat</b> <span class="tag">Driver</span> <span class="tag">Diinput operasional</span><div style="color:#5B6B85;font-size:12px">16 Okt, 09.10 · Rina</div></div></div>
+      <div class="st"><div class="ln"><div class="d" style="background:#fff;border:2px solid #1E9E6A;box-sizing:border-box"><div style="width:8px;height:8px;border-radius:50%;background:#1E9E6A"></div></div><div class="l g"></div></div><div class="bd"><b>Dalam perjalanan</b> <span class="tag">Driver</span><div style="color:#5B6B85;font-size:12px">16 Okt, 09.24 · SUPRIADI · sudah 1 j 52 m</div></div></div>
+      <div class="st"><div class="ln"><div class="o"></div><div class="l g"></div></div><div class="bd" style="color:#8A97AD">Tiba di tujuan <span class="tag">Driver</span></div></div>
+      <div class="st"><div class="ln"><div class="o"></div><div class="l g"></div></div><div class="bd" style="color:#8A97AD">Diterima, foto surat jalan <span class="tag">Driver</span></div></div>
+      <div class="st"><div class="ln"><div class="o"></div></div><div class="bd" style="color:#8A97AD">Completed <span class="tag">Operasional</span></div></div>
+    </div>
+
+    <div style="padding:16px 28px;border-top:1px solid #EEF1F6;display:flex;gap:10px;align-items:center">
+      <span style="color:#5B6B85;font-size:13px;flex:1">Tombol Completed aktif setelah driver mengirim foto diterima.</span>
+      <button style="height:42px;padding:0 18px;border:0;background:#C4CCD9;color:#fff;border-radius:12px;font-size:14px;font-weight:600">Tandai Completed</button>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

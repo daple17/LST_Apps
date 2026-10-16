@@ -1,5 +1,5 @@
 // Impor bagian 2: material (kontainer), tiket (worksheet), report kerusakan, surat jalan + isinya, status tiket (done_at).
-const M = require('../../lib/legacy-map');
+const M = require('../../lib/legacy-map'), { legacyTrackStatus } = require('../../lib/tracking');
 const { dt, dtt, trunc } = require('./common');
 
 const chunks = (a, n) => { const o = []; for (let i = 0; i < a.length; i += n) o.push(a.slice(i, i + n)); return o; };
@@ -117,8 +117,8 @@ async function deliveryNotes(ctx) {
   for (const [no, p] of placeholders) { const id = pid.get(no); await ctx.q('DELETE FROM ticket_job_orders WHERE ticket_id=?', [id]); if (p.jos.size) await ctx.q('INSERT IGNORE INTO ticket_job_orders (ticket_id, jo_id) VALUES ?', [[...p.jos].map(j => [id, j])]); }
   const rowsOut = out.map(({ r, ticketId, ticketNo }) => ({ legacy_id: r.id, no_sj: r.no_sj, ticket_id: ticketId || pid.get(ticketNo), nopol: trunc(M.squash(r.no_pol) || '-', 20), driver: trunc(M.squash(r.nm_sopir) || '-', 80), phone: trunc(M.cleanText(r.no_telp_sopir), 30),
     vendor_id: vendors.get(Number(r.id_vendor)) ?? null, destination: trunc(M.cleanText(r.tujuan), 100), origin_address: trunc(M.cleanText(r.alamat_pengirim), 100), finish_loading: dtt(r.date_finish), created_at: dtt(r.date_created) || (dt(r.tanggal) + ' 00:00:00'),
-    created_by_name: trunc(uname.get(Number(r.id_user)) || null, 100), created_by: users.get(Number(r.id_user)) ?? null, legacy_status: r.status_kirim == null ? null : Number(r.status_kirim), origin: 'LEGACY' }));
-  await ctx.upsert('delivery_notes', ['legacy_id', 'no_sj', 'ticket_id', 'nopol', 'driver', 'phone', 'vendor_id', 'destination', 'origin_address', 'finish_loading', 'created_at', 'created_by_name', 'created_by', 'legacy_status', 'origin'], rowsOut);
+    created_by_name: trunc(uname.get(Number(r.id_user)) || null, 100), created_by: users.get(Number(r.id_user)) ?? null, legacy_status: r.status_kirim == null ? null : Number(r.status_kirim), origin: 'LEGACY', track_status: legacyTrackStatus(r) }));
+  await ctx.upsert('delivery_notes', ['legacy_id', 'no_sj', 'ticket_id', 'nopol', 'driver', 'phone', 'vendor_id', 'destination', 'origin_address', 'finish_loading', 'created_at', 'created_by_name', 'created_by', 'legacy_status', 'origin', 'track_status'], rowsOut);
   s.inserted = rowsOut.filter(o => !had.has(Number(o.legacy_id))).length; s.updated = rowsOut.length - s.inserted;
   d('vendor_tidak_ditemukan', rowsOut.filter(o => o.vendor_id == null).length); d('tanpa_isi_barang', rowsOut.filter(o => !(bySj.get(Number(o.legacy_id)) || []).length).length);
   ctx.addNote('delivery_notes', `Surat jalan yang tidak bisa dikaitkan ke tiket aslinya masuk tiket penampung bulanan MIG-YYYYMM (${placeholders.size} tiket penampung, is_placeholder=1, sudah selesai, PIC = pengguna migrasi-sistem-lama). start_loading dikosongkan (tidak ada di sistem lama); finish_loading = date_finish bila ada.`);

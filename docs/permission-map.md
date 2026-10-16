@@ -84,3 +84,5 @@ Seluruh router: `GET /upcoming`, `/plan`, `/tickets`.
 - Login: 10 gagal / 15 menit per username dan per IP → 429. User nonaktif mendapat pesan sama dengan password salah.
 - Super Admin (role sistem) selalu memegang semua izin, termasuk modul baru; disinkronkan tiap server start (`lib/roles-seed.js`).
 - Tombol di layar disembunyikan sesuai izin (`PERM_BTN` di `public/app.js`), tetapi yang menentukan tetap server.
+
+**Tracking surat jalan (`ho.*`) — `/api/ho/sj/:id/*`:** GET `tracking`, `qr.svg` → `ho.view`; POST `ready`, `complete`, `reopen`, `tracking/step`, `tracking/undo`, `tracking/link/revoke|regenerate|unlock` → `ho.update`. (Endpoint publik driver `/api/pub/d/:token/*`: tanpa login, dibatasi token + verifikasi nopol; ditambahkan di tahap 3.)
