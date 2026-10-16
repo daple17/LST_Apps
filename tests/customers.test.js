@@ -71,7 +71,7 @@ test('API customer: daftar, kode otomatis, kunci kode, nonaktif, hapus, ekspor, 
 
   // Excel mengikuti filter
   const ex = await app.raw('/customers/export?q=sumber'); assert.equal(ex.status, 200); const wb = new ExcelJS.Workbook(); await wb.xlsx.load(ex.buf); const ws = wb.worksheets[0];
-  assert.deepEqual(ws.getRow(1).values.slice(1), ['Kode', 'Nama', 'Kota', 'Telepon', 'Email', 'NPWP', 'Alamat', 'Jumlah JO', 'Status']); assert.equal(ws.rowCount, 2); assert.equal(ws.getRow(2).getCell(1).value, a.data.code);
+  assert.deepEqual(ws.getRow(1).values.slice(1), ['Kode', 'Nama', 'Kota', 'Telepon', 'Email', 'NPWP', 'Alamat', 'Job Order', 'Status']); assert.equal(ws.rowCount, 2); assert.equal(ws.getRow(2).getCell(1).value, a.data.code);
 
   // izin
   const mk = async (name, perms) => { const rl = (await q('INSERT INTO roles (name) VALUES (?)', [name])).insertId; if (perms.length) await q('INSERT INTO role_permissions (role_id, permission) VALUES ?', [perms.map(p => [rl, p])]); return (await q('INSERT INTO users (username,password,name,role_id,email) VALUES (?,?,?,?,?)', [name, 'x', name, rl, name + '@x.id'])).insertId; };

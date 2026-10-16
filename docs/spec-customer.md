@@ -8,7 +8,7 @@
 5. Customer hasil migrasi dengan nickname bukan 3 huruf diberi tanda **Tinjau** (`needs_code_review`). Tanda hanya bisa dihapus ("kode sudah saya tinjau"), tidak bisa dipasang; kodenya tetap terkunci.
 
 ## Layar `#customer`
-Kartu (Total, Aktif, Nonaktif, Kode perlu ditinjau; klik = filter), pencarian (kode, nama, kota, email, telepon, NPWP), filter status, Download Excel, + Tambah Customer, tabel (Kode, Nama, Kota, Telepon, Email, NPWP, jumlah JO yang menautkan ke daftar JO customer itu, Status, Edit), paginasi 20 baris. Form modal: usulan kode, status (edit), nama, kota, telepon, email, NPWP, alamat. Tombol disembunyikan sesuai izin.
+Kartu (Total, Aktif, Nonaktif, Kode perlu ditinjau; klik = filter), pencarian (kode, nama, kota, email, telepon, NPWP), filter status, Download Excel, + Tambah Customer, tabel (Kode, Nama, Kota, Telepon, Email, NPWP, Job Order (jumlah) yang menautkan ke daftar JO customer itu, Status, Edit), paginasi 20 baris. Form modal: usulan kode, status (edit), nama, kota, telepon, email, NPWP, alamat. Tombol disembunyikan sesuai izin.
 "+ baru" di form Job Order juga memakai kode otomatis.
 
 ## API (`routes/customers.js`, izin `customer.*` termasuk `customer.export` yang baru)

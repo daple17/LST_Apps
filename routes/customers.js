@@ -43,7 +43,7 @@ module.exports = pool => {
     const [cond, p] = where(req.query), rows = await q(`${SEL}${cond} ORDER BY c.name`, p);
     await excel.send(res, `customer-${new Date().toISOString().slice(0, 10)}.xlsx`, [{ name: 'Customer', columns: [
       { header: 'Kode', key: 'code', width: 10 }, { header: 'Nama', key: 'name', width: 44 }, { header: 'Kota', key: 'city', width: 20 }, { header: 'Telepon', key: 'phone', width: 18 },
-      { header: 'Email', key: 'email', width: 30 }, { header: 'NPWP', key: 'tax', width: 22 }, { header: 'Alamat', key: 'address', width: 44 }, { header: 'Jumlah JO', key: 'jo', width: 11 }, { header: 'Status', key: 'status', width: 12 }],
+      { header: 'Email', key: 'email', width: 30 }, { header: 'NPWP', key: 'tax', width: 22 }, { header: 'Alamat', key: 'address', width: 44 }, { header: 'Job Order', key: 'jo', width: 11 }, { header: 'Status', key: 'status', width: 12 }],
       rows: rows.map(c => ({ code: c.code, name: c.name, city: c.city, phone: c.phone, email: c.email, tax: c.tax_no, address: c.address, jo: +c.jo_count, status: c.is_active ? 'Aktif' : 'Nonaktif' })) }]);
   }));
 
