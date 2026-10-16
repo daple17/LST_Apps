@@ -54,11 +54,11 @@ module.exports = pool => {
 
   r.get('/:id(\\d+)', wrap(async (req, res) => {
     const v = await one(`${SEL} WHERE v.id=?`, [req.params.id]); if (!v) throw httpError(404, 'Vendor tidak ditemukan');
-    res.json(shape(v));
+    res.json({ ...shape(v), rates: await rateRows(v.id) });
   }));
 
   r.post('/', wrap(async (req, res) => {
-    const f = await fields(req.body);
+    const f = await fields(req.body), rates = req.body.rates === undefined ? [] : rateList(req.body.rates);
     let code = req.body.code ? squash(req.body.code).toUpperCase() : null;               // kode manual hanya untuk pemanggil lama; form baru selalu otomatis
     if (code && !MANUAL_CODE.test(code)) throw invalid('code', 'Kode vendor 2-10 huruf/angka');
     let id;
@@ -69,13 +69,14 @@ module.exports = pool => {
     }
     if (!id) throw httpError(409, 'Gagal membuat kode vendor, coba lagi');
     await audit.log(pool, { entity: 'vendor', id, action: 'Dibuat', note: note(`${code} ${f.name}`), user: req.user });
+    if (rates.length) await saveRates(id, rates, req.user);
     res.json({ id, code });
   }));
 
   r.put('/:id(\\d+)', wrap(async (req, res) => {
     const cur = await one(`${SEL} WHERE v.id=?`, [req.params.id]); if (!cur) throw httpError(404, 'Vendor tidak ditemukan');
     if (req.body.code !== undefined && squash(req.body.code).toUpperCase() !== cur.code.toUpperCase()) throw invalid('code', 'Kode vendor tidak bisa diubah (tampil di surat jalan)');
-    const f = await fields(req.body, cur.id), active = req.body.is_active === undefined ? !!cur.is_active : !!req.body.is_active;
+    const f = await fields(req.body, cur.id), rates = req.body.rates === undefined ? null : rateList(req.body.rates), active = req.body.is_active === undefined ? !!cur.is_active : !!req.body.is_active;
     const review = req.body.needs_code_review === false || req.body.needs_code_review === 0 ? 0 : cur.needs_code_review;
     await pool.query('UPDATE vendors SET name=?, city=?, npwp=?, pic=?, country_id=?, is_active=?, needs_code_review=? WHERE id=?', [f.name, f.city, f.npwp, f.pic, f.country_id, active ? 1 : 0, review, cur.id]);
     const diff = [];
@@ -83,6 +84,7 @@ module.exports = pool => {
     if ((cur.country_id || null) !== f.country_id) diff.push('negara diubah');
     if (!!cur.is_active !== active) diff.push(active ? 'diaktifkan' : 'dinonaktifkan');
     if (cur.needs_code_review && !review) diff.push('kode ditandai sudah ditinjau');
+    if (rates) await saveRates(cur.id, rates, req.user);
     await audit.log(pool, { entity: 'vendor', id: cur.id, action: !!cur.is_active !== active ? (active ? 'Diaktifkan' : 'Dinonaktifkan') : 'Diubah', note: note(`${cur.code}${diff.length ? '; ' + diff.join('; ') : ''}`), user: req.user });
     res.json({ ok: true });
   }));
@@ -104,38 +106,30 @@ module.exports = pool => {
     res.json({ ok: true });
   }));
 
-  // Tarif per rute: dihitung per ritase atau per ton (dipakai pengajuan PO). Ubah tarif = izin vendor.update.
-  const BASIS = { RITASE: 'ritase', TON: 'ton' };
-  async function rateBody(b, vendorId, id = 0) {
-    const origin = squash(b.origin), destination = squash(b.destination), basis = String(b.basis || '').toUpperCase(), price = Number(b.price);
-    if (!origin || origin.length > 100) throw invalid('origin', 'Asal wajib diisi (maks. 100 karakter)');
-    if (!destination || destination.length > 100) throw invalid('destination', 'Tujuan wajib diisi (maks. 100 karakter)');
-    if (!BASIS[basis]) throw invalid('basis', 'Pilih satuan: ritase atau ton');
-    if (!Number.isFinite(price) || price <= 0 || price > 9999999999999) throw invalid('price', 'Harga harus lebih dari 0');
-    if (await one('SELECT id FROM vendor_rates WHERE vendor_id=? AND origin=? AND destination=? AND basis=? AND id<>?', [vendorId, origin, destination, basis, id])) throw invalid('destination', `Tarif ${origin} → ${destination} per ${BASIS[basis]} sudah ada`);
-    return { origin, destination, basis, price: Math.round(price * 100) / 100 };
+  // Tarif per kota tujuan: jarak kota + tonase + ritase. Disimpan di sini; perhitungan ada di menu PO nanti.
+  const money = (v, field, label, min) => { const n = v === '' || v == null ? 0 : Number(v); if (!Number.isFinite(n) || n < min || n > 9999999999999) throw invalid(field, `${label} ${min ? 'harus lebih dari 0' : 'tidak boleh negatif'}`); return Math.round(n * 100) / 100; };
+  function rateList(raw) {
+    if (!Array.isArray(raw)) throw invalid('rates', 'Tarif harus berupa daftar');
+    if (raw.length > 200) throw invalid('rates', 'Maksimal 200 kota per vendor');
+    const seen = new Set();
+    return raw.map((x, i) => {
+      const city = squash(x.city), k = `rates.${i}.`;
+      if (!city || city.length > 100) throw invalid(k + 'city', 'Kota wajib diisi (maks. 100 karakter)');
+      if (seen.has(city.toLowerCase())) throw invalid(k + 'city', `Kota ${city} diisi dua kali`); seen.add(city.toLowerCase());
+      return [city, money(x.price_city, k + 'price_city', 'Tarif jarak kota', 1), money(x.price_ton, k + 'price_ton', 'Tarif tonase', 0), money(x.price_trip, k + 'price_trip', 'Tarif ritase', 0)];
+    });
   }
-  const vendorOf = async id => (await one('SELECT id, code FROM vendors WHERE id=?', [id])) || (() => { throw httpError(404, 'Vendor tidak ditemukan'); })();
-  const rateRows = async vid => (await q('SELECT id, origin, destination, basis, price FROM vendor_rates WHERE vendor_id=? ORDER BY origin, destination, basis', [vid])).map(x => ({ ...x, price: +x.price }));
-  r.get('/:id(\\d+)/rates', wrap(async (req, res) => { await vendorOf(req.params.id); res.json(await rateRows(req.params.id)); }));
-  r.post('/:id(\\d+)/rates', wrap(async (req, res) => {
-    const v = await vendorOf(req.params.id), f = await rateBody(req.body, v.id);
-    const [{ insertId }] = await pool.query('INSERT INTO vendor_rates (vendor_id, origin, destination, basis, price) VALUES (?,?,?,?,?)', [v.id, f.origin, f.destination, f.basis, f.price]);
-    await audit.log(pool, { entity: 'vendor', id: v.id, action: 'Tarif ditambah', note: note(`${f.origin} → ${f.destination} per ${BASIS[f.basis]}: ${f.price}`), user: req.user });
-    res.json({ id: insertId });
-  }));
-  r.put('/:id(\\d+)/rates/:rid(\\d+)', wrap(async (req, res) => {
-    const v = await vendorOf(req.params.id), cur = await one('SELECT * FROM vendor_rates WHERE id=? AND vendor_id=?', [req.params.rid, v.id]); if (!cur) throw httpError(404, 'Tarif tidak ditemukan');
-    const f = await rateBody(req.body, v.id, cur.id);
-    await pool.query('UPDATE vendor_rates SET origin=?, destination=?, basis=?, price=? WHERE id=?', [f.origin, f.destination, f.basis, f.price, cur.id]);
-    await audit.log(pool, { entity: 'vendor', id: v.id, action: 'Tarif diubah', note: note(`${cur.origin} → ${cur.destination} per ${BASIS[cur.basis]}: ${+cur.price} → ${f.origin} → ${f.destination} per ${BASIS[f.basis]}: ${f.price}`), user: req.user });
-    res.json({ ok: true });
-  }));
-  r.delete('/:id(\\d+)/rates/:rid(\\d+)', wrap(async (req, res) => {
-    const v = await vendorOf(req.params.id), cur = await one('SELECT * FROM vendor_rates WHERE id=? AND vendor_id=?', [req.params.rid, v.id]); if (!cur) throw httpError(404, 'Tarif tidak ditemukan');
-    await pool.query('DELETE FROM vendor_rates WHERE id=?', [cur.id]);
-    await audit.log(pool, { entity: 'vendor', id: v.id, action: 'Tarif dihapus', note: note(`${cur.origin} → ${cur.destination} per ${BASIS[cur.basis]}: ${+cur.price}`), user: req.user });
-    res.json({ ok: true });
-  }));
+  const rateRows = async vid => (await q('SELECT city, price_city, price_ton, price_trip FROM vendor_rates WHERE vendor_id=? ORDER BY city', [vid])).map(x => ({ city: x.city, price_city: +x.price_city, price_ton: +x.price_ton, price_trip: +x.price_trip }));
+  async function saveRates(vid, list, user) {
+    const old = await rateRows(vid), cn = await pool.getConnection();
+    try {
+      await cn.beginTransaction(); await cn.query('DELETE FROM vendor_rates WHERE vendor_id=?', [vid]);
+      if (list.length) await cn.query('INSERT INTO vendor_rates (vendor_id, city, price_city, price_ton, price_trip) VALUES ?', [list.map(l => [vid, ...l])]);
+      await cn.commit();
+    } catch (e) { await cn.rollback(); throw e; } finally { cn.release(); }
+    const key = x => `${x.city}|${x.price_city}|${x.price_ton}|${x.price_trip}`, before = new Set(old.map(key)), after = list.map(l => ({ city: l[0], price_city: l[1], price_ton: l[2], price_trip: l[3] }));
+    const diff = [...after.filter(x => !before.has(key(x))).map(x => `${x.city}: kota ${x.price_city}, ton ${x.price_ton}, ritase ${x.price_trip}`), ...old.filter(x => !after.some(y => key(y) === key(x))).map(x => `hapus/ubah ${x.city}`)];
+    if (diff.length) await audit.log(pool, { entity: 'vendor', id: vid, action: 'Tarif diubah', note: note(diff.join('; ')), user });
+  }
   return r;
 };

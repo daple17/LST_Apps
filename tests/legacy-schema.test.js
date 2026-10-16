@@ -16,7 +16,7 @@ test('migrasi 010: skema kompatibilitas data lama (hanya menambah, aman diulang)
   await q("INSERT INTO job_orders (no_jo, type, customer_id, status) VALUES ('0001USC', 'IMPORT', 1, 'NOT_COMP')");
   const before = { jo: (await q('SELECT * FROM job_orders'))[0], c: (await q('SELECT * FROM customers'))[0] };
 
-  assert.deepEqual(await migrate(pool, dir), ['010-legacy-compat.js', '011-legacy-material-origin.js', '012-coa-job-types.js', '013-customer-active.js', '014-vendor-active.js', '015-vendor-rates.js']); assert.deepEqual(await migrate(pool, dir), []);
+  assert.deepEqual(await migrate(pool, dir), ['010-legacy-compat.js', '011-legacy-material-origin.js', '012-coa-job-types.js', '013-customer-active.js', '014-vendor-active.js', '015-vendor-rates.js', '016-vendor-rates-city.js']); assert.deepEqual(await migrate(pool, dir), []);
   // data lama tidak berubah; kolom baru terisi default
   const jo = (await q('SELECT * FROM job_orders'))[0];
   for (const k of Object.keys(before.jo)) if (k !== 'updated_at') assert.equal(String(jo[k]), String(before.jo[k]), k);
