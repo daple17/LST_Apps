@@ -25,3 +25,17 @@ test('teks tidak valid ditolak', () => {
 test('svg valid tanpa NaN/undefined', () => {
   const s = C.svg('2026100041'); assert.ok(!/NaN|undefined/.test(s)); assert.match(s, /^<svg /);
 });
+
+test('barcode terbaca pemindai (ZXing): modul bulat, nomor SJ nyata', () => {
+  const Z = require('../public/vendor/zxing-library.min.js');
+  for (const t of ['2026100041', 'SJ-20261001-01', 'CQH4162B', 'A']) {
+    const b = C.bars(t), mw = 2, W = b.modules * mw, H = 40, lum = new Uint8ClampedArray(W * H).fill(255);
+    for (const r of b.bars) for (let x = r.x * mw; x < (r.x + r.w) * mw; x++) for (let y = 0; y < H; y++) lum[y * W + x] = 0;
+    const res = new Z.MultiFormatReader().decode(new Z.BinaryBitmap(new Z.HybridBinarizer(new Z.RGBLuminanceSource(lum, W, H))), new Map([[Z.DecodeHintType.POSSIBLE_FORMATS, [Z.BarcodeFormat.CODE_128]]]));
+    assert.equal(res.getText(), t);
+  }
+});
+test('svg: latar putih (zona tenang) dan lebar piksel bulat per modul', () => {
+  const s = C.svg('SJ-20261001-01'), m = C.bars('SJ-20261001-01').modules;
+  assert.match(s, /<rect width="\d+" height="64" fill="#fff"\/>/); assert.match(s, new RegExp(`width="${m * 2}" height="64"`));
+});
